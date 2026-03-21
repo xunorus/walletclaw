@@ -1,0 +1,20 @@
+{
+  "name": "aleph1",
+  "version": "0.0.4",
+  "packageManager": "yarn@4.6.0",
+  "dependencies": {
+    "@parcel/core": "^2.16.4",
+    "@xmtp/browser-sdk": "^7.0.0",
+    "@xmtp/content-type-read-receipt": "^2.0.2",
+    "eth-crypto": "^4.0.0",
+    "ethers": "^6.16.0",
+    "parcel": "^2.16.4",
+    "parcel-reporter-static-files-copy": "^1.5.3",
+    "viem": "^2.47.5"
+  },
+  "devDependencies": {
+    "@parcel/packager-raw-url": "2.16.4",
+    "@parcel/transformer-webmanifest": "2.16.4",
+    "buffer": "^5.5.0||^6.0.0"
+  }
+}

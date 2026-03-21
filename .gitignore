@@ -1,0 +1,7 @@
+.DS_Store
+.pnp.cjs
+.pnp.loader.mjs
+.yarn/
+yarn.lock
+.parcel-cache/
+dist/
