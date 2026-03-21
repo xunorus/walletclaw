@@ -451,81 +451,6 @@
   }
   .forget-btn:hover { color: var(--red); }
 
-
-  /* ── Version badge ── */
-  .version-badge {
-    font-size: 10px;
-    font-family: var(--mono);
-    color: var(--text3);
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 3px 8px;
-    letter-spacing: 0.5px;
-    cursor: default;
-    user-select: none;
-    transition: color 0.15s, border-color 0.15s;
-    position: relative;
-  }
-  .version-badge:hover { color: var(--text2); border-color: var(--border2); }
-
-  /* Version history dropdown */
-  .version-dropdown {
-    display: none;
-    position: absolute;
-    top: calc(100% + 6px);
-    right: 0;
-    width: 300px;
-    background: var(--bg2);
-    border: 1px solid var(--border2);
-    border-radius: 10px;
-    padding: 12px;
-    z-index: 500;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-  }
-  .version-badge:hover .version-dropdown { display: block; }
-  .version-dropdown-title {
-    font-size: 10px;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: var(--text3);
-    margin-bottom: 10px;
-    font-family: var(--mono);
-  }
-  .vlog-entry {
-    display: flex;
-    gap: 10px;
-    padding: 7px 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 11px;
-  }
-  .vlog-entry:last-child { border-bottom: none; padding-bottom: 0; }
-  .vlog-tag {
-    font-family: var(--mono);
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--teal);
-    white-space: nowrap;
-    min-width: 52px;
-  }
-  .vlog-tag.current {
-    color: var(--purple);
-  }
-  .vlog-info { flex: 1; }
-  .vlog-desc { color: var(--text2); line-height: 1.5; }
-  .vlog-date { color: var(--text3); font-size: 10px; margin-top: 2px; }
-  .vlog-pills { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
-  .vlog-pill {
-    font-size: 9px;
-    padding: 1px 6px;
-    border-radius: 99px;
-    border: 1px solid var(--border);
-    color: var(--text3);
-  }
-  .vlog-pill.feat { border-color: rgba(255,140,66,0.3); color: var(--teal); }
-  .vlog-pill.fix  { border-color: rgba(224,53,48,0.3);  color: var(--purple); }
-  .vlog-pill.sec  { border-color: rgba(255,209,102,0.3); color: var(--amber); }
-
 </style>
 </head>
 <body>
@@ -584,67 +509,6 @@
     <div class="status-pill" id="xmtp-status-pill">
       <div class="dot"></div>
       <span id="xmtp-status-text">XMTP offline</span>
-    </div>
-    <div class="version-badge" id="version-badge">
-      v0.4.0
-      <div class="version-dropdown">
-        <div class="version-dropdown-title">Changelog</div>
-
-        <div class="vlog-entry">
-          <div class="vlog-tag current">v0.4.0</div>
-          <div class="vlog-info">
-            <div class="vlog-desc">Encrypted wallet persistence</div>
-            <div class="vlog-date">Today</div>
-            <div class="vlog-pills">
-              <span class="vlog-pill sec">AES-GCM</span>
-              <span class="vlog-pill sec">PBKDF2</span>
-              <span class="vlog-pill feat">auto-restore</span>
-              <span class="vlog-pill feat">forget wallet</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="vlog-entry">
-          <div class="vlog-tag">v0.3.0</div>
-          <div class="vlog-info">
-            <div class="vlog-desc">Avalanche Fuji testnet default</div>
-            <div class="vlog-date">Today</div>
-            <div class="vlog-pills">
-              <span class="vlog-pill feat">chainId 43113</span>
-              <span class="vlog-pill feat">AVAX units</span>
-              <span class="vlog-pill feat">MetaMask add network</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="vlog-entry">
-          <div class="vlog-tag">v0.2.0</div>
-          <div class="vlog-info">
-            <div class="vlog-desc">OpenClaw red theme + lobster icon</div>
-            <div class="vlog-date">Today</div>
-            <div class="vlog-pills">
-              <span class="vlog-pill feat">red palette</span>
-              <span class="vlog-pill feat">SVG mascot</span>
-              <span class="vlog-pill fix">contrast fix</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="vlog-entry">
-          <div class="vlog-tag">v0.1.0</div>
-          <div class="vlog-info">
-            <div class="vlog-desc">Initial WalletClaw — 3 OpenClaw connection methods</div>
-            <div class="vlog-date">Today</div>
-            <div class="vlog-pills">
-              <span class="vlog-pill feat">REST /sign</span>
-              <span class="vlog-pill feat">WebSocket</span>
-              <span class="vlog-pill feat">XMTP</span>
-              <span class="vlog-pill feat">ethers.js</span>
-            </div>
-          </div>
-        </div>
-
-      </div>
     </div>
   </div>
 </header>
@@ -915,37 +779,6 @@ const state = {
 
 // ─── Crypto persistence (AES-GCM via WebCrypto) ──────────
 const STORAGE_KEY = 'walletclaw_v1';
-const APP_VERSION = 'v0.4.0';
-
-function bumpVersion(newVersion, description, pills = []) {
-  // Adds a new entry to the top of the changelog and updates the badge
-  const badge = document.getElementById('version-badge');
-  if (!badge) return;
-  badge.childNodes[0].textContent = newVersion;
-
-  const dropdown = badge.querySelector('.version-dropdown');
-  const firstEntry = dropdown.querySelector('.vlog-entry');
-
-  // De-highlight previous current
-  const prevCurrent = dropdown.querySelector('.vlog-tag.current');
-  if (prevCurrent) prevCurrent.classList.remove('current');
-
-  const pillsHtml = pills.map(([label, type]) =>
-    `<span class="vlog-pill ${type}">${label}</span>`
-  ).join('');
-
-  const entry = document.createElement('div');
-  entry.className = 'vlog-entry';
-  entry.innerHTML = `
-    <div class="vlog-tag current">${newVersion}</div>
-    <div class="vlog-info">
-      <div class="vlog-desc">${description}</div>
-      <div class="vlog-date">just now</div>
-      <div class="vlog-pills">${pillsHtml}</div>
-    </div>`;
-  dropdown.insertBefore(entry, firstEntry);
-  log(`Version bumped to ${newVersion}: ${description}`, 'ok');
-}
 let _pendingWallet = null; // wallet waiting to be saved after password
 
 async function deriveKey(password, salt) {
