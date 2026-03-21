@@ -3,28 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WalletClaw 🦞</title>
+<title>WalletClaw</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;800&display=swap');
 
   :root {
-    --bg: #110709;
-    --bg2: #180c0d;
-    --bg3: #201212;
-    --border: rgba(220,60,50,0.18);
-    --border2: rgba(220,60,50,0.38);
-    --purple: #e03530;
-    --purple-dim: rgba(220,53,48,0.15);
-    --purple-glow: rgba(220,53,48,0.4);
-    --teal: #ff8c42;
-    --teal-dim: rgba(255,140,66,0.12);
-    --amber: #ffd166;
-    --amber-dim: rgba(255,209,102,0.12);
+    --bg: #0a0a0f;
+    --bg2: #111118;
+    --bg3: #18181f;
+    --border: rgba(120,100,255,0.18);
+    --border2: rgba(120,100,255,0.35);
+    --purple: #7c5cfc;
+    --purple-dim: rgba(124,92,252,0.15);
+    --purple-glow: rgba(124,92,252,0.4);
+    --teal: #1de9b6;
+    --teal-dim: rgba(29,233,182,0.12);
+    --amber: #ffb020;
+    --amber-dim: rgba(255,176,32,0.12);
     --red: #ff4757;
-    --text: #fff0ee;
-    --text2: #f0a89e;
-    --text3: #c47a74;
+    --text: #e8e4ff;
+    --text2: #9b92cc;
+    --text3: #5a5380;
     --mono: 'Space Mono', monospace;
     --display: 'Syne', sans-serif;
   }
@@ -45,7 +45,7 @@
     content: '';
     position: fixed;
     inset: 0;
-    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(80,0,0,0.06) 2px, rgba(80,0,0,0.06) 4px);
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
     pointer-events: none;
     z-index: 9999;
   }
@@ -65,8 +65,8 @@
     font-weight: 800;
     letter-spacing: -0.5px;
   }
-  .logo span { color: var(--teal); }
-  
+  .logo span { color: var(--purple); }
+  .logo em { color: var(--teal); font-style: normal; }
 
   .status-pill {
     display: flex;
@@ -379,51 +379,7 @@
 <body>
 
 <header>
-  <div class="logo" style="display:flex;align-items:center;gap:10px">
-  <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
-    <!-- Body -->
-    <ellipse cx="17" cy="20" rx="8" ry="7" fill="#c0392b"/>
-    <ellipse cx="17" cy="20" rx="6" ry="5.2" fill="#e74c3c"/>
-    <!-- Head -->
-    <ellipse cx="17" cy="13" rx="5.5" ry="4.5" fill="#c0392b"/>
-    <ellipse cx="17" cy="13" rx="4" ry="3.2" fill="#e74c3c"/>
-    <!-- Eyes -->
-    <circle cx="14.8" cy="11.5" r="1.4" fill="#fff"/>
-    <circle cx="19.2" cy="11.5" r="1.4" fill="#fff"/>
-    <circle cx="14.8" cy="11.6" r="0.7" fill="#1a0608"/>
-    <circle cx="19.2" cy="11.6" r="0.7" fill="#1a0608"/>
-    <!-- Eye shine -->
-    <circle cx="15.2" cy="11.2" r="0.28" fill="#fff"/>
-    <circle cx="19.6" cy="11.2" r="0.28" fill="#fff"/>
-    <!-- Smile -->
-    <path d="M14.5 14.8 Q17 16.5 19.5 14.8" stroke="#fff" stroke-width="0.8" stroke-linecap="round" fill="none"/>
-    <!-- Antennae -->
-    <line x1="15" y1="9.5" x2="12" y2="5.5" stroke="#e74c3c" stroke-width="1.1" stroke-linecap="round"/>
-    <line x1="19" y1="9.5" x2="22" y2="5.5" stroke="#e74c3c" stroke-width="1.1" stroke-linecap="round"/>
-    <circle cx="12" cy="5.5" r="1" fill="#ff8c42"/>
-    <circle cx="22" cy="5.5" r="1" fill="#ff8c42"/>
-    <!-- LEFT BIG CLAW -->
-    <path d="M9.5 16 C6 14 4 11 5.5 9 C7 7 9.5 8.5 10.5 11" stroke="#c0392b" stroke-width="2.2" stroke-linecap="round" fill="none"/>
-    <path d="M10.5 11 C8 9.5 7 7 8.5 5.5 C10 4 12 5.5 11.5 8" stroke="#e74c3c" stroke-width="1.8" stroke-linecap="round" fill="none"/>
-    <path d="M10.5 11 C9 13 8 14.5 9.5 16" stroke="#e74c3c" stroke-width="1.8" stroke-linecap="round" fill="none"/>
-    <!-- RIGHT BIG CLAW -->
-    <path d="M24.5 16 C28 14 30 11 28.5 9 C27 7 24.5 8.5 23.5 11" stroke="#c0392b" stroke-width="2.2" stroke-linecap="round" fill="none"/>
-    <path d="M23.5 11 C26 9.5 27 7 25.5 5.5 C24 4 22 5.5 22.5 8" stroke="#e74c3c" stroke-width="1.8" stroke-linecap="round" fill="none"/>
-    <path d="M23.5 11 C25 13 26 14.5 24.5 16" stroke="#e74c3c" stroke-width="1.8" stroke-linecap="round" fill="none"/>
-    <!-- Walking legs left -->
-    <line x1="10" y1="19" x2="6" y2="22" stroke="#c0392b" stroke-width="1.3" stroke-linecap="round"/>
-    <line x1="10.5" y1="21" x2="7" y2="25" stroke="#c0392b" stroke-width="1.3" stroke-linecap="round"/>
-    <line x1="11" y1="23" x2="8" y2="27" stroke="#c0392b" stroke-width="1.3" stroke-linecap="round"/>
-    <!-- Walking legs right -->
-    <line x1="24" y1="19" x2="28" y2="22" stroke="#c0392b" stroke-width="1.3" stroke-linecap="round"/>
-    <line x1="23.5" y1="21" x2="27" y2="25" stroke="#c0392b" stroke-width="1.3" stroke-linecap="round"/>
-    <line x1="23" y1="23" x2="26" y2="27" stroke="#c0392b" stroke-width="1.3" stroke-linecap="round"/>
-    <!-- Tail fan -->
-    <path d="M13 26 Q17 31 21 26" stroke="#c0392b" stroke-width="2" stroke-linecap="round" fill="none"/>
-    <path d="M14.5 27.5 Q17 30 19.5 27.5" stroke="#e74c3c" stroke-width="1.2" stroke-linecap="round" fill="none"/>
-  </svg>
-  Wallet<span>Claw</span>
-</div>
+  <div class="logo">Wallet<span>Claw</span><em>⚡</em></div>
   <div style="display:flex;align-items:center;gap:12px">
     <div class="status-pill" id="wallet-status-pill">
       <div class="dot"></div>
@@ -554,8 +510,7 @@
           </div>
         </div>
 
-        <div class="code-block" style="margin-top:12px"><span class="cmt"># In your OpenClaw instance (env vars or config.toml)
-<span class="cmt"># Network: Avalanche Fuji Testnet (chainId 43113)</span></span>
+        <div class="code-block" style="margin-top:12px"><span class="cmt"># In your OpenClaw instance (env vars or config.toml)</span>
 <span class="kw">WALLETCLAW_URL</span>=<span class="str">"http://localhost:3741"</span>
 <span class="kw">WALLETCLAW_API_KEY</span>=<span class="str">"<span id="api-key-env">YOUR_API_KEY</span>"</span>
 
@@ -670,7 +625,7 @@
     <div class="card">
       <div class="card-title">📟 Activity log</div>
       <div class="terminal" id="log-terminal">
-        <div class="log-line"><span class="ts">[init]</span> <span class="inf"> WalletClaw started · Avalanche Fuji Testnet (chainId 43113). Generate or import a wallet to begin.</span></div>
+        <div class="log-line"><span class="ts">[init]</span> <span class="inf"> WalletClaw started. Generate or import a wallet to begin.</span></div>
       </div>
     </div>
 
@@ -725,18 +680,6 @@ async function generateWallet() {
 async function connectMetaMask() {
   if (!window.ethereum) { log('MetaMask not found', 'err'); return; }
   try {
-    try {
-      await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0xA869' }] });
-    } catch(switchErr) {
-      if (switchErr.code === 4902) {
-        await window.ethereum.request({ method: 'wallet_addEthereumChain', params: [{
-          chainId: '0xA869', chainName: 'Avalanche Fuji Testnet',
-          nativeCurrency: { name: 'AVAX', symbol: 'AVAX', decimals: 18 },
-          rpcUrls: ['https://api.avax-test.network/ext/bc/C/rpc'],
-          blockExplorerUrls: ['https://testnet.snowtrace.io']
-        }]});
-      }
-    }
     const provider = new ethers.BrowserProvider(window.ethereum);
     const signer = await provider.getSigner();
     const address = await signer.getAddress();
@@ -745,7 +688,7 @@ async function connectMetaMask() {
     updateWalletUI(address);
     generateApiKey();
     document.getElementById('xmtp-addr').textContent = address;
-    log(`MetaMask connected on Avalanche Fuji: ${address.slice(0,12)}...`, 'ok');
+    log(`MetaMask connected: ${address.slice(0,12)}...`, 'ok');
     updateBalance(address, provider);
     updateNetworkInfo(provider);
   } catch(e) {
@@ -769,42 +712,15 @@ function importWallet() {
   }
 }
 
-// ─── Network config ──────────────────────────────────────
-const NETWORKS = {
-  fuji: {
-    name: 'Avalanche Fuji Testnet',
-    rpc: 'https://api.avax-test.network/ext/bc/C/rpc',
-    chainId: 43113,
-    symbol: 'AVAX',
-    explorer: 'https://testnet.snowtrace.io',
-    faucet: 'https://faucet.avax.network'
-  },
-  mainnet: {
-    name: 'Avalanche Mainnet',
-    rpc: 'https://api.avax.network/ext/bc/C/rpc',
-    chainId: 43114,
-    symbol: 'AVAX',
-    explorer: 'https://snowtrace.io',
-    faucet: null
-  }
-};
-const DEFAULT_NETWORK = NETWORKS.fuji;
-
 async function tryConnectProvider(wallet) {
   try {
-    const provider = new ethers.JsonRpcProvider(DEFAULT_NETWORK.rpc, {
-      chainId: DEFAULT_NETWORK.chainId,
-      name: DEFAULT_NETWORK.name
-    });
+    // Try to connect to default RPC (fallback to no-provider mode)
+    const provider = new ethers.JsonRpcProvider('https://eth.llamarpc.com');
     const connected = wallet.connect(provider);
     state.provider = provider;
     state.wallet = connected;
     await updateBalance(wallet.address, provider);
     await updateNetworkInfo(provider);
-    log(`Connected to ${DEFAULT_NETWORK.name}`, 'ok');
-    if (DEFAULT_NETWORK.faucet) {
-      log(`Get testnet AVAX → ${DEFAULT_NETWORK.faucet}`, 'inf');
-    }
   } catch(e) {
     log('No RPC connection (wallet works offline)', 'wrn');
     document.getElementById('wallet-network').textContent = 'No RPC (offline mode)';
@@ -814,23 +730,15 @@ async function tryConnectProvider(wallet) {
 async function updateBalance(address, provider) {
   try {
     const bal = await provider.getBalance(address);
-    const avax = parseFloat(ethers.formatEther(bal)).toFixed(4);
-    const net = state.provider ? await state.provider.getNetwork().catch(()=>null) : null;
-    const symbol = (net && net.chainId === 43113n || net && net.chainId === 43114n) ? 'AVAX' : 'ETH';
-    document.getElementById('wallet-balance').innerHTML = `${avax} <span style="font-size:14px;color:var(--text2)">${symbol}</span>`;
+    const eth = parseFloat(ethers.formatEther(bal)).toFixed(4);
+    document.getElementById('wallet-balance').innerHTML = `${eth} <span style="font-size:14px;color:var(--text2)">ETH</span>`;
   } catch(e) {}
 }
 
 async function updateNetworkInfo(provider) {
   try {
     const net = await provider.getNetwork();
-    const names = {
-      43113n: '🔺 Avalanche Fuji Testnet',
-      43114n: '🔺 Avalanche Mainnet',
-      1n: 'Ethereum Mainnet',
-      11155111n: 'Sepolia Testnet',
-      137n: 'Polygon'
-    };
+    const names = { 1n:'Ethereum Mainnet', 11155111n:'Sepolia Testnet', 5n:'Goerli', 137n:'Polygon' };
     document.getElementById('wallet-network').textContent = names[net.chainId] || `Chain ${net.chainId}`;
   } catch(e) {}
 }
