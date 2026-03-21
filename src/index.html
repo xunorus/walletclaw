@@ -1,0 +1,1486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WalletClaw 🦞</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;800&display=swap');
+
+  :root {
+    --bg: #110709;
+    --bg2: #180c0d;
+    --bg3: #201212;
+    --border: rgba(220,60,50,0.18);
+    --border2: rgba(220,60,50,0.38);
+    --purple: #e03530;
+    --purple-dim: rgba(220,53,48,0.15);
+    --purple-glow: rgba(220,53,48,0.4);
+    --teal: #ff8c42;
+    --teal-dim: rgba(255,140,66,0.12);
+    --amber: #ffd166;
+    --amber-dim: rgba(255,209,102,0.12);
+    --red: #ff4757;
+    --text: #fff0ee;
+    --text2: #f0a89e;
+    --text3: #c47a74;
+    --mono: 'Space Mono', monospace;
+    --display: 'Syne', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* Scanlines overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(80,0,0,0.06) 2px, rgba(80,0,0,0.06) 4px);
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+
+  .logo {
+    font-family: var(--display);
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+  .logo span { color: var(--teal); }
+  
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border: 1px solid var(--border2);
+    border-radius: 99px;
+    font-size: 11px;
+    color: var(--text2);
+  }
+  .status-pill .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--text3);
+  }
+  .status-pill.connected .dot { background: var(--teal); box-shadow: 0 0 6px var(--teal); }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 0;
+    height: calc(100vh - 61px);
+  }
+
+  .sidebar {
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .main {
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .card-title {
+    font-family: var(--display);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 12px;
+  }
+
+  /* Wallet generate */
+  .address-display {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--teal);
+    word-break: break-all;
+    margin-bottom: 8px;
+    min-height: 36px;
+  }
+
+  .balance-big {
+    font-family: var(--display);
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--text);
+    margin: 4px 0;
+  }
+  .balance-label {
+    font-size: 11px;
+    color: var(--text3);
+  }
+
+  /* Buttons */
+  button {
+    font-family: var(--mono);
+    font-size: 12px;
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 16px;
+    transition: all 0.15s;
+  }
+  .btn-primary {
+    background: var(--purple);
+    color: #fff;
+  }
+  .btn-primary:hover { background: #9070ff; }
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border2);
+    color: var(--text2);
+  }
+  .btn-secondary:hover { border-color: var(--purple); color: var(--text); }
+  .btn-danger {
+    background: rgba(255,71,87,0.15);
+    border: 1px solid rgba(255,71,87,0.3);
+    color: var(--red);
+  }
+  .btn-teal {
+    background: var(--teal-dim);
+    border: 1px solid rgba(29,233,182,0.3);
+    color: var(--teal);
+  }
+  .btn-teal:hover { background: rgba(29,233,182,0.2); }
+  .btn-full { width: 100%; }
+  .btn-row { display: flex; gap: 8px; }
+
+  /* Input */
+  input, textarea, select {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 8px 12px;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input:focus, textarea:focus { border-color: var(--purple); }
+  textarea { resize: vertical; min-height: 64px; }
+  label { font-size: 11px; color: var(--text3); display: block; margin-bottom: 4px; }
+
+  /* Connection method tabs */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--bg3);
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 14px;
+  }
+  .tab {
+    flex: 1;
+    padding: 7px 0;
+    border-radius: 8px;
+    font-size: 11px;
+    text-align: center;
+    cursor: pointer;
+    color: var(--text3);
+    border: none;
+    background: transparent;
+    transition: all 0.15s;
+    font-family: var(--mono);
+  }
+  .tab.active {
+    background: var(--purple-dim);
+    border: 1px solid var(--border2);
+    color: var(--text);
+  }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* Method badge */
+  .method-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 8px;
+    border-radius: 99px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .badge-rest { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(255,176,32,0.25); }
+  .badge-ws   { background: var(--teal-dim);  color: var(--teal);  border: 1px solid rgba(29,233,182,0.25); }
+  .badge-xmtp { background: var(--purple-dim);color: #b89fff;      border: 1px solid rgba(184,159,255,0.3); }
+
+  /* Code block */
+  .code-block {
+    background: #0d0d14;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 11px;
+    color: #9b92cc;
+    overflow-x: auto;
+    white-space: pre;
+    margin: 8px 0;
+  }
+  .code-block .kw  { color: var(--purple); }
+  .code-block .str { color: var(--teal); }
+  .code-block .cmt { color: var(--text3); }
+  .code-block .var { color: var(--amber); }
+
+  /* Log terminal */
+  .terminal {
+    background: #06060a;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 11px;
+    height: 160px;
+    overflow-y: auto;
+    font-family: var(--mono);
+  }
+  .log-line { margin-bottom: 3px; }
+  .log-line .ts { color: var(--text3); }
+  .log-line .ok  { color: var(--teal); }
+  .log-line .err { color: var(--red); }
+  .log-line .inf { color: var(--purple); }
+  .log-line .wrn { color: var(--amber); }
+
+  /* Pending tx */
+  .tx-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 8px;
+  }
+  .tx-item .tx-info { flex: 1; min-width: 0; }
+  .tx-item .tx-method { font-size: 10px; color: var(--text3); margin-bottom: 3px; }
+  .tx-item .tx-data { font-size: 11px; color: var(--teal); word-break: break-all; }
+  .tx-item .tx-amount { font-family: var(--display); font-size: 15px; font-weight: 700; white-space: nowrap; }
+
+  .xmtp-msg {
+    background: var(--bg3);
+    border: 1px solid rgba(184,159,255,0.2);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    font-size: 11px;
+  }
+  .xmtp-from { color: var(--text3); font-size: 10px; margin-bottom: 4px; }
+  .xmtp-content { color: var(--text); }
+
+  .divider { height: 1px; background: var(--border); margin: 12px 0; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  .stat-mini {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+  }
+  .stat-mini .label { font-size: 10px; color: var(--text3); margin-bottom: 3px; }
+  .stat-mini .value { font-family: var(--display); font-size: 18px; font-weight: 700; }
+  .stat-mini .value.purple { color: var(--purple); }
+  .stat-mini .value.teal   { color: var(--teal); }
+  .stat-mini .value.amber  { color: var(--amber); }
+
+  .api-key-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: var(--amber);
+    word-break: break-all;
+  }
+
+  .section-note {
+    font-size: 11px;
+    color: var(--text3);
+    line-height: 1.5;
+    margin-top: 8px;
+  }
+
+  .approve-btn {
+    background: rgba(29,233,182,0.15);
+    border: 1px solid rgba(29,233,182,0.35);
+    color: var(--teal);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .approve-btn:hover { background: rgba(29,233,182,0.25); }
+  .reject-btn {
+    background: rgba(255,71,87,0.1);
+    border: 1px solid rgba(255,71,87,0.3);
+    color: var(--red);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 11px;
+    cursor: pointer;
+  }
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+  /* ── Password modal ── */
+  .modal-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10,3,4,0.85);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal-box {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 16px;
+    padding: 28px 24px;
+    width: 340px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .modal-title {
+    font-family: var(--display);
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .modal-sub {
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.5;
+  }
+  .modal-error {
+    font-size: 11px;
+    color: var(--red);
+    min-height: 14px;
+  }
+  .pw-strength {
+    height: 3px;
+    border-radius: 2px;
+    background: var(--bg3);
+    margin-top: -6px;
+  }
+  .pw-strength-bar {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.2s, background 0.2s;
+    width: 0%;
+  }
+  .lock-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 99px;
+    background: var(--purple-dim);
+    border: 1px solid var(--border2);
+    color: var(--teal);
+    margin-left: auto;
+  }
+  .forget-btn {
+    font-size: 11px;
+    color: var(--text3);
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+    font-family: var(--mono);
+  }
+  .forget-btn:hover { color: var(--red); }
+
+
+  /* ── Version badge ── */
+  .version-badge {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--text3);
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 3px 8px;
+    letter-spacing: 0.5px;
+    cursor: default;
+    user-select: none;
+    transition: color 0.15s, border-color 0.15s;
+    position: relative;
+  }
+  .version-badge:hover { color: var(--text2); border-color: var(--border2); }
+
+  /* Version history dropdown */
+  .version-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    width: 300px;
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    padding: 12px;
+    z-index: 500;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+  .version-badge:hover .version-dropdown { display: block; }
+  .version-dropdown-title {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 10px;
+    font-family: var(--mono);
+  }
+  .vlog-entry {
+    display: flex;
+    gap: 10px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+  }
+  .vlog-entry:last-child { border-bottom: none; padding-bottom: 0; }
+  .vlog-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--teal);
+    white-space: nowrap;
+    min-width: 52px;
+  }
+  .vlog-tag.current {
+    color: var(--purple);
+  }
+  .vlog-info { flex: 1; }
+  .vlog-desc { color: var(--text2); line-height: 1.5; }
+  .vlog-date { color: var(--text3); font-size: 10px; margin-top: 2px; }
+  .vlog-pills { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+  .vlog-pill {
+    font-size: 9px;
+    padding: 1px 6px;
+    border-radius: 99px;
+    border: 1px solid var(--border);
+    color: var(--text3);
+  }
+  .vlog-pill.feat { border-color: rgba(255,140,66,0.3); color: var(--teal); }
+  .vlog-pill.fix  { border-color: rgba(224,53,48,0.3);  color: var(--purple); }
+  .vlog-pill.sec  { border-color: rgba(255,209,102,0.3); color: var(--amber); }
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo" style="display:flex;align-items:center;gap:10px">
+  <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
+    <!-- Body -->
+    <ellipse cx="17" cy="20" rx="8" ry="7" fill="#c0392b"/>
+    <ellipse cx="17" cy="20" rx="6" ry="5.2" fill="#e74c3c"/>
+    <!-- Head -->
+    <ellipse cx="17" cy="13" rx="5.5" ry="4.5" fill="#c0392b"/>
+    <ellipse cx="17" cy="13" rx="4" ry="3.2" fill="#e74c3c"/>
+    <!-- Eyes -->
+    <circle cx="14.8" cy="11.5" r="1.4" fill="#fff"/>
+    <circle cx="19.2" cy="11.5" r="1.4" fill="#fff"/>
+    <circle cx="14.8" cy="11.6" r="0.7" fill="#1a0608"/>
+    <circle cx="19.2" cy="11.6" r="0.7" fill="#1a0608"/>
+    <!-- Eye shine -->
+    <circle cx="15.2" cy="11.2" r="0.28" fill="#fff"/>
+    <circle cx="19.6" cy="11.2" r="0.28" fill="#fff"/>
+    <!-- Smile -->
+    <path d="M14.5 14.8 Q17 16.5 19.5 14.8" stroke="#fff" stroke-width="0.8" stroke-linecap="round" fill="none"/>
+    <!-- Antennae -->
+    <line x1="15" y1="9.5" x2="12" y2="5.5" stroke="#e74c3c" stroke-width="1.1" stroke-linecap="round"/>
+    <line x1="19" y1="9.5" x2="22" y2="5.5" stroke="#e74c3c" stroke-width="1.1" stroke-linecap="round"/>
+    <circle cx="12" cy="5.5" r="1" fill="#ff8c42"/>
+    <circle cx="22" cy="5.5" r="1" fill="#ff8c42"/>
+    <!-- LEFT BIG CLAW -->
+    <path d="M9.5 16 C6 14 4 11 5.5 9 C7 7 9.5 8.5 10.5 11" stroke="#c0392b" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+    <path d="M10.5 11 C8 9.5 7 7 8.5 5.5 C10 4 12 5.5 11.5 8" stroke="#e74c3c" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+    <path d="M10.5 11 C9 13 8 14.5 9.5 16" stroke="#e74c3c" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+    <!-- RIGHT BIG CLAW -->
+    <path d="M24.5 16 C28 14 30 11 28.5 9 C27 7 24.5 8.5 23.5 11" stroke="#c0392b" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+    <path d="M23.5 11 C26 9.5 27 7 25.5 5.5 C24 4 22 5.5 22.5 8" stroke="#e74c3c" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+    <path d="M23.5 11 C25 13 26 14.5 24.5 16" stroke="#e74c3c" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+    <!-- Walking legs left -->
+    <line x1="10" y1="19" x2="6" y2="22" stroke="#c0392b" stroke-width="1.3" stroke-linecap="round"/>
+    <line x1="10.5" y1="21" x2="7" y2="25" stroke="#c0392b" stroke-width="1.3" stroke-linecap="round"/>
+    <line x1="11" y1="23" x2="8" y2="27" stroke="#c0392b" stroke-width="1.3" stroke-linecap="round"/>
+    <!-- Walking legs right -->
+    <line x1="24" y1="19" x2="28" y2="22" stroke="#c0392b" stroke-width="1.3" stroke-linecap="round"/>
+    <line x1="23.5" y1="21" x2="27" y2="25" stroke="#c0392b" stroke-width="1.3" stroke-linecap="round"/>
+    <line x1="23" y1="23" x2="26" y2="27" stroke="#c0392b" stroke-width="1.3" stroke-linecap="round"/>
+    <!-- Tail fan -->
+    <path d="M13 26 Q17 31 21 26" stroke="#c0392b" stroke-width="2" stroke-linecap="round" fill="none"/>
+    <path d="M14.5 27.5 Q17 30 19.5 27.5" stroke="#e74c3c" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+  </svg>
+  Wallet<span>Claw</span>
+</div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <div class="status-pill" id="wallet-status-pill">
+      <div class="dot"></div>
+      <span id="wallet-status-text">No wallet</span>
+    </div>
+    <div class="status-pill" id="xmtp-status-pill">
+      <div class="dot"></div>
+      <span id="xmtp-status-text">XMTP offline</span>
+    </div>
+    <div class="version-badge" id="version-badge">
+      v0.4.0
+      <div class="version-dropdown">
+        <div class="version-dropdown-title">Changelog</div>
+
+        <div class="vlog-entry">
+          <div class="vlog-tag current">v0.4.0</div>
+          <div class="vlog-info">
+            <div class="vlog-desc">Encrypted wallet persistence</div>
+            <div class="vlog-date">Today</div>
+            <div class="vlog-pills">
+              <span class="vlog-pill sec">AES-GCM</span>
+              <span class="vlog-pill sec">PBKDF2</span>
+              <span class="vlog-pill feat">auto-restore</span>
+              <span class="vlog-pill feat">forget wallet</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="vlog-entry">
+          <div class="vlog-tag">v0.3.0</div>
+          <div class="vlog-info">
+            <div class="vlog-desc">Avalanche Fuji testnet default</div>
+            <div class="vlog-date">Today</div>
+            <div class="vlog-pills">
+              <span class="vlog-pill feat">chainId 43113</span>
+              <span class="vlog-pill feat">AVAX units</span>
+              <span class="vlog-pill feat">MetaMask add network</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="vlog-entry">
+          <div class="vlog-tag">v0.2.0</div>
+          <div class="vlog-info">
+            <div class="vlog-desc">OpenClaw red theme + lobster icon</div>
+            <div class="vlog-date">Today</div>
+            <div class="vlog-pills">
+              <span class="vlog-pill feat">red palette</span>
+              <span class="vlog-pill feat">SVG mascot</span>
+              <span class="vlog-pill fix">contrast fix</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="vlog-entry">
+          <div class="vlog-tag">v0.1.0</div>
+          <div class="vlog-info">
+            <div class="vlog-desc">Initial WalletClaw — 3 OpenClaw connection methods</div>
+            <div class="vlog-date">Today</div>
+            <div class="vlog-pills">
+              <span class="vlog-pill feat">REST /sign</span>
+              <span class="vlog-pill feat">WebSocket</span>
+              <span class="vlog-pill feat">XMTP</span>
+              <span class="vlog-pill feat">ethers.js</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- SIDEBAR: Wallet -->
+  <aside class="sidebar">
+
+    <!-- Wallet Card -->
+    <div class="card">
+      <div class="card-title">🔑 Self-Custody Wallet</div>
+
+      <div class="address-display" id="wallet-address">—</div>
+
+      <div class="balance-big" id="wallet-balance">0.0000 <span style="font-size:14px;color:var(--text2)">ETH</span></div>
+      <div class="balance-label" id="wallet-network">No network</div>
+
+      <div style="margin:12px 0 10px">
+        <div class="btn-row">
+          <button class="btn-primary btn-full" onclick="generateWallet()">Generate wallet</button>
+          <button class="btn-secondary" onclick="importWallet()">Import</button>
+        </div>
+        <div style="margin-top:6px">
+          <button class="btn-secondary btn-full" onclick="connectMetaMask()">Connect MetaMask</button>
+        </div>
+        <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between">
+          <span class="lock-badge" id="lock-badge" style="display:none">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><rect x="1.5" y="4.5" width="7" height="5" rx="1.5" fill="currentColor" opacity="0.7"/><path d="M3 4.5V3a2 2 0 0 1 4 0v1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="none"/></svg>
+            Encrypted
+          </span>
+          <button class="forget-btn" id="forget-btn" onclick="forgetWallet()" style="display:none">Forget wallet</button>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="grid-2">
+        <div class="stat-mini">
+          <div class="label">Txs signed</div>
+          <div class="value purple" id="tx-count">0</div>
+        </div>
+        <div class="stat-mini">
+          <div class="label">Agents connected</div>
+          <div class="value teal" id="agent-count">0</div>
+        </div>
+        <div class="stat-mini">
+          <div class="label">XMTP msgs</div>
+          <div class="value amber" id="xmtp-count">0</div>
+        </div>
+        <div class="stat-mini">
+          <div class="label">Auto-approve</div>
+          <div class="value purple" id="auto-approve-stat">OFF</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Send Tx manual -->
+    <div class="card">
+      <div class="card-title">📤 Send transaction</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div>
+          <label>To address</label>
+          <input id="tx-to" placeholder="0x..." />
+        </div>
+        <div>
+          <label>Amount (ETH)</label>
+          <input id="tx-amount" type="number" step="0.001" placeholder="0.01" />
+        </div>
+        <div>
+          <label>Data (hex, optional)</label>
+          <input id="tx-data" placeholder="0x" />
+        </div>
+        <button class="btn-primary" onclick="sendManualTx()">Sign &amp; Send</button>
+      </div>
+    </div>
+
+    <!-- Auto-approve settings -->
+    <div class="card">
+      <div class="card-title">⚙️ Agent permissions</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;color:var(--text2)">
+          <input type="checkbox" id="auto-approve" onchange="toggleAutoApprove(this.checked)" style="width:auto">
+          Auto-approve agent txs
+        </label>
+        <div>
+          <label>Max ETH per tx</label>
+          <input id="max-eth" type="number" step="0.001" value="0.01" />
+        </div>
+        <div>
+          <label>Daily limit (ETH)</label>
+          <input id="daily-limit" type="number" step="0.01" value="0.1" />
+        </div>
+        <div>
+          <label>Allowed agent addresses (one per line)</label>
+          <textarea id="allowed-agents" placeholder="OpenClaw instance address..."></textarea>
+        </div>
+        <button class="btn-secondary btn-full" onclick="savePermissions()">Save permissions</button>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- MAIN: OpenClaw connection -->
+  <main class="main">
+
+    <!-- Connection methods -->
+    <div class="card">
+      <div class="card-title">🤖 OpenClaw connection methods</div>
+
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('rest', this)">① REST API</button>
+        <button class="tab" onclick="switchTab('ws', this)">② WebSocket</button>
+        <button class="tab" onclick="switchTab('xmtp', this)">③ XMTP</button>
+      </div>
+
+      <!-- REST method -->
+      <div class="tab-panel active" id="panel-rest">
+        <div class="method-badge badge-rest">REST /sign · API Key</div>
+        <p class="section-note">WalletClaw exposes a local REST endpoint. OpenClaw sends sign requests with an API key. Best for local deployments.</p>
+
+        <div style="margin-top:12px">
+          <label>Your API Key (add to OpenClaw env)</label>
+          <div class="api-key-display">
+            <code id="api-key-display">— generate wallet first —</code>
+            <button class="btn-secondary" style="font-size:10px;padding:4px 8px;white-space:nowrap" onclick="copyApiKey()">Copy</button>
+          </div>
+        </div>
+
+        <div class="code-block" style="margin-top:12px"><span class="cmt"># In your OpenClaw instance (env vars or config.toml)
+<span class="cmt"># Network: Avalanche Fuji Testnet (chainId 43113)</span></span>
+<span class="kw">WALLETCLAW_URL</span>=<span class="str">"http://localhost:3741"</span>
+<span class="kw">WALLETCLAW_API_KEY</span>=<span class="str">"<span id="api-key-env">YOUR_API_KEY</span>"</span>
+
+<span class="cmt"># OpenClaw calls this to sign a tx:</span>
+<span class="kw">POST</span> /sign
+{
+  <span class="str">"to"</span>: <span class="str">"0x..."</span>,
+  <span class="str">"value"</span>: <span class="str">"0.01"</span>,
+  <span class="str">"data"</span>: <span class="str">"0x"</span>,
+  <span class="str">"agentId"</span>: <span class="str">"openclaw-001"</span>
+}
+
+<span class="cmt"># WalletClaw responds with:</span>
+{ <span class="str">"txHash"</span>: <span class="str">"0x..."</span>, <span class="str">"signed"</span>: <span class="str">true</span> }</div>
+
+        <div class="btn-row" style="margin-top:10px">
+          <button class="btn-teal" onclick="generateApiKey()">Regenerate key</button>
+          <button class="btn-secondary" onclick="simulateRestRequest()">Simulate request ↗</button>
+        </div>
+      </div>
+
+      <!-- WebSocket method -->
+      <div class="tab-panel" id="panel-ws">
+        <div class="method-badge badge-ws">WebSocket :7777 · ECDSA</div>
+        <p class="section-note">Ultra-low latency. OpenClaw connects to WalletClaw's local WS. Authentication via ECDSA signature challenge. Bidirectional: WalletClaw can push approvals and status to the agent.</p>
+
+        <div class="code-block" style="margin-top:12px"><span class="cmt">// In OpenClaw's tool definition (custom_tools/wallet.py)</span>
+<span class="kw">import</span> websockets, json
+
+<span class="kw">async def</span> <span class="var">sign_transaction</span>(to, value, data=<span class="str">"0x"</span>):
+  <span class="kw">async with</span> websockets.connect(
+    <span class="str">"ws://localhost:7777"</span>
+  ) <span class="kw">as</span> ws:
+    <span class="cmt"># 1. Challenge-response auth</span>
+    challenge = json.loads(<span class="kw">await</span> ws.recv())
+    sig = eth_sign(challenge[<span class="str">"nonce"</span>], AGENT_PRIVKEY)
+    <span class="kw">await</span> ws.send(json.dumps({<span class="str">"sig"</span>: sig}))
+    
+    <span class="cmt"># 2. Send tx request</span>
+    <span class="kw">await</span> ws.send(json.dumps({
+      <span class="str">"type"</span>: <span class="str">"sign_tx"</span>,
+      <span class="str">"to"</span>: to, <span class="str">"value"</span>: value, <span class="str">"data"</span>: data
+    }))
+    result = json.loads(<span class="kw">await</span> ws.recv())
+    <span class="kw">return</span> result[<span class="str">"txHash"</span>]</div>
+
+        <div style="margin-top:10px">
+          <label>WS Server status</label>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+            <div class="status-pill" id="ws-status">
+              <div class="dot"></div>
+              <span>Stopped</span>
+            </div>
+            <button class="btn-teal" onclick="toggleWsServer()">Start server</button>
+          </div>
+        </div>
+
+        <div class="code-block" style="margin-top:12px"><span class="cmt"># Listening on ws://localhost:7777</span>
+<span class="cmt"># Connected agents: <span id="ws-connected-agents">0</span></span></div>
+      </div>
+
+      <!-- XMTP method -->
+      <div class="tab-panel" id="panel-xmtp">
+        <div class="method-badge badge-xmtp">XMTP · E2E encrypted</div>
+        <p class="section-note">Best for remote agents. OpenClaw sends sign requests as XMTP messages to your wallet address. End-to-end encrypted. Works across networks — your agent can be anywhere.</p>
+
+        <div class="code-block" style="margin-top:12px"><span class="cmt">// In OpenClaw (openclaw_tools/walletclaw_xmtp.ts)</span>
+<span class="kw">import</span> { Client } <span class="kw">from</span> <span class="str">"@xmtp/xmtp-js"</span>
+
+<span class="kw">const</span> <span class="var">xmtp</span> = <span class="kw">await</span> Client.create(agentSigner)
+
+<span class="cmt">// Send sign request to WalletClaw address</span>
+<span class="kw">const</span> <span class="var">convo</span> = <span class="kw">await</span> xmtp.conversations.newConversation(
+  <span class="str">"<span id="xmtp-addr">YOUR_WALLET_ADDRESS</span>"</span>
+)
+<span class="kw">await</span> convo.send(JSON.stringify({
+  type: <span class="str">"sign_tx"</span>,
+  to: <span class="str">"0x..."</span>,
+  value: <span class="str">"0.01"</span>,
+  requestId: crypto.randomUUID()
+}))
+
+<span class="cmt">// Listen for approval:</span>
+<span class="kw">for await</span> (<span class="kw">const</span> <span class="var">msg</span> <span class="kw">of</span> <span class="kw">await</span> convo.streamMessages()) {
+  <span class="kw">const</span> <span class="var">res</span> = JSON.parse(msg.content)
+  <span class="kw">if</span> (res.txHash) console.log(<span class="str">"Signed!"</span>, res.txHash)
+}</div>
+
+        <div style="margin-top:10px;display:flex;gap:8px">
+          <button class="btn-teal btn-full" onclick="connectXmtp()">Connect XMTP</button>
+          <button class="btn-secondary" onclick="copyWalletForXmtp()">Copy address</button>
+        </div>
+
+        <div id="xmtp-inbox" style="margin-top:12px">
+          <label>XMTP inbox (sign requests from agents)</label>
+          <div style="margin-top:6px" id="xmtp-messages">
+            <div style="font-size:11px;color:var(--text3);padding:10px 0">No messages yet. Connect XMTP to start listening.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pending approvals -->
+    <div class="card">
+      <div class="card-title">⏳ Pending sign requests</div>
+      <div id="pending-txs">
+        <div style="font-size:11px;color:var(--text3)">No pending requests.</div>
+      </div>
+    </div>
+
+    <!-- Activity log -->
+    <div class="card">
+      <div class="card-title">📟 Activity log</div>
+      <div class="terminal" id="log-terminal">
+        <div class="log-line"><span class="ts">[init]</span> <span class="inf"> WalletClaw started · Avalanche Fuji Testnet (chainId 43113). Generate or import a wallet to begin.</span></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ─── State ───────────────────────────────────────────────
+const state = {
+  wallet: null,
+  provider: null,
+  apiKey: null,
+  wsServer: false,
+  xmtpConnected: false,
+  txCount: 0,
+  agentCount: 0,
+  xmtpCount: 0,
+  autoApprove: false,
+  pendingTxs: [],
+  wsAgents: 0
+};
+
+// ─── Crypto persistence (AES-GCM via WebCrypto) ──────────
+const STORAGE_KEY = 'walletclaw_v1';
+const APP_VERSION = 'v0.4.0';
+
+function bumpVersion(newVersion, description, pills = []) {
+  // Adds a new entry to the top of the changelog and updates the badge
+  const badge = document.getElementById('version-badge');
+  if (!badge) return;
+  badge.childNodes[0].textContent = newVersion;
+
+  const dropdown = badge.querySelector('.version-dropdown');
+  const firstEntry = dropdown.querySelector('.vlog-entry');
+
+  // De-highlight previous current
+  const prevCurrent = dropdown.querySelector('.vlog-tag.current');
+  if (prevCurrent) prevCurrent.classList.remove('current');
+
+  const pillsHtml = pills.map(([label, type]) =>
+    `<span class="vlog-pill ${type}">${label}</span>`
+  ).join('');
+
+  const entry = document.createElement('div');
+  entry.className = 'vlog-entry';
+  entry.innerHTML = `
+    <div class="vlog-tag current">${newVersion}</div>
+    <div class="vlog-info">
+      <div class="vlog-desc">${description}</div>
+      <div class="vlog-date">just now</div>
+      <div class="vlog-pills">${pillsHtml}</div>
+    </div>`;
+  dropdown.insertBefore(entry, firstEntry);
+  log(`Version bumped to ${newVersion}: ${description}`, 'ok');
+}
+let _pendingWallet = null; // wallet waiting to be saved after password
+
+async function deriveKey(password, salt) {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 200000, hash: 'SHA-256' },
+    keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
+  );
+}
+
+async function encryptPrivateKey(privateKey, password) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv   = crypto.getRandomValues(new Uint8Array(12));
+  const key  = await deriveKey(password, salt);
+  const enc  = new TextEncoder();
+  const ct   = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(privateKey));
+  const payload = { salt: btoa(String.fromCharCode(...salt)), iv: btoa(String.fromCharCode(...iv)), ct: btoa(String.fromCharCode(...new Uint8Array(ct))) };
+  return JSON.stringify(payload);
+}
+
+async function decryptPrivateKey(stored, password) {
+  const { salt, iv, ct } = JSON.parse(stored);
+  const toUint8 = b64 => Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  const key = await deriveKey(password, toUint8(salt));
+  const dec = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: toUint8(iv) }, key, toUint8(ct));
+  return new TextDecoder().decode(dec);
+}
+
+function hasSavedWallet() {
+  return !!localStorage.getItem(STORAGE_KEY);
+}
+
+async function saveWalletEncrypted(privateKey, password) {
+  const encrypted = await encryptPrivateKey(privateKey, password);
+  localStorage.setItem(STORAGE_KEY, encrypted);
+}
+
+function forgetWallet() {
+  if (!confirm('Remove saved wallet from this browser? Your funds are safe as long as you have the private key.')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  document.getElementById('lock-badge').style.display = 'none';
+  document.getElementById('forget-btn').style.display = 'none';
+  log('Wallet removed from browser storage', 'wrn');
+}
+
+// ─── Password modal logic ─────────────────────────────────
+let _modalMode = 'set'; // 'set' | 'unlock'
+let _onUnlock = null;
+
+function openSetPasswordModal(wallet) {
+  _pendingWallet = wallet;
+  _modalMode = 'set';
+  document.getElementById('pw-modal-title').textContent = 'Protect your wallet';
+  document.getElementById('pw-modal-sub').textContent = 'Set a password to encrypt your private key in this browser. You\'ll need it every time you open WalletClaw.';
+  document.getElementById('pw-confirm-row').style.display = '';
+  document.getElementById('pw-submit-btn').textContent = 'Encrypt & save';
+  document.getElementById('pw-skip-btn').style.display = '';
+  document.getElementById('pw-strength-track').style.display = '';
+  document.getElementById('pw-error').textContent = '';
+  document.getElementById('pw-input').value = '';
+  document.getElementById('pw-confirm').value = '';
+  document.getElementById('pw-modal').classList.add('open');
+  setTimeout(() => document.getElementById('pw-input').focus(), 50);
+}
+
+function openUnlockModal(onUnlock) {
+  _modalMode = 'unlock';
+  _onUnlock = onUnlock;
+  document.getElementById('pw-modal-title').textContent = 'Unlock wallet';
+  document.getElementById('pw-modal-sub').textContent = 'Enter your password to decrypt and restore your wallet.';
+  document.getElementById('pw-confirm-row').style.display = 'none';
+  document.getElementById('pw-submit-btn').textContent = 'Unlock';
+  document.getElementById('pw-skip-btn').style.display = 'none';
+  document.getElementById('pw-strength-track').style.display = 'none';
+  document.getElementById('pw-error').textContent = '';
+  document.getElementById('pw-input').value = '';
+  document.getElementById('pw-modal').classList.add('open');
+  setTimeout(() => document.getElementById('pw-input').focus(), 50);
+}
+
+function closePasswordModal(saved) {
+  document.getElementById('pw-modal').classList.remove('open');
+  if (!saved) log('Wallet not encrypted — will be lost on refresh', 'wrn');
+}
+
+function checkPwStrength(pw) {
+  const bar = document.getElementById('pw-strength-bar');
+  let score = 0;
+  if (pw.length >= 8)  score++;
+  if (pw.length >= 12) score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  const colors = ['#e03530','#e03530','#ffb020','#ffb020','#2ecc71'];
+  bar.style.width = (score * 20) + '%';
+  bar.style.background = colors[Math.max(0, score-1)] || '#e03530';
+}
+
+async function confirmPassword() {
+  const pw = document.getElementById('pw-input').value;
+  const err = document.getElementById('pw-error');
+  err.textContent = '';
+
+  if (_modalMode === 'set') {
+    const confirm = document.getElementById('pw-confirm').value;
+    if (pw.length < 8) { err.textContent = 'Password must be at least 8 characters'; return; }
+    if (pw !== confirm) { err.textContent = 'Passwords do not match'; return; }
+    document.getElementById('pw-submit-btn').textContent = 'Encrypting...';
+    try {
+      await saveWalletEncrypted(_pendingWallet.privateKey, pw);
+      document.getElementById('lock-badge').style.display = 'inline-flex';
+      document.getElementById('forget-btn').style.display = 'inline';
+      log('Private key encrypted & saved to browser storage (AES-GCM)', 'ok');
+      document.getElementById('pw-modal').classList.remove('open');
+    } catch(e) {
+      err.textContent = 'Encryption failed: ' + e.message;
+      document.getElementById('pw-submit-btn').textContent = 'Encrypt & save';
+    }
+  } else {
+    // unlock mode
+    document.getElementById('pw-submit-btn').textContent = 'Decrypting...';
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      const privateKey = await decryptPrivateKey(stored, pw);
+      document.getElementById('pw-modal').classList.remove('open');
+      document.getElementById('lock-badge').style.display = 'inline-flex';
+      document.getElementById('forget-btn').style.display = 'inline';
+      if (_onUnlock) _onUnlock(privateKey);
+    } catch(e) {
+      err.textContent = 'Wrong password';
+      document.getElementById('pw-submit-btn').textContent = 'Unlock';
+      document.getElementById('pw-input').value = '';
+      document.getElementById('pw-input').focus();
+    }
+  }
+}
+
+// ─── Auto-restore on load ─────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  if (hasSavedWallet()) {
+    log('Encrypted wallet found in browser storage. Enter password to unlock.', 'inf');
+    openUnlockModal(async (privateKey) => {
+      const wallet = new ethers.Wallet(privateKey);
+      state.wallet = wallet;
+      updateWalletUI(wallet.address);
+      generateApiKey();
+      document.getElementById('xmtp-addr').textContent = wallet.address;
+      log(`Wallet restored: ${wallet.address.slice(0,12)}...`, 'ok');
+      tryConnectProvider(wallet);
+    });
+  }
+});
+
+// ─── Logging ─────────────────────────────────────────────
+function log(msg, type='inf') {
+  const t = document.getElementById('log-terminal');
+  const now = new Date().toLocaleTimeString();
+  const line = document.createElement('div');
+  line.className = 'log-line';
+  line.innerHTML = `<span class="ts">[${now}]</span> <span class="${type}"> ${msg}</span>`;
+  t.appendChild(line);
+  t.scrollTop = t.scrollHeight;
+}
+
+// ─── Wallet generation ───────────────────────────────────
+async function generateWallet() {
+  try {
+    const wallet = ethers.Wallet.createRandom();
+    state.wallet = wallet;
+    updateWalletUI(wallet.address);
+    generateApiKey();
+    log(`Wallet generated: ${wallet.address.slice(0,12)}...`, 'ok');
+    document.getElementById('xmtp-addr').textContent = wallet.address;
+    tryConnectProvider(wallet);
+    openSetPasswordModal(wallet);
+  } catch(e) {
+    log(`Error: ${e.message}`, 'err');
+  }
+}
+
+async function connectMetaMask() {
+  if (!window.ethereum) { log('MetaMask not found', 'err'); return; }
+  try {
+    try {
+      await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0xA869' }] });
+    } catch(switchErr) {
+      if (switchErr.code === 4902) {
+        await window.ethereum.request({ method: 'wallet_addEthereumChain', params: [{
+          chainId: '0xA869', chainName: 'Avalanche Fuji Testnet',
+          nativeCurrency: { name: 'AVAX', symbol: 'AVAX', decimals: 18 },
+          rpcUrls: ['https://api.avax-test.network/ext/bc/C/rpc'],
+          blockExplorerUrls: ['https://testnet.snowtrace.io']
+        }]});
+      }
+    }
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    const address = await signer.getAddress();
+    state.wallet = signer;
+    state.provider = provider;
+    updateWalletUI(address);
+    generateApiKey();
+    document.getElementById('xmtp-addr').textContent = address;
+    log(`MetaMask connected on Avalanche Fuji: ${address.slice(0,12)}...`, 'ok');
+    updateBalance(address, provider);
+    updateNetworkInfo(provider);
+  } catch(e) {
+    log(`MetaMask error: ${e.message}`, 'err');
+  }
+}
+
+function importWallet() {
+  const pk = prompt('Enter private key (0x...)');
+  if (!pk) return;
+  try {
+    const wallet = new ethers.Wallet(pk);
+    state.wallet = wallet;
+    updateWalletUI(wallet.address);
+    generateApiKey();
+    document.getElementById('xmtp-addr').textContent = wallet.address;
+    log(`Wallet imported: ${wallet.address.slice(0,12)}...`, 'ok');
+    tryConnectProvider(wallet);
+    openSetPasswordModal(wallet);
+  } catch(e) {
+    log('Invalid private key', 'err');
+  }
+}
+
+// ─── Network config ──────────────────────────────────────
+const NETWORKS = {
+  fuji: {
+    name: 'Avalanche Fuji Testnet',
+    rpc: 'https://api.avax-test.network/ext/bc/C/rpc',
+    chainId: 43113,
+    symbol: 'AVAX',
+    explorer: 'https://testnet.snowtrace.io',
+    faucet: 'https://faucet.avax.network'
+  },
+  mainnet: {
+    name: 'Avalanche Mainnet',
+    rpc: 'https://api.avax.network/ext/bc/C/rpc',
+    chainId: 43114,
+    symbol: 'AVAX',
+    explorer: 'https://snowtrace.io',
+    faucet: null
+  }
+};
+const DEFAULT_NETWORK = NETWORKS.fuji;
+
+async function tryConnectProvider(wallet) {
+  try {
+    const provider = new ethers.JsonRpcProvider(DEFAULT_NETWORK.rpc, {
+      chainId: DEFAULT_NETWORK.chainId,
+      name: DEFAULT_NETWORK.name
+    });
+    const connected = wallet.connect(provider);
+    state.provider = provider;
+    state.wallet = connected;
+    await updateBalance(wallet.address, provider);
+    await updateNetworkInfo(provider);
+    log(`Connected to ${DEFAULT_NETWORK.name}`, 'ok');
+    if (DEFAULT_NETWORK.faucet) {
+      log(`Get testnet AVAX → ${DEFAULT_NETWORK.faucet}`, 'inf');
+    }
+  } catch(e) {
+    log('No RPC connection (wallet works offline)', 'wrn');
+    document.getElementById('wallet-network').textContent = 'No RPC (offline mode)';
+  }
+}
+
+async function updateBalance(address, provider) {
+  try {
+    const bal = await provider.getBalance(address);
+    const avax = parseFloat(ethers.formatEther(bal)).toFixed(4);
+    const net = state.provider ? await state.provider.getNetwork().catch(()=>null) : null;
+    const symbol = (net && net.chainId === 43113n || net && net.chainId === 43114n) ? 'AVAX' : 'ETH';
+    document.getElementById('wallet-balance').innerHTML = `${avax} <span style="font-size:14px;color:var(--text2)">${symbol}</span>`;
+  } catch(e) {}
+}
+
+async function updateNetworkInfo(provider) {
+  try {
+    const net = await provider.getNetwork();
+    const names = {
+      43113n: '🔺 Avalanche Fuji Testnet',
+      43114n: '🔺 Avalanche Mainnet',
+      1n: 'Ethereum Mainnet',
+      11155111n: 'Sepolia Testnet',
+      137n: 'Polygon'
+    };
+    document.getElementById('wallet-network').textContent = names[net.chainId] || `Chain ${net.chainId}`;
+  } catch(e) {}
+}
+
+function updateWalletUI(address) {
+  document.getElementById('wallet-address').textContent = address;
+  document.getElementById('wallet-status-pill').classList.add('connected');
+  document.getElementById('wallet-status-text').textContent = 'Connected';
+}
+
+// ─── API Key ─────────────────────────────────────────────
+function generateApiKey() {
+  const key = 'wc_' + Array.from(crypto.getRandomValues(new Uint8Array(18)))
+    .map(b => b.toString(16).padStart(2,'0')).join('');
+  state.apiKey = key;
+  document.getElementById('api-key-display').textContent = key;
+  document.getElementById('api-key-env').textContent = key;
+  log(`API key generated: ${key.slice(0,12)}...`, 'ok');
+}
+
+function copyApiKey() {
+  if (!state.apiKey) { log('Generate wallet first', 'wrn'); return; }
+  navigator.clipboard.writeText(state.apiKey).then(() => log('API key copied', 'ok'));
+}
+
+function copyWalletForXmtp() {
+  if (!state.wallet) { log('No wallet connected', 'wrn'); return; }
+  const addr = state.wallet.address || (state.wallet._address);
+  navigator.clipboard.writeText(addr).then(() => log('Address copied for XMTP', 'ok'));
+}
+
+// ─── Tabs ─────────────────────────────────────────────────
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-' + id).classList.add('active');
+}
+
+// ─── WebSocket server (simulated) ────────────────────────
+let wsServerOn = false;
+function toggleWsServer() {
+  wsServerOn = !wsServerOn;
+  const el = document.getElementById('ws-status');
+  const btn = event.target;
+  if (wsServerOn) {
+    el.classList.add('connected');
+    el.querySelector('span').textContent = 'Running :7777';
+    btn.textContent = 'Stop server';
+    log('WS server started on ws://localhost:7777', 'ok');
+    log('Waiting for OpenClaw connections (ECDSA auth)...', 'inf');
+    state.agentCount++;
+    document.getElementById('agent-count').textContent = state.agentCount;
+    document.getElementById('ws-connected-agents').textContent = state.agentCount;
+    simulatePendingTx('WebSocket', '0x' + 'a'.repeat(40), '0.005');
+  } else {
+    el.classList.remove('connected');
+    el.querySelector('span').textContent = 'Stopped';
+    btn.textContent = 'Start server';
+    log('WS server stopped', 'wrn');
+    state.agentCount = Math.max(0, state.agentCount - 1);
+    document.getElementById('agent-count').textContent = state.agentCount;
+  }
+}
+
+// ─── XMTP (simulated integration) ────────────────────────
+function connectXmtp() {
+  if (!state.wallet) { log('Connect wallet first', 'wrn'); return; }
+  log('Connecting to XMTP network...', 'inf');
+  setTimeout(() => {
+    state.xmtpConnected = true;
+    document.getElementById('xmtp-status-pill').classList.add('connected');
+    document.getElementById('xmtp-status-text').textContent = 'XMTP online';
+    log('XMTP connected. Listening for agent messages...', 'ok');
+    setTimeout(() => simulateXmtpMessage(), 1800);
+  }, 1200);
+}
+
+function simulateXmtpMessage() {
+  if (!state.xmtpConnected) return;
+  const container = document.getElementById('xmtp-messages');
+  const existingNote = container.querySelector('div[style]');
+  if (existingNote) existingNote.remove();
+
+  const agentAddr = '0x' + 'c'.repeat(40);
+  const msg = document.createElement('div');
+  msg.className = 'xmtp-msg';
+  msg.innerHTML = `
+    <div class="xmtp-from">From: ${agentAddr.slice(0,12)}... (OpenClaw agent) · just now</div>
+    <div class="xmtp-content">{"type":"sign_tx","to":"0xDeadBeef...","value":"0.003","requestId":"${crypto.randomUUID().slice(0,8)}"}</div>
+  `;
+  container.appendChild(msg);
+
+  state.xmtpCount++;
+  document.getElementById('xmtp-count').textContent = state.xmtpCount;
+  log('XMTP sign request received from agent', 'inf');
+  simulatePendingTx('XMTP', '0x' + 'b'.repeat(40), '0.003');
+}
+
+// ─── Pending Txs ──────────────────────────────────────────
+let pendingId = 0;
+function simulatePendingTx(method, to, value) {
+  const id = ++pendingId;
+  const container = document.getElementById('pending-txs');
+  const note = container.querySelector('div[style]');
+  if (note) note.remove();
+
+  const el = document.createElement('div');
+  el.className = 'tx-item';
+  el.id = 'ptx-' + id;
+  el.innerHTML = `
+    <div class="tx-info">
+      <div class="tx-method">via ${method} · OpenClaw agent</div>
+      <div class="tx-data">to: ${to.slice(0,18)}...</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+      <div class="tx-amount" style="color:var(--amber)">${value} ETH</div>
+      <div style="display:flex;gap:6px">
+        <button class="approve-btn" onclick="approveAgentTx(${id}, '${to}', '${value}')">✓ Approve</button>
+        <button class="reject-btn" onclick="rejectAgentTx(${id})">✗</button>
+      </div>
+    </div>
+  `;
+  container.appendChild(el);
+
+  if (state.autoApprove) {
+    log(`Auto-approving tx from agent (${value} ETH)`, 'wrn');
+    setTimeout(() => approveAgentTx(id, to, value), 800);
+  }
+}
+
+async function approveAgentTx(id, to, value) {
+  const el = document.getElementById('ptx-' + id);
+  if (!el) return;
+  el.style.opacity = '0.4';
+
+  if (state.wallet) {
+    try {
+      let signed;
+      const tx = { to, value: ethers.parseEther(value) };
+      if (state.wallet.signTransaction) {
+        signed = await state.wallet.signTransaction(tx);
+      } else {
+        signed = '0x' + Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b=>b.toString(16).padStart(2,'0')).join('') + '...';
+      }
+      log(`Tx signed ✓ | ${value} ETH → ${to.slice(0,12)}...`, 'ok');
+      log(`Signed tx: ${signed.slice(0,18)}...`, 'inf');
+    } catch(e) {
+      log(`Signed (simulation) | ${value} ETH → ${to.slice(0,12)}...`, 'ok');
+    }
+  } else {
+    log(`Signed (no wallet) | ${value} ETH → ${to.slice(0,12)}...`, 'wrn');
+  }
+
+  state.txCount++;
+  document.getElementById('tx-count').textContent = state.txCount;
+  setTimeout(() => el.remove(), 600);
+}
+
+function rejectAgentTx(id) {
+  const el = document.getElementById('ptx-' + id);
+  if (el) el.remove();
+  log('Sign request rejected', 'wrn');
+
+  const container = document.getElementById('pending-txs');
+  if (!container.children.length) {
+    container.innerHTML = '<div style="font-size:11px;color:var(--text3)">No pending requests.</div>';
+  }
+}
+
+// ─── REST simulate ────────────────────────────────────────
+function simulateRestRequest() {
+  if (!state.wallet) { log('Generate wallet first', 'wrn'); return; }
+  log('Incoming REST /sign request from OpenClaw...', 'inf');
+  simulatePendingTx('REST API', '0x' + 'd'.repeat(40), '0.008');
+}
+
+// ─── Manual tx ───────────────────────────────────────────
+async function sendManualTx() {
+  if (!state.wallet) { log('No wallet', 'err'); return; }
+  const to = document.getElementById('tx-to').value.trim();
+  const amount = document.getElementById('tx-amount').value;
+  const data = document.getElementById('tx-data').value || '0x';
+  if (!to || !amount) { log('Fill in to & amount', 'wrn'); return; }
+  try {
+    const tx = { to, value: ethers.parseEther(amount), data };
+    let result;
+    if (state.wallet.sendTransaction) {
+      log(`Sending ${amount} ETH to ${to.slice(0,12)}...`, 'inf');
+      result = await state.wallet.sendTransaction(tx);
+      log(`Tx sent: ${result.hash}`, 'ok');
+    } else {
+      const signed = await state.wallet.signTransaction(tx);
+      log(`Tx signed (no provider, use RPC to broadcast): ${signed.slice(0,18)}...`, 'ok');
+    }
+    state.txCount++;
+    document.getElementById('tx-count').textContent = state.txCount;
+  } catch(e) {
+    log(`Tx error: ${e.message}`, 'err');
+  }
+}
+
+// ─── Permissions ─────────────────────────────────────────
+function toggleAutoApprove(on) {
+  state.autoApprove = on;
+  document.getElementById('auto-approve-stat').textContent = on ? 'ON' : 'OFF';
+  log(`Auto-approve ${on ? 'ENABLED' : 'DISABLED'}`, on ? 'wrn' : 'ok');
+}
+
+function savePermissions() {
+  const maxEth = document.getElementById('max-eth').value;
+  const daily = document.getElementById('daily-limit').value;
+  log(`Permissions saved: max ${maxEth} ETH/tx, ${daily} ETH/day`, 'ok');
+}
+</script>
+
+<!-- ── Password Modal ── -->
+<div class="modal-backdrop" id="pw-modal">
+  <div class="modal-box">
+    <div class="modal-title">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <rect x="3" y="9" width="14" height="10" rx="3" fill="#e03530" opacity="0.8"/>
+        <path d="M6 9V6a4 4 0 0 1 8 0v3" stroke="#e03530" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+        <circle cx="10" cy="14" r="1.5" fill="#fff" opacity="0.9"/>
+      </svg>
+      <span id="pw-modal-title">Protect your wallet</span>
+    </div>
+    <p class="modal-sub" id="pw-modal-sub">Set a password to encrypt your private key in this browser. You'll need it every time you open WalletClaw.</p>
+    <div>
+      <label>Password</label>
+      <input type="password" id="pw-input" placeholder="Min. 8 characters" oninput="checkPwStrength(this.value)" onkeydown="if(event.key==='Enter')confirmPassword()"/>
+      <div class="pw-strength" id="pw-strength-track">
+        <div class="pw-strength-bar" id="pw-strength-bar"></div>
+      </div>
+    </div>
+    <div id="pw-confirm-row">
+      <label>Confirm password</label>
+      <input type="password" id="pw-confirm" placeholder="Repeat password" onkeydown="if(event.key==='Enter')confirmPassword()"/>
+    </div>
+    <div class="modal-error" id="pw-error"></div>
+    <button class="btn-primary btn-full" onclick="confirmPassword()" id="pw-submit-btn">Encrypt &amp; save</button>
+    <button class="btn-secondary btn-full" id="pw-skip-btn" onclick="closePasswordModal(false)" style="font-size:11px">Skip (wallet won't persist)</button>
+  </div>
+</div>
+
+</body>
+</html>

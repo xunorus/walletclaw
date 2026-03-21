@@ -5,3 +5,7 @@
 yarn.lock
 .parcel-cache/
 dist/
+.firebase/
+.firebaserc
+public/
+firebase.json
