@@ -21,6 +21,7 @@ const REST_PORT = 18789; // Puerto único para REST, Agentes y UI (vía Caddy)
 
 // Estado del puente
 let uiSocket = null; // Conexión con el navegador (WalletClaw)
+let activeAgentSocket = null; // Último agente conectado
 let activeApiKey = null; // Se sincroniza desde el navegador
 
 // ─── 1. SERVIDOR REST PARA OPENCLAW (Port 3000) ───────────────────────────
@@ -108,8 +109,13 @@ uiWss.on('connection', (ws) => {
             }
 
             // 2. Respuesta de Firma del usuario
-            if (msg.type === 'SIGN_RESPONSE') {
-                console.log(`[UI]    ✅ Firma procesada por el usuario: ${msg.status}`);
+            if (msg.type === 'SIGN_RESPONSE' || msg.type === 'CHAT_MESSAGE') {
+                if (activeAgentSocket && activeAgentSocket.readyState === WebSocket.OPEN) {
+                    console.log(`[UI]    🦾 Propagando mensaje de UI al Agente...`);
+                    activeAgentSocket.send(data.toString());
+                } else {
+                    console.log(`[UI]    ⚠️ No hay agente conectado para recibir el mensaje.`);
+                }
             }
         } catch (e) {
             console.error('[UI]    ❌ Error procesando mensaje de UI:', e.message);
@@ -134,11 +140,20 @@ agentWss.on('connection', (ws, req) => {
         return;
     }
 
-    console.log(`[WS_AGENT] 🟢 Agente OpenClaw conectado vía WebSocket.`);
+    console.log(`[WS_AGENT] 🟢 Agente OpenClaw conectado.`);
+    activeAgentSocket = ws;
 
     ws.on('message', (data) => {
-        if (!uiSocket) return;
+        if (!uiSocket || uiSocket.readyState !== WebSocket.OPEN) {
+            console.log(`[WS_AGENT] ⚠️ UI no conectada. Mensaje del agente ignorado.`);
+            return;
+        }
         console.log(`[WS_AGENT] 🦾 Mensaje recibido del agente. Propagando a UI...`);
         uiSocket.send(data.toString());
+    });
+
+    ws.on('close', () => {
+        console.log(`[WS_AGENT] 🔴 Agente OpenClaw desconectado.`);
+        if (activeAgentSocket === ws) activeAgentSocket = null;
     });
 });

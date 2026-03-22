@@ -1405,7 +1405,7 @@
 
             <!-- WS SECTION -->
             <div>
-              <div class="method-badge badge-ws">WebSocket :7777</div>
+              <div class="method-badge badge-ws">WebSocket :18789</div>
               <p class="section-note">Real-time local connection via WS.</p>
               <div style="display:flex;align-items:center;gap:12px;margin-top:10px">
                 <div class="status-pill" id="ws-status">
@@ -1924,6 +1924,7 @@
           el.classList.add('connected');
           el.querySelector('span').textContent = 'Connected';
           btn.textContent = 'Stop bridge';
+          renderConversations();
 
           // Handshake: Sync API Key with the bridge
           const currentKey = document.getElementById('api-key-display').textContent;
@@ -1942,6 +1943,19 @@
               log(`Received sign request from local agent`, 'inf');
               addAgentTx('REST/Local', p.to || '0x...', p.value || '0.0', 'local', msg.id);
             }
+            if (msg.type === 'CHAT_MESSAGE') {
+              if (!state.messages['local']) state.messages['local'] = [];
+              state.messages['local'].push({
+                id: 'ws_' + Date.now(),
+                senderAddress: 'assistant',
+                content: msg.content,
+                sent: Date.now()
+              });
+              renderMessages();
+              // Scroll to bottom
+              const msgList = document.getElementById('chat-messages');
+              if (msgList) msgList.scrollTop = msgList.scrollHeight;
+            }
           } catch (e) { console.error('[bridge] Error:', e.message); }
         };
 
@@ -1953,6 +1967,7 @@
             el.classList.remove('connected');
             el.querySelector('span').textContent = 'Disconnected';
             btn.textContent = 'Start bridge';
+            renderConversations();
           }
         };
 
@@ -2220,7 +2235,7 @@
           }
         };
 
-        await convo.send(JSON.stringify(config));
+        await convo.sendText(JSON.stringify(config));
         log("Wallet config synced with Agent.", "ok");
       } catch (e) {
         log(`Config sync failed: ${e.message}`, "wrn");
@@ -2445,10 +2460,21 @@
       const aiTabBtn = document.querySelector('[onclick*="ai_tab"]');
       if (aiTabBtn) switchTab('ai_tab', aiTabBtn);
 
+      // Handle Local Agent (WebSocket)
+      if (conversation.id === 'local') {
+          if (bridgeSocket && bridgeSocket.readyState === WebSocket.OPEN) {
+              bridgeSocket.send(JSON.stringify({ type: 'CHAT_MESSAGE', content: text }));
+              return;
+          } else {
+              log("Local bridge not connected. Go to 'Settings' tab.", "wrn");
+              return;
+          }
+      }
+
       // Handle placeholder/init for Agent
       if (conversation.id === 'hector' || conversation.id === 'placeholder' || !conversation.send) {
         if (!state.xmtpClient) {
-          log("XMTP not connected. Go to 'Config' first.", "wrn");
+          log("XMTP not connected. Go to 'Settings' first.", "wrn");
           return;
         }
         try {
@@ -2738,6 +2764,7 @@
               txHash: txHash,
               requestId: meta.requestId
             };
+            // Using sendText as standard for XMTP MLS
             await (convo.sendText ? convo.sendText(JSON.stringify(response)) : convo.send(JSON.stringify(response)));
             log('Approval sent back to agent via XMTP', 'ok');
           }
@@ -2782,7 +2809,11 @@
           const convo = state.conversations.find(c => c.topic === meta.topic);
           if (convo) {
             const response = { type: 'tx_rejected', requestId: meta.requestId };
-            convo.send(JSON.stringify(response));
+            if (convo.sendText) {
+              await convo.sendText(JSON.stringify(response));
+            } else {
+              await convo.send(JSON.stringify(response));
+            }
             log('Rejection sent back to agent via XMTP', 'wrn');
           }
         } catch (e) { }
@@ -2885,6 +2916,7 @@
       deleteConversation
     });
     // ─── Attach functions to window for HTML access ──────────
+    // ─── Attach functions to window for HTML access ──────────
     window.confirmPassword = confirmPassword;
     window.sendChatMessage = sendChatMessage;
     window.openSetPasswordModal = openSetPasswordModal;
@@ -2897,7 +2929,25 @@
     window.approveAgentTx = approveAgentTx;
     window.rejectAgentTx = rejectAgentTx;
     window.toggleWS = toggleWsServer;
-    window.confirmAgentAddress = window.confirmAgentAddress; // already set
+    
+    // Additional UI functions
+    window.confirmAgentAddress = confirmAgentAddress;
+    window.selectAgent = selectAgent;
+    window.selectLocalAgent = selectLocalAgent;
+    window.switchTab = switchTab;
+    window.toggleWsServer = toggleWsServer;
+    window.generateApiKey = generateApiKey;
+    window.generateWallet = generateWallet;
+    window.importWallet = importWallet;
+    window.connectMetaMask = connectMetaMask;
+    window.forgetWallet = forgetWallet;
+    window.sendManualTx = sendManualTx;
+    window.toggleAutoApprove = toggleAutoApprove;
+    window.savePermissions = savePermissions;
+    window.clearResidualChats = clearResidualChats;
+    window.toggleChatSidebar = toggleChatSidebar;
+    window.deleteConversation = deleteConversation;
+    window.connectXmtp = connectXmtp;
 
   </script>
 
