@@ -1501,7 +1501,7 @@
 
     // ─── Crypto persistence (AES-GCM via WebCrypto) ──────────
     const STORAGE_KEY = 'walletclaw_v1';
-    const APP_VERSION = 'v0.6.3';
+    const APP_VERSION = 'v0.6.5';
 
     function renderVersion() {
       const badge = document.getElementById('version-badge');
@@ -1895,7 +1895,7 @@
     function toggleWsServer() {
       const el = document.getElementById('ws-status');
       const btn = event.target;
-      
+
       if (bridgeSocket) {
         // Stop current connection
         bridgeSocket.close();
@@ -1908,21 +1908,27 @@
         return;
       }
 
-      // Start new connection to bridge.js (Port 8000)
+      // Start new connection to bridge.js (Smart Port Detection)
       try {
-        bridgeSocket = new WebSocket('ws://localhost:8000');
-        
+        const isSecure = location.protocol === 'https:';
+        const bridgeUrl = isSecure
+          ? `wss://${location.host}/ws-ui`
+          : `ws://127.0.0.1:18789/ws-ui`;
+
+        log(`Connecting to Bridge: ${bridgeUrl}`, 'inf');
+        bridgeSocket = new WebSocket(bridgeUrl);
+
         bridgeSocket.onopen = () => {
-          log('Connected to Local Bridge (8000)', 'ok');
+          log('Connected to Local Bridge', 'ok');
           state.wsStatus = 'Connected';
           el.classList.add('connected');
-          el.querySelector('span').textContent = 'Connected :8000';
+          el.querySelector('span').textContent = 'Connected';
           btn.textContent = 'Stop bridge';
-          
+
           // Handshake: Sync API Key with the bridge
           const currentKey = document.getElementById('api-key-display').textContent;
           if (currentKey && currentKey !== 'Key Loading...') {
-             bridgeSocket.send(JSON.stringify({ type: 'SYNC_API_KEY', key: currentKey }));
+            bridgeSocket.send(JSON.stringify({ type: 'SYNC_API_KEY', key: currentKey }));
           }
         };
 
@@ -1930,7 +1936,7 @@
           try {
             const msg = JSON.parse(event.data);
             console.log('[bridge] Received:', msg);
-            
+
             if (msg.type === 'SIGN_REQUEST') {
               const p = msg.payload || {};
               log(`Received sign request from local agent`, 'inf');
@@ -2741,14 +2747,14 @@
 
       // Respond via Local Bridge if connected
       if (bridgeSocket && bridgeSocket.readyState === WebSocket.OPEN && meta && !meta.topic) {
-          bridgeSocket.send(JSON.stringify({ 
-              type: 'SIGN_RESPONSE', 
-              id: meta.requestId, 
-              status: 'signed', 
-              txHash: txHash 
-          }));
-          log('Approval sent back to agent via Local Bridge', 'ok');
-          delete pendingMetadata[id];
+        bridgeSocket.send(JSON.stringify({
+          type: 'SIGN_RESPONSE',
+          id: meta.requestId,
+          status: 'signed',
+          txHash: txHash
+        }));
+        log('Approval sent back to agent via Local Bridge', 'ok');
+        delete pendingMetadata[id];
       }
 
       state.txCount++;

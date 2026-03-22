@@ -17,9 +17,7 @@ app.use(cors());
 app.use(express.json());
 
 // Puertos configurables
-const REST_PORT = 3000;
-const AGENT_WS_PORT = 7777;
-const UI_WS_PORT = 8000;
+const REST_PORT = 18789; // Puerto único para REST, Agentes y UI (vía Caddy)
 
 // Estado del puente
 let uiSocket = null; // Conexión con el navegador (WalletClaw)
@@ -28,11 +26,11 @@ let activeApiKey = null; // Se sincroniza desde el navegador
 // ─── 1. SERVIDOR REST PARA OPENCLAW (Port 3000) ───────────────────────────
 
 app.post('/sign', (req, res) => {
-    const receivedKey = req.headers['x-api-key'];
+    const receivedKey = req.headers['x-api-key'] || (req.headers['authorization'] ? req.headers['authorization'].replace('Bearer ', '') : null);
     
     // Validación de API Key
     if (!activeApiKey || receivedKey !== activeApiKey) {
-        console.log(`[REST] 🔴 Intento de firma bloqueado: API Key inválida o no configurada.`);
+        console.log(`[REST] 🔴 Intento de firma bloqueado: API Key inválida o no configurada. Recibido: ${receivedKey}`);
         return res.status(401).json({ error: 'Unauthorized: Invalid or missing API Key' });
     }
 
@@ -61,13 +59,39 @@ const restServer = app.listen(REST_PORT, () => {
     console.log(`\n╔══════════════════════════════════════════════╗`);
     console.log(`║    WalletClaw Bridge — ¡ONLINE!  🦾🦞       ║`);
     console.log(`╚══════════════════════════════════════════════╝`);
-    console.log(`[REST]  Escuchando en http://localhost:${REST_PORT}/sign`);
+    console.log(`[REST]      Escuchando en http://localhost:${REST_PORT}/sign`);
+    console.log(`[AGENT_WS]  Escuchando en ws://localhost:${REST_PORT}/ws-agent`);
+    console.log(`[UI_WS]     Escuchando en ws://localhost:${REST_PORT}/ws-ui`);
 });
 
 
-// ─── 2. WEBSOCKET PARA EL NAVEGADOR (Port 8000) ───────────────────────────
+// ─── 2. WEBSOCKETS (noServer mode) ──────────────────────────────────────────
 
-const uiWss = new WebSocketServer({ port: UI_WS_PORT });
+const uiWss = new WebSocketServer({ noServer: true });
+const agentWss = new WebSocketServer({ noServer: true });
+
+restServer.on('upgrade', (request, socket, head) => {
+    const url = new URL(request.url, `http://${request.headers.host}`);
+    
+    // Ruta para el Navegador (WalletClaw UI)
+    if (url.pathname === '/ws-ui') {
+        uiWss.handleUpgrade(request, socket, head, (ws) => {
+            uiWss.emit('connection', ws, request);
+        });
+    } 
+    // Ruta para Agentes OpenClaw
+    else if (url.pathname === '/ws-agent' || url.pathname === '/') {
+        agentWss.handleUpgrade(request, socket, head, (ws) => {
+            agentWss.emit('connection', ws, request);
+        });
+    } 
+    else {
+        socket.destroy();
+    }
+});
+
+
+// ─── 3. LÓGICA DE CONEXIÓN UI ───────────────────────────────────────────────
 
 uiWss.on('connection', (ws) => {
     console.log(`[UI]    🟢 WalletClaw (Navegador) conectado.`);
@@ -86,7 +110,6 @@ uiWss.on('connection', (ws) => {
             // 2. Respuesta de Firma del usuario
             if (msg.type === 'SIGN_RESPONSE') {
                 console.log(`[UI]    ✅ Firma procesada por el usuario: ${msg.status}`);
-                // Aquí podrías notificar al agente si la conexión fuera persistente
             }
         } catch (e) {
             console.error('[UI]    ❌ Error procesando mensaje de UI:', e.message);
@@ -99,20 +122,14 @@ uiWss.on('connection', (ws) => {
     });
 });
 
-console.log(`[UI_WS] Escuchando en ws://localhost:${UI_WS_PORT}`);
-
-
-// ─── 3. WEBSOCKET PARA AGENTES OPENCLAW (Port 7777) ────────────────────────
-
-const agentWss = new WebSocketServer({ port: AGENT_WS_PORT });
-
 agentWss.on('connection', (ws, req) => {
-    // En WS la key podría venir en la URL: ws://localhost:7777?key=...
     const url = new URL(req.url, `http://${req.headers.host}`);
-    const receivedKey = url.searchParams.get('key');
+    const queryKey = url.searchParams.get('key');
+    const authHeader = req.headers['authorization'] ? req.headers['authorization'].replace('Bearer ', '') : null;
+    const receivedKey = queryKey || authHeader;
 
     if (!activeApiKey || receivedKey !== activeApiKey) {
-        console.log(`[WS_AGENT] 🔴 Conexión rechazada: API Key inválida.`);
+        console.log(`[WS_AGENT] 🔴 Conexión rechazada: API Key inválida (Recibido: ${receivedKey})`);
         ws.terminate();
         return;
     }
@@ -125,5 +142,3 @@ agentWss.on('connection', (ws, req) => {
         uiSocket.send(data.toString());
     });
 });
-
-console.log(`[WS_AGENT] Escuchando en ws://localhost:${AGENT_WS_PORT}\n`);
