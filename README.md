@@ -263,8 +263,22 @@ yarn parcel src/index.html    --port 3233 --https
 ```
 
 
-Lanza el puente: node src/bridge.js 🦾
-En WalletClaw: Settings -> Start bridge.
+
+
+Instala las dependencias 
+```
+npm install express ws cors
+```
+
+Lanza el puente 🦾
+```
+node src/bridge.js
+``` 
+
+En WalletClaw: 
+Settings -> Start bridge.
+```
+
 Dile a tu agente que te pida una firma (vía REST o WS): Podrá hacerlo usando tu API Key.
 🦾🦞_
 
