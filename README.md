@@ -258,7 +258,8 @@ yarn
 
 # Run
 ```
-yarn parcel src/index.html src/test.html   --port 3233 --https
+yarn parcel src/index.html    --port 3233 --https
+
 ```
 ---
 

@@ -9,3 +9,10 @@ dist/
 .firebaserc
 public/
 firebase.json
+/old
+.claude/
+.yarnrc.yml
+node_modules/
+package-lock.json
+src/old/
+src/onboarding_questions.md
