@@ -1088,6 +1088,55 @@
       text-transform: uppercase;
       font-weight: 800;
     }
+
+    /* --- Switches --- */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--bg3);
+      transition: .3s;
+      border-radius: 24px;
+      border: 1px solid var(--border);
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 2px;
+      bottom: 2px;
+      background-color: var(--text3);
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    input:checked+.slider {
+      background-color: var(--teal-dim);
+      border-color: var(--teal);
+    }
+
+    input:checked+.slider:before {
+      transform: translateX(20px);
+      background-color: var(--teal);
+    }
   </style>
 
 </head>
@@ -1327,115 +1376,252 @@
     <!-- MAIN: OpenClaw connection -->
     <main class="main">
       <!-- 1. Connection methods -->
-      <div class="card">
-        <div class="card-title">🤖 OpenClaw connection methods</div>
-        <div class="tabs">
-          <button class="tab active" id="tab-chat" onclick="switchTab('chat', this)">💬 Chat</button>
-          <button class="tab" id="tab-settings" onclick="switchTab('settings', this)">⚙️ Settings</button>
-        </div>
+      <div class="tabs">
+        <button class="tab" id="tab-conexion" onclick="switchTab('conexion', this)">🔗 CONEXION</button>
+        <button class="tab active" id="tab-chat" onclick="switchTab('chat', this)">💬 CHAT</button>
+        <button class="tab" id="tab-settings" onclick="switchTab('settings', this)">⚙️ SETTINGS</button>
+      </div>
 
-        <!-- Chat tab (DEFAULT) -->
-        <div class="tab-panel active" id="panel-chat">
-          <div class="chat-container">
-            <div class="chat-sidebar" id="chat-sidebar">
-              <div class="chat-sidebar-header" style="display:flex; justify-content:space-between; align-items:center;">
-                <span>Conversations</span>
-                <button onclick="toggleChatSidebar()"
-                  style="background:none; border:none; color:var(--text3); cursor:pointer; font-weight:bold;">[ <<
-                    ]</button>
+      <!-- Conexion tab (Initial/Setup) -->
+      <div class="tab-panel" id="panel-conexion">
+        <div class="card" style="border:none; background:transparent; padding:0">
+          <div class="card-title">🤖 OpenClaw connection methods</div>
+          <div class="tabs" style="margin-top:10px">
+            <button class="tab active" id="subtab-rest" onclick="switchSubTab('rest', this)">① REST API</button>
+            <button class="tab" id="subtab-ws" onclick="switchSubTab('ws', this)">② WebSocket</button>
+            <button class="tab" id="subtab-xmtp" onclick="switchSubTab('xmtp', this)">③ XMTP</button>
+          </div>
+
+          <!-- REST method -->
+          <div class="tab-panel active" id="panel-con-rest">
+            <div class="method-badge badge-rest">REST /sign · API Key</div>
+            <p class="section-note">WalletClaw exposes a local REST endpoint. OpenClaw sends sign requests with an API
+              key. Best for local deployments.</p>
+
+            <div style="margin-top:12px">
+              <label>Your API Key (add to OpenClaw env)</label>
+              <div class="api-key-display">
+                <code id="con-api-key-display">— generate wallet first —</code>
+                <button class="btn-secondary" style="font-size:10px;padding:4px 8px;white-space:nowrap"
+                  onclick="copyApiKey()">Copy</button>
+                <button class="btn-secondary" style="font-size:10px;padding:4px 8px;white-space:nowrap; border-left: 1px solid rgba(255,255,255,0.1)"
+                  onclick="generateApiKey(true)">Rotate</button>
               </div>
-              <div class="contact-list" id="chat-contact-list"></div>
             </div>
-            <div class="chat-main">
-              <div class="chat-header">
-                <div style="display:flex; align-items:center; gap:8px">
-                  <button id="sidebar-expand-btn" onclick="toggleChatSidebar()"
-                    style="display:none; background:var(--purple); border:1px solid var(--border2); color:white; padding:4px 10px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:11px; box-shadow: 0 0 10px var(--purple-glow);">[
-                    >> ] List</button>
-                  <span id="active-contact-addr" style="font-size:11px; font-weight:700;">OpenClaw Agent</span>
-                </div>
-                <button onclick="clearResidualChats()"
-                  style="background:none; border:none; color:var(--text3); font-size:9px; text-decoration:underline; cursor:pointer;">Clear
-                  Chats</button>
-              </div>
-              <div class="chat-messages" id="chat-messages"></div>
-              <div id="agent-typing" class="typing-indicator">🦞 Agent is typing...</div>
-              <div class="chat-input-area">
-                <input type="text" id="chat-input" class="chat-input" placeholder="Type a message..."
-                  oninput="handleTyping()" onkeydown="if(event.key==='Enter')sendChatMessage()">
-                <button class="btn-chat-send" onclick="sendChatMessage()">Send</button>
-              </div>
+
+            <div class="code-block" style="margin-top:12px"><span class="cmt"># In your OpenClaw instance (env vars or
+                config.toml)
+                # Network: Avalanche Fuji Testnet (chainId 43113)</span>
+              <span class="kw">WALLETCLAW_URL</span>=<span class="str">"http://localhost:18789"</span>
+              <span class="kw">WALLETCLAW_API_KEY</span>=<span class="str">"<span
+                  id="con-api-key-env">YOUR_API_KEY</span>"</span>
+
+              <span class="cmt"># OpenClaw calls this to sign a tx:</span>
+              <span class="kw">POST</span> /sign
+              {
+              <span class="str">"to"</span>: <span class="str">"0x..."</span>,
+              <span class="str">"value"</span>: <span class="str">"0.01"</span>,
+              <span class="str">"data"</span>: <span class="str">"0x"</span>,
+              <span class="str">"agentId"</span>: <span class="str">"openclaw-001"</span>
+              }
             </div>
           </div>
-        </div>
 
-        <!-- Unified Settings tab -->
-        <div class="tab-panel" id="panel-settings">
-          <div style="display:flex; flex-direction:column; gap:20px; padding: 10px 0;">
+          <!-- WebSocket method -->
+          <div class="tab-panel" id="panel-con-ws">
+            <div class="method-badge badge-ws">WebSocket :18789 · Bridge</div>
+            <p class="section-note">Ultra-low latency. OpenClaw connects to WalletClaw's local bridge. Authentication
+              via API Key sync. Bidirectional: WalletClaw can push approvals and status to the agent.</p>
 
-            <!-- XMTP SECTION -->
-            <div>
-              <div class="method-badge badge-xmtp">XMTP · SECURE MESSAGING</div>
-              <p class="section-note">E2E encrypted communication for remote agents.</p>
-              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:12px">
-                <button id="xmtp-connect-btn" class="btn-primary btn-full" onclick="connectXmtp()">Connect XMTP</button>
-                <div style="display:flex; flex-direction:column; gap:4px">
-                  <input type="text" id="hector-addr-input" class="chat-input" placeholder="0x..."
-                    onchange="updateAgentAddr(this.value)" />
-                  <button id="confirm-hector-btn" class="btn-secondary btn-full" onclick="confirmAgentAddress()">Confirm
-                    Agent</button>
-                </div>
-              </div>
+            <div style="margin-top:15px; background: rgba(255,140,66,0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,140,66,0.2);">
+              <div style="font-weight: 700; color: var(--teal); font-size: 13px; margin-bottom: 8px;">🦾 Launching the Bridge</div>
+              
+              <div style="font-size: 11px; margin-bottom: 5px; color: var(--text3);">1. Install dependencies:</div>
+              <div style="background:rgba(0,0,0,0.3); padding: 6px; border-radius: 4px; font-family: monospace; font-size: 10px; color: var(--teal);">npm install express ws cors</div>
+              
+              <div style="font-size: 11px; margin-top: 10px; margin-bottom: 5px; color: var(--text3);">2. Run the bridge in a terminal:</div>
+              <div style="background:rgba(0,0,0,0.3); padding: 6px; border-radius: 4px; font-family: monospace; font-size: 10px; color: var(--teal);">node src/bridge.js</div>
+              
+              <div style="font-size: 11px; margin-top: 10px; color: var(--text3);">3. <b>In WalletClaw (This Tab)</b>: Click "Start bridge" below.</div>
             </div>
 
-            <div class="divider"></div>
+            <div class="code-block" style="margin-top:12px"><span class="cmt">// In OpenClaw's tool definition
+                (custom_tools/wallet.py)</span>
+              <span class="kw">import</span> websockets, json
 
-            <!-- REST SECTION -->
-            <div>
-              <div class="method-badge badge-rest">REST /sign · API Key</div>
-              <p class="section-note">Local communication via API Key.</p>
-              <div class="api-key-display" style="margin-top:10px; padding:6px 10px; font-size:11px">
-                <code id="api-key-display">Key Loading...</code>
-              </div>
-              <button class="btn-teal" style="margin-top:10px; font-size:10px" onclick="generateApiKey()">Regenerate
-                key</button>
+              <span class="kw">async def</span> <span class="var">sign_transaction</span>(to, value, data=<span
+                class="str">"0x"</span>):
+              <span class="kw">async with</span> websockets.connect(
+              <span class="str">"ws://localhost:18789/ws-agent"</span>
+              ) <span class="kw">as</span> ws:
+              <span class="cmt"># Send tx request over bridge</span>
+              <span class="kw">await</span> ws.send(json.dumps({
+              <span class="str">"type"</span>: <span class="str">"sign_tx"</span>,
+              <span class="str">"to"</span>: to, <span class="str">"value"</span>: value, <span
+                class="str">"data"</span>: data
+              }))
+              result = json.loads(<span class="kw">await</span> ws.recv())
+              <span class="kw">return</span> result[<span class="str">"txHash"</span>]
             </div>
 
-            <div class="divider"></div>
-
-            <!-- WS SECTION -->
-            <div>
-              <div class="method-badge badge-ws">WebSocket :18789</div>
-              <p class="section-note">Real-time local connection via WS.</p>
+            <div style="margin-top:10px">
+              <label>Bridge status</label>
               <div style="display:flex;align-items:center;gap:12px;margin-top:10px">
-                <div class="status-pill" id="ws-status">
+                <div class="status-pill" id="con-ws-status">
                   <div class="dot"></div><span>Stopped</span>
                 </div>
-                <button class="btn-teal" style="font-size:10px" onclick="toggleWsServer()">Start server</button>
+                <button class="btn-teal" style="font-size:10px" onclick="toggleWsServer(this)">Start bridge</button>
               </div>
             </div>
+          </div>
 
+          <!-- XMTP method -->
+          <div class="tab-panel" id="panel-con-xmtp">
+            <div class="method-badge badge-xmtp">XMTP · E2E encrypted</div>
+            <p class="section-note">Best for remote agents. OpenClaw sends sign requests as XMTP messages to your wallet
+              address. End-to-end encrypted. Works across networks — your agent can be anywhere.</p>
+
+            <div id="xmtp-qr-container"
+              style="display:flex; flex-direction:column; align-items:center; margin: 15px 0; gap: 10px;">
+              <div id="xmtp-qr-image" style="background:#fff; padding:10px; border-radius:8px; display:none;">
+                <img id="qr-img" width="150" height="150" />
+              </div>
+              <div class="address-display" id="con-xmtp-addr-display" style="width:100%; text-align:center;">— generate
+                wallet first —</div>
+            </div>
+
+            <div class="code-block" style="margin-top:12px"><span class="cmt">// In OpenClaw
+                (openclaw_tools/walletclaw_xmtp.ts)</span>
+              <span class="kw">import</span> { Client } <span class="kw">from</span> <span
+                class="str">"@xmtp/xmtp-js"</span>
+
+              <span class="kw">const</span> <span class="var">xmtp</span> = <span class="kw">await</span>
+              Client.create(agentSigner)
+
+              <span class="cmt">// Send sign request to WalletClaw address</span>
+              <span class="kw">const</span> <span class="var">convo</span> = <span class="kw">await</span>
+              xmtp.conversations.newConversation(
+              <span class="str">"<span id="con-xmtp-addr-text">YOUR_WALLET_ADDRESS</span>"</span>
+              )
+              <span class="kw">await</span> convo.send(JSON.stringify({
+              type: <span class="str">"sign_tx"</span>,
+              to: <span class="str">"0x..."</span>,
+              value: <span class="str">"0.01"</span>,
+              requestId: crypto.randomUUID()
+              }))
+            </div>
+
+            <div style="margin-top:10px;display:flex;gap:8px">
+              <button id="con-xmtp-connect-btn" class="btn-primary btn-full" onclick="toggleXmtp()">Connect
+                XMTP</button>
+              <button class="btn-secondary" onclick="copyWalletForXmtp()">Copy address</button>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- 2. Pending approvals -->
-      <div class="card">
-        <div class="card-title">⏳ Pending sign requests</div>
-        <div id="pending-txs">
-          <div style="font-size:11px;color:var(--text3)">No pending requests.</div>
+      <!-- Chat tab (DEFAULT) -->
+      <div class="tab-panel active" id="panel-chat">
+        <div class="chat-container">
+          <div class="chat-sidebar" id="chat-sidebar">
+            <div class="chat-sidebar-header" style="display:flex; justify-content:space-between; align-items:center;">
+              <span>Conversations</span>
+              <button onclick="toggleChatSidebar()"
+                style="background:none; border:none; color:var(--text3); cursor:pointer; font-weight:bold;">[ <<
+                  ]</button>
+            </div>
+            <div class="contact-list" id="chat-contact-list"></div>
+          </div>
+          <div class="chat-main">
+            <div class="chat-header">
+              <div style="display:flex; align-items:center; gap:8px">
+                <button id="sidebar-expand-btn" onclick="toggleChatSidebar()"
+                  style="display:none; background:var(--purple); border:1px solid var(--border2); color:white; padding:4px 10px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:11px; box-shadow: 0 0 10px var(--purple-glow);">[
+                  >> ] List</button>
+                <span id="active-contact-addr" style="font-size:11px; font-weight:700;">OpenClaw Agent</span>
+              </div>
+              <button onclick="clearResidualChats()"
+                style="background:none; border:none; color:var(--text3); font-size:9px; text-decoration:underline; cursor:pointer;">Clear
+                Chats</button>
+            </div>
+            <div class="chat-messages" id="chat-messages"></div>
+            <div id="agent-typing" class="typing-indicator">🦞 Agent is typing...</div>
+            <div class="chat-input-area">
+              <input type="text" id="chat-input" class="chat-input" placeholder="Type a message..."
+                oninput="handleTyping()" onkeydown="if(event.key==='Enter')sendChatMessage()">
+              <button class="btn-chat-send" onclick="sendChatMessage()">Send</button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- 3. Activity log -->
-      <div class="card">
-        <div class="card-title">📟 Activity log</div>
-        <div class="terminal" id="log-terminal">
-          <div class="log-line"><span class="ts">[init]</span> <span class="inf"> WalletClaw started · Avalanche Fuji
-              Testnet.</span></div>
+      <!-- Unified Settings tab -->
+      <div class="tab-panel" id="panel-settings">
+        <div style="display:flex; flex-direction:column; gap:20px; padding: 10px 0;">
+
+          <div>
+            <div class="card-title">👤 User Preferences</div>
+            <p class="section-note" style="font-size: 13px;">General application settings and profile.</p>
+
+            <div style="margin-top:12px">
+              <label style="font-size: 13px; font-weight: 600; color: var(--text);">Agent's XMTP Address (Primary AI Target)</label>
+              <div style="display:flex; flex-direction:column; gap:4px">
+                <input type="text" id="hector-addr-input" class="chat-input" placeholder="0x..."
+                  onchange="updateAgentAddr(this.value)" />
+                <button id="confirm-hector-btn" class="btn-secondary btn-full" onclick="confirmAgentAddress()">Confirm
+                  Agent</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div>
+            <div class="card-title">🔐 Session Security</div>
+            <p class="section-note" style="font-size: 13px;">Control how your password is cached during this session.</p>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:14px; padding: 4px 0;">
+              <span style="font-size:14px; font-weight: 600;">Remember password in session</span>
+              <label class="switch">
+                <input type="checkbox" id="remember-session-toggle" onchange="setRememberSession(this.checked)">
+                <span class="slider"></span>
+              </label>
+            </div>
+            <p class="section-note" style="color:var(--text3); font-size:11px; margin-top:8px; line-height: 1.4;">
+              ⚠️ If enabled, your password will stay in browser memory (sessionStorage) until the tab is closed. This
+              prevents re-typing but is less secure.
+            </p>
+          </div>
+
+          <div class="divider"></div>
+
+          <div>
+            <div class="card-title">🛠 Maintenance</div>
+            <button class="btn-danger btn-full" onclick="showRevokeModal()">Revoke All XMTP Sessions</button>
+            <p class="section-note" style="color:var(--text3); font-size:10px; margin-top:5px;">Useful if you reached
+              the 10 installation limit on XMTP.</p>
+          </div>
+
         </div>
       </div>
-    </main>
+  </div>
+
+  <!-- 2. Pending approvals -->
+  <div class="card">
+    <div class="card-title">⏳ Pending sign requests</div>
+    <div id="pending-txs">
+      <div style="font-size:11px;color:var(--text3)">No pending requests.</div>
+    </div>
+  </div>
+
+  <!-- 3. Activity log -->
+  <div class="card">
+    <div class="card-title">📟 Activity log</div>
+    <div class="terminal" id="log-terminal">
+      <div class="log-line"><span class="ts">[init]</span> <span class="inf"> WalletClaw started · Avalanche Fuji
+          Testnet.</span></div>
+    </div>
+  </div>
+  </main>
   </div>
 
   <script type="module">
@@ -1476,7 +1662,7 @@
     const state = {
       wallet: null,
       provider: null,
-      apiKey: null,
+      apiKey: localStorage.getItem('walletclaw_api_key'),
       wsServer: false,
       wsStatus: 'Stopped',
       xmtpClient: null,
@@ -1491,7 +1677,17 @@
       autoApprove: false,
       pendingTxs: [],
       wsAgents: 0,
-      xmtpRequests: {} // { messageId: { pendingId, status: 'pending'|'signed'|'rejected' } }
+      xmtpRequests: {}, // { messageId: { pendingId, status: 'pending'|'signed'|'rejected' } }
+      rememberSession: localStorage.getItem('remember_session') === 'true'
+    };
+
+    window.setRememberSession = function (enabled) {
+      state.rememberSession = enabled;
+      localStorage.setItem('remember_session', enabled);
+      if (!enabled) {
+        sessionStorage.removeItem(SESSION_PW_KEY);
+      }
+      log(`Session persistence ${enabled ? 'enabled' : 'disabled'}.`, 'inf');
     };
 
     // ─── TrustedHTML Policy ─────────────────────────────────
@@ -1501,7 +1697,8 @@
 
     // ─── Crypto persistence (AES-GCM via WebCrypto) ──────────
     const STORAGE_KEY = 'walletclaw_v1';
-    const APP_VERSION = 'v0.6.5';
+    const SESSION_PW_KEY = 'walletclaw_session_pw';
+    const APP_VERSION = 'v0.7.1';
 
     function renderVersion() {
       const badge = document.getElementById('version-badge');
@@ -1665,6 +1862,11 @@
           document.getElementById('pw-modal').classList.remove('open');
           // Auto-connect XMTP after setting password
           connectXmtp();
+
+          // Session Persistence
+          if (state.rememberSession) {
+            sessionStorage.setItem(SESSION_PW_KEY, pw);
+          }
         } catch (e) {
           err.textContent = 'Encryption failed: ' + e.message;
           document.getElementById('pw-submit-btn').textContent = 'Encrypt & save';
@@ -1678,6 +1880,12 @@
           document.getElementById('pw-modal').classList.remove('open');
           document.getElementById('lock-badge').style.display = 'inline-flex';
           document.getElementById('forget-btn').style.display = 'inline';
+
+          // Session Persistence
+          if (state.rememberSession) {
+            sessionStorage.setItem(SESSION_PW_KEY, pw);
+          }
+
           if (_onUnlock) _onUnlock(privateKey);
         } catch (e) {
           err.textContent = 'Wrong password';
@@ -1691,20 +1899,90 @@
     // ─── Auto-restore on load ─────────────────────────────────
     window.addEventListener('DOMContentLoaded', () => {
       renderVersion();
+
+      // UI Init: Toggle Session Preference
+      const sessionToggle = document.getElementById('remember-session-toggle');
+      if (sessionToggle) sessionToggle.checked = state.rememberSession;
+
+      const lastTab = localStorage.getItem('last_tab');
+      const lastSubTab = localStorage.getItem('last_sub_tab') || 'ws';
+
+      // 1. Initial UI restoration (Immediate)
+      const targetTab = lastTab || (hasSavedWallet() ? 'chat' : 'conexion');
+      const targetSub = lastSubTab || 'ws';
+
+      // Restore Sub-tab state (always, so it's ready when the user visits the panel)
+      const subTabBtn = document.getElementById('subtab-' + targetSub);
+      if (subTabBtn) window.switchSubTab(targetSub, subTabBtn);
+
+      // Restore Main-tab state
+      const tabBtn = document.getElementById('tab-' + targetTab);
+      if (tabBtn) {
+        window.switchTab(targetTab, tabBtn);
+      } else {
+        const defaultTab = hasSavedWallet() ? 'chat' : 'conexion';
+        window.switchTab(defaultTab, document.getElementById('tab-' + defaultTab));
+      }
+
+      // 2. Wallet Restoration / Bootup
       if (hasSavedWallet()) {
-        log('Encrypted wallet found in browser storage. Enter password to unlock.', 'inf');
-        openUnlockModal(async (privateKey) => {
-          const wallet = new ethers.Wallet(privateKey);
-          state.wallet = wallet;
-          updateWalletUI(wallet.address);
-          generateApiKey();
-          log(`Wallet restored: ${wallet.address.slice(0, 12)}...`, 'ok');
-          tryConnectProvider(wallet);
-          // Auto-connect XMTP on unlock
-          connectXmtp();
-          // UX Feature: Auto-switch to chat upon unlock
-          switchTab('chat', document.getElementById('tab-chat'));
-        });
+        const sessionPw = sessionStorage.getItem(SESSION_PW_KEY);
+
+        const tryAutoUnlock = async (pw) => {
+          try {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            const privateKey = await decryptPrivateKey(stored, pw);
+            const wallet = new ethers.Wallet(privateKey);
+            state.wallet = wallet;
+            updateWalletUI(wallet.address);
+            if (!state.apiKey) window.generateApiKey();
+            else if (window.syncUIWithApiKey) window.syncUIWithApiKey();
+            
+            log(`Wallet auto-unlocked via session storage.`, 'ok');
+            document.getElementById('lock-badge').style.display = 'inline-flex';
+            document.getElementById('forget-btn').style.display = 'inline';
+            tryConnectProvider(wallet);
+            connectXmtp();
+            return true;
+          } catch (e) {
+            sessionStorage.removeItem(SESSION_PW_KEY);
+            return false;
+          }
+        };
+
+        if (state.rememberSession && sessionPw) {
+          log('Attempting session auto-unlock...', 'inf');
+          tryAutoUnlock(sessionPw).then(success => {
+            if (!success) {
+              log('Session password invalid or expired.', 'wrn');
+              promptManualUnlock();
+            }
+          });
+        } else {
+          promptManualUnlock();
+        }
+
+        function promptManualUnlock() {
+          log('Encrypted wallet found. Enter password to unlock.', 'inf');
+          openUnlockModal(async (privateKey) => {
+            const wallet = new ethers.Wallet(privateKey);
+            state.wallet = wallet;
+            updateWalletUI(wallet.address);
+            if (!state.apiKey) window.generateApiKey();
+            else if (window.syncUIWithApiKey) window.syncUIWithApiKey();
+            
+            log(`Wallet restored: ${wallet.address.slice(0, 12)}...`, 'ok');
+            tryConnectProvider(wallet);
+            connectXmtp();
+          });
+        }
+      } else {
+        log('No wallet configured. Please generate or import a wallet to begin.', 'wrn');
+        // If no wallet, ensure we are on conexion tab
+        if (targetTab !== 'conexion') {
+          window.switchTab('conexion', document.getElementById('tab-conexion'));
+          window.switchSubTab('ws', document.getElementById('subtab-ws'));
+        }
       }
     });
 
@@ -1853,57 +2131,127 @@
       document.getElementById('wallet-status-pill').classList.add('connected');
       document.getElementById('wallet-status-text').textContent = 'Connected';
 
-      const xmtpDisp = document.getElementById('xmtp-addr-display');
+            const xmtpDisp = document.getElementById('xmtp-addr-display');
       if (xmtpDisp) xmtpDisp.textContent = address;
+
+      // Update Conexion tab elements
+      const conXmtpAddrDisp = document.getElementById('con-xmtp-addr-display');
+      if (conXmtpAddrDisp) conXmtpAddrDisp.textContent = address;
+
+      const conXmtpText = document.getElementById('con-xmtp-addr-text');
+      if (conXmtpText) conXmtpText.textContent = address;
+
+      // Generate QR Code for the address
+      const qrImg = document.getElementById('qr-img');
+      const qrContainer = document.getElementById('xmtp-qr-image');
+      if (qrImg && qrContainer) {
+        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${address}`;
+        qrContainer.style.display = 'block';
+      }
 
       const hectorInput = document.getElementById('hector-addr-input');
       if (hectorInput) hectorInput.value = AGENT_ADDR;
     }
 
     // ─── API Key ─────────────────────────────────────────────
-    function generateApiKey() {
+    window.generateApiKey = function (forceNew = false) {
+      if (!forceNew && state.apiKey) {
+        window.syncUIWithApiKey();
+        return;
+      }
+
       const key = 'wc_' + Array.from(crypto.getRandomValues(new Uint8Array(18)))
         .map(b => b.toString(16).padStart(2, '0')).join('');
       state.apiKey = key;
-      const display = document.getElementById('api-key-display');
-      if (display) display.textContent = key;
+      localStorage.setItem('walletclaw_api_key', key);
+      
+      window.syncUIWithApiKey();
       log(`API key generated: ${key.slice(0, 12)}...`, 'ok');
     }
 
-    function copyApiKey() {
+    window.syncUIWithApiKey = function () {
+      const key = state.apiKey;
+      const display = document.getElementById('api-key-display');
+      if (display) display.textContent = key;
+
+      const displayCon = document.getElementById('con-api-key-display');
+      if (displayCon) displayCon.textContent = key;
+
+      const envCon = document.getElementById('con-api-key-env');
+      if (envCon) envCon.textContent = key;
+    }
+
+    window.copyApiKey = function () {
       if (!state.apiKey) { log('Generate wallet first', 'wrn'); return; }
       navigator.clipboard.writeText(state.apiKey).then(() => log('API key copied', 'ok'));
     }
 
-    function copyWalletForXmtp() {
+    window.copyWalletForXmtp = function () {
       if (!state.wallet) { log('No wallet connected', 'wrn'); return; }
       const addr = state.wallet.address || (state.wallet._address);
       navigator.clipboard.writeText(addr).then(() => log('Address copied for XMTP', 'ok'));
     }
 
     // ─── Tabs ─────────────────────────────────────────────────
-    function switchTab(id, btn) {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    window.switchTab = function (id, btn) {
+      // 1. Reset ONLY top-level main tabs (children of .main > .tabs)
+      const mainContainer = document.querySelector('.main > .tabs');
+      if (mainContainer) {
+        mainContainer.querySelectorAll(':scope > .tab').forEach(t => t.classList.remove('active'));
+      }
+      
+      // 2. Reset ONLY top-level main panels (direct children of main)
+      const mainContent = document.querySelector('.main');
+      if (mainContent) {
+        const mainPanels = mainContent.querySelectorAll(':scope > .tab-panel');
+        mainPanels.forEach(p => p.classList.remove('active'));
+      }
+
+      if (btn) btn.classList.add('active');
+      const panel = document.getElementById('panel-' + id);
+      if (panel) panel.classList.add('active');
+      localStorage.setItem('last_tab', id);
+    }
+
+    window.switchSubTab = function (id, btn) {
+      // 1. Reset internal sub-tabs for THIS level ONLY
+      const parent = btn.parentElement;
+      if (parent) {
+        parent.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      }
+
+      // 2. Reset the correct internal panels to hide/show within the Conexion tab ONLY
+      const conPanel = document.getElementById('panel-conexion');
+      if (conPanel) {
+        // Use :scope to only target immediate children that belong to this sub-tab set
+        const subPanels = conPanel.querySelectorAll(':scope > .card > .tab-panel');
+        subPanels.forEach(p => p.classList.remove('active'));
+      }
+
       btn.classList.add('active');
-      document.getElementById('panel-' + id).classList.add('active');
+      const targetPanel = document.getElementById('panel-con-' + id);
+      if (targetPanel) targetPanel.classList.add('active');
+      localStorage.setItem('last_sub_tab', id);
     }
 
     // ─── WebSocket Bridge Connection (Real) ────────────────────────
     let bridgeSocket = null;
 
-    function toggleWsServer() {
-      const el = document.getElementById('ws-status');
-      const btn = event.target;
+    window.toggleWsServer = function (btnElement) {
+      const el = document.getElementById('con-ws-status') || document.getElementById('ws-status');
+      const btn = btnElement || (event ? event.target : null) || document.getElementById('tab-conexion-bridge-btn');
 
       if (bridgeSocket) {
         // Stop current connection
         bridgeSocket.close();
         bridgeSocket = null;
         state.wsStatus = 'Stopped';
-        el.classList.remove('connected');
-        el.querySelector('span').textContent = 'Stopped';
-        btn.textContent = 'Start bridge';
+        if (el) {
+          el.classList.remove('connected');
+          const span = el.querySelector('span');
+          if (span) span.textContent = 'Stopped';
+        }
+        if (btn) btn.textContent = 'Start bridge';
         log('Local bridge connection closed', 'wrn');
         return;
       }
@@ -1911,6 +2259,7 @@
       // Start new connection to bridge.js (Smart Port Detection)
       try {
         const isSecure = location.protocol === 'https:';
+        // We use v0.6.7's logic: if secure, use the host's wss
         const bridgeUrl = isSecure
           ? `wss://${location.host}/ws-ui`
           : `ws://127.0.0.1:18789/ws-ui`;
@@ -1921,14 +2270,18 @@
         bridgeSocket.onopen = () => {
           log('Connected to Local Bridge', 'ok');
           state.wsStatus = 'Connected';
-          el.classList.add('connected');
-          el.querySelector('span').textContent = 'Connected';
-          btn.textContent = 'Stop bridge';
+          if (el) {
+            el.classList.add('connected');
+            const span = el.querySelector('span');
+            if (span) span.textContent = 'Connected';
+          }
+          if (btn) btn.textContent = 'Stop bridge';
           renderConversations();
 
           // Handshake: Sync API Key with the bridge
-          const currentKey = document.getElementById('api-key-display').textContent;
-          if (currentKey && currentKey !== 'Key Loading...') {
+          const keyEl = document.getElementById('con-api-key-display') || document.getElementById('api-key-display');
+          const currentKey = state.apiKey || (keyEl ? keyEl.textContent : null);
+          if (currentKey && !currentKey.includes('—') && !currentKey.includes('Key Loading...')) {
             bridgeSocket.send(JSON.stringify({ type: 'SYNC_API_KEY', key: currentKey }));
           }
         };
@@ -1944,6 +2297,8 @@
               addAgentTx('REST/Local', p.to || '0x...', p.value || '0.0', 'local', msg.id);
             }
             if (msg.type === 'CHAT_MESSAGE') {
+              console.log('[Bridge] <<', msg.content);
+              log('New message from local agent', 'ok');
               if (!state.messages['local']) state.messages['local'] = [];
               state.messages['local'].push({
                 id: 'ws_' + Date.now(),
@@ -1964,20 +2319,36 @@
             log('Disconnected from Local Bridge', 'err');
             bridgeSocket = null;
             state.wsStatus = 'Stopped';
-            el.classList.remove('connected');
-            el.querySelector('span').textContent = 'Disconnected';
-            btn.textContent = 'Start bridge';
+            if (el) {
+              el.classList.remove('connected');
+              const span = el.querySelector('span');
+              if (span) span.textContent = 'Disconnected';
+            }
+            if (btn) btn.textContent = 'Start bridge';
             renderConversations();
           }
         };
 
         bridgeSocket.onerror = (err) => {
           log('Bridge connection failed (Ensure bridge.js is running)', 'err');
+          if (btn) btn.textContent = 'Start bridge';
           console.error('[bridge] error:', err);
         };
 
       } catch (e) {
         log(`Failed to initiate bridge: ${e.message}`, 'err');
+      }
+
+      // Sync status with Conexion tab
+      const conWsStatus = document.getElementById('con-ws-status');
+      if (conWsStatus) {
+        if (state.wsStatus === 'Connected') {
+          conWsStatus.classList.add('connected');
+          conWsStatus.querySelector('span').textContent = 'Connected';
+        } else {
+          conWsStatus.classList.remove('connected');
+          conWsStatus.querySelector('span').textContent = state.wsStatus;
+        }
       }
     }
 
@@ -2070,13 +2441,16 @@
         document.getElementById('xmtp-status-text').textContent = 'XMTP online';
         if (overlay) overlay.style.display = 'none';
 
-        const connectBtn = document.getElementById('xmtp-connect-btn');
-        if (connectBtn) {
-          connectBtn.textContent = 'Authenticated ✓';
-          connectBtn.disabled = true;
-          connectBtn.classList.add('btn-teal');
-          connectBtn.classList.remove('btn-primary');
-        }
+        const btns = ['xmtp-connect-btn', 'con-xmtp-connect-btn'];
+        btns.forEach(id => {
+          const btn = document.getElementById(id);
+          if (btn) {
+            btn.textContent = 'Authenticated ✓';
+            btn.disabled = false;
+            btn.classList.add('btn-teal');
+            btn.classList.remove('btn-primary');
+          }
+        });
 
         log(`XMTP connected: ${wallet.address.slice(0, 12)}...`, 'ok');
 
@@ -2105,6 +2479,33 @@
         if (connectBtn) connectBtn.disabled = false;
       }
     }
+
+    window.toggleXmtp = async function () {
+      if (state.xmtpConnected) {
+        log('Disconnecting XMTP...', 'wrn');
+        state.xmtpConnected = false;
+        state.xmtpClient = null;
+
+        document.getElementById('xmtp-status-pill').classList.remove('connected');
+        document.getElementById('xmtp-status-text').textContent = 'XMTP offline';
+
+        const btns = ['xmtp-connect-btn', 'con-xmtp-connect-btn'];
+        btns.forEach(id => {
+          const btn = document.getElementById(id);
+          if (btn) {
+            btn.textContent = 'Connect XMTP';
+            btn.classList.add('btn-primary');
+            btn.classList.remove('btn-teal');
+            btn.disabled = false;
+          }
+        });
+        log('XMTP stopped.', 'ok');
+        renderConversations();
+      } else {
+        await connectXmtp();
+      }
+    }
+
 
     // --- Revocation Logic ---
     window.showRevokeModal = function () {
@@ -2311,22 +2712,24 @@
       list.innerHTML = policy.createHTML(html);
     }
 
-    function selectAgent() {
+    window.selectAgent = function () {
       // Find existing conversation with Agent or create a placeholder for UI
       const existing = state.conversations.find(c => (c.peerAddress || '').toLowerCase() === (AGENT_ADDR || '').toLowerCase());
       if (existing) {
         selectConversation(existing.id);
       } else {
         state.selectedConversation = { id: 'hector', type: 'xmtp', peerAddress: AGENT_ADDR };
-        document.getElementById('active-contact-addr').textContent = '🦞 Agent (OpenClaw)';
+        const hb = document.getElementById('active-contact-addr');
+        if (hb) hb.textContent = '🦞 Agent (OpenClaw)';
         renderConversations();
         renderMessages();
       }
     }
 
-    function selectLocalAgent() {
+    window.selectLocalAgent = function () {
       state.selectedConversation = { id: 'local', type: 'local', peerAddress: 'Local Agent' };
-      document.getElementById('active-contact-addr').textContent = 'Local Agent (OpenClaw)';
+      const hb = document.getElementById('active-contact-addr');
+      if (hb) hb.textContent = 'Local Agent (OpenClaw)';
       renderConversations();
       renderMessages();
     }
@@ -2444,7 +2847,7 @@
       // Optimistic UI: Add message to local state immediately
       const optimisticMsg = {
         id: 'temp_' + Date.now(),
-        senderAddress: state.wallet.address,
+        senderAddress: state.wallet?.address || 'me',
         content: text,
         sent: Date.now(),
         conversationId: convId,
@@ -2453,7 +2856,7 @@
 
       if (!state.messages[convId]) state.messages[convId] = [];
       state.messages[convId].push(optimisticMsg);
-      renderMessages(convId);
+      renderMessages();
       input.value = '';
 
       // UX: Switch to AI Tab if not already there
@@ -2462,13 +2865,14 @@
 
       // Handle Local Agent (WebSocket)
       if (conversation.id === 'local') {
-          if (bridgeSocket && bridgeSocket.readyState === WebSocket.OPEN) {
-              bridgeSocket.send(JSON.stringify({ type: 'CHAT_MESSAGE', content: text }));
-              return;
-          } else {
-              log("Local bridge not connected. Go to 'Settings' tab.", "wrn");
-              return;
-          }
+        if (bridgeSocket && bridgeSocket.readyState === WebSocket.OPEN) {
+          bridgeSocket.send(JSON.stringify({ type: 'CHAT_MESSAGE', content: text }));
+          log('Message sent to local agent', 'ok');
+          return;
+        } else {
+          log("Local bridge not connected. Go to 'Settings' tab.", "wrn");
+          return;
+        }
       }
 
       // Handle placeholder/init for Agent
@@ -2513,7 +2917,7 @@
       }
     }
 
-    async function startNewChat() {
+    window.startNewChat = async function () {
       const addr = prompt("Enter the wallet address to message:");
       if (!addr || !ethers.isAddress(addr)) {
         if (addr) log("Invalid address", "wrn");
@@ -2579,11 +2983,16 @@
 
     async function streamConversations() {
       if (!state.xmtpClient) return;
-      const stream = await state.xmtpClient.conversations.stream();
-      for await (const convo of stream) {
-        state.conversations.unshift(convo);
-        renderConversations();
-        log(`New conversation started with ${convo.peerAddress.slice(0, 12)}...`, 'ok');
+      try {
+        const stream = await state.xmtpClient.conversations.stream();
+        for await (const convo of stream) {
+          if (!state.xmtpConnected) break;
+          state.conversations.unshift(convo);
+          renderConversations();
+          log(`New conversation started with ${convo.peerAddress.slice(0, 12)}...`, 'ok');
+        }
+      } catch (e) {
+        if (state.xmtpConnected) console.error("Stream Conversations error:", e);
       }
     }
 
@@ -2592,6 +3001,7 @@
       try {
         const stream = await state.xmtpClient.conversations.streamAllMessages();
         for await (const msg of stream) {
+          if (!state.xmtpConnected) break;
           state.xmtpCount++;
           const countEl = document.getElementById('xmtp-count');
           if (countEl) countEl.textContent = state.xmtpCount;
@@ -2929,7 +3339,7 @@
     window.approveAgentTx = approveAgentTx;
     window.rejectAgentTx = rejectAgentTx;
     window.toggleWS = toggleWsServer;
-    
+
     // Additional UI functions
     window.confirmAgentAddress = confirmAgentAddress;
     window.selectAgent = selectAgent;
@@ -2948,6 +3358,7 @@
     window.toggleChatSidebar = toggleChatSidebar;
     window.deleteConversation = deleteConversation;
     window.connectXmtp = connectXmtp;
+    window.toggleXmtp = toggleXmtp;
 
   </script>
 

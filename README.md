@@ -2,7 +2,7 @@
 
 > **Self-custody crypto wallet with superpowers for AI agents — built for the OpenClaw ecosystem.**
 
-[![Version](https://img.shields.io/badge/version-v0.4.0-e03530?style=flat-square)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.7.1-e03530?style=flat-square)](./CHANGELOG.md)
 [![Network](https://img.shields.io/badge/network-Avalanche%20Fuji-e84142?style=flat-square&logo=avalanche)](https://testnet.snowtrace.io)
 [![License](https://img.shields.io/badge/license-MIT-ff8c42?style=flat-square)](#license)
 [![Hackathon](https://img.shields.io/badge/hackathon-Aleph%202026-ffd166?style=flat-square)](#)
@@ -24,13 +24,20 @@ There is no middle ground. No way to say *"agent, you can spend up to 0.01 AVAX 
 
 ## What is WalletClaw?
 
-WalletClaw is a **self-custody wallet designed specifically as a signing middleware for AI agents**. It sits between your OpenClaw instances and the blockchain, giving agents the ability to request transaction signatures without ever holding your private key.
+WalletClaw is a **self-custody hot wallet designed specifically as a signing middleware for AI agents**. It runs as a **Dashboard co-located on the same machine as your OpenClaw instances**, enabling high-speed, low-latency transaction signing without exposing your private keys.
 
-Think of it as a **smart approval layer**: the agent asks, WalletClaw decides (automatically or by asking you), and the signed transaction goes on-chain.
+Think of it as the **Secure Execution Layer** for your agent:
+1. **Local Handshake**: OpenClaw connects locally to the Dashboard (via REST or WebSocket).
+2. **Dashboard Approval**: You monitor and approve requests in real-time.
+3. **Global Broadcast**: Once signed, results and notifications are sent via **XMTP** to your mobile app or other DApps.
 
-```
-OpenClaw agent  ──────►  WalletClaw  ──────►  Avalanche / EVM
-  (no keys)         sign request        signed tx
+```mermaid
+graph LR
+    subgraph "Local Machine"
+    A[OpenClaw Agent] -- Local Bridge --> B[WalletClaw Dashboard]
+    end
+    B -- XMTP --> C[User's Mobile App / DApp]
+    B -- Signed Tx --> D[Blockchain]
 ```
 
 ---
@@ -51,11 +58,11 @@ Your private key never leaves your device. WalletClaw generates or imports keys 
 
 ### 🤖 Three connection methods for OpenClaw
 
-| Method | Best for | Latency | Auth |
+| Method | Role | Latency | Scope |
 |--------|----------|---------|------|
-| **REST `/sign`** | Local agents, quick setup | ~50ms | API key |
-| **WebSocket `:7777`** | High-frequency signing | ~5ms | ECDSA challenge |
-| **XMTP messaging** | Remote agents, cross-network | ~200ms | E2E encryption |
+| **REST `/sign`** | Standard local signing | ~50ms | **Local Co-location** |
+| **WebSocket `:18789`** | Real-time agent sync | ~5ms | **Local Co-location** |
+| **XMTP messaging** | Cross-app communication | ~200ms | **Remote / Global** |
 
 ### ⚙️ Granular agent permissions
 - Max ETH/AVAX per transaction
@@ -76,7 +83,7 @@ The wallet survives browser refreshes. Private keys are encrypted with your pass
 ### Agent signs a transaction (REST flow)
 
 ```
-1. OpenClaw calls POST http://localhost:3741/sign
+1. OpenClaw calls POST http://localhost:18789/sign
    {
      "to": "0xRecipient...",
      "value": "0.005",
@@ -136,12 +143,12 @@ Copy your wallet address and visit [faucet.avax.network](https://faucet.avax.net
 **Option A — REST (fastest to set up):**
 ```bash
 # Add to your OpenClaw environment
-export WALLETCLAW_URL="http://localhost:3741"
+export WALLETCLAW_URL="http://localhost:18789"
 export WALLETCLAW_API_KEY="wc_your_key_here"
 ```
 
 **Option B — WebSocket:**
-Click **Start server** in the WebSocket tab. OpenClaw connects to `ws://localhost:7777`.
+Click **Start bridge** in the Conexion tab. OpenClaw connects to `ws://localhost:18789/ws-agent`.
 
 **Option C — XMTP:**
 Click **Connect XMTP** in the XMTP tab. Give your wallet address to your OpenClaw instance.
@@ -153,31 +160,22 @@ Set spending limits in the **Agent permissions** panel on the sidebar. Enable au
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                      WalletClaw                         │
-│                                                         │
-│  ┌──────────────┐   ┌──────────────┐   ┌────────────┐  │
-│  │  REST /sign  │   │  WS :7777    │   │   XMTP     │  │
-│  │  + API key   │   │  + ECDSA     │   │  E2E enc.  │  │
-│  └──────┬───────┘   └──────┬───────┘   └─────┬──────┘  │
-│         └──────────────────┼─────────────────┘         │
-│                            ▼                            │
-│               ┌────────────────────────┐                │
-│               │   Permission engine    │                │
-│               │  (limits, allowlist,   │                │
-│               │   auto-approve)        │                │
-│               └───────────┬────────────┘                │
-│                           ▼                             │
-│               ┌────────────────────────┐                │
-│               │   ethers.js signer     │                │
-│               │   (key in memory,      │                │
-│               │   AES-GCM in storage)  │                │
-│               └───────────┬────────────┘                │
-└───────────────────────────┼─────────────────────────────┘
-                            ▼
-                 Avalanche Fuji Testnet
-                   (chainId: 43113)
+WalletClaw uses a **Hybrid Bridge Architecture** to balance local performance with global security:
+
+1. **The Bridge (`bridge.js`)**: A lightweight Node.js relay that facilitates the communication between the Python/TS OpenClaw agent and the Browser-based Dashboard.
+2. **The Dashboard (`index.html`)**: The primary UI and signing engine. It holds the keys (encrypted) and provides the "Human in the Loop" approval interface.
+3. **The Global Layer (XMTP)**: Extends the dashboard's reach, allowing it to notify the user on other devices or interact with remote dApps securely.
+
+```mermaid
+flowchart TD
+    subgraph LocalMachine ["Local Environment (Dashboard & Agent)"]
+        Agent[OpenClaw Agent] <--> Bridge[Node.js Bridge :18789]
+        Bridge <--> Dash[WalletClaw Dashboard]
+    end
+    
+    Dash <--> XMTP((XMTP Network))
+    XMTP <--> User[UserApp / DApp]
+    Dash -- "Signed UserOp/Tx" --> Chain[(Blockchain)]
 ```
 
 ---
@@ -258,6 +256,7 @@ yarn
 
 # Run
 ```
+yarn parcel src/index.html    --port 3233 --https
 yarn parcel src/index.html    --port 3233 --https
 
 ```

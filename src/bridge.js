@@ -108,13 +108,13 @@ uiWss.on('connection', (ws) => {
                 console.log(`[UI]    🦾 API Key sincronizada y ACTIVA.`);
             }
 
-            // 2. Respuesta de Firma del usuario
+            // 2. Respuesta de Firma o Chat del usuario
             if (msg.type === 'SIGN_RESPONSE' || msg.type === 'CHAT_MESSAGE') {
                 if (activeAgentSocket && activeAgentSocket.readyState === WebSocket.OPEN) {
-                    console.log(`[UI]    🦾 Propagando mensaje de UI al Agente...`);
+                    console.log(`[UI]    🦾 Propagando ${msg.type} de UI al Agente...`);
                     activeAgentSocket.send(data.toString());
                 } else {
-                    console.log(`[UI]    ⚠️ No hay agente conectado para recibir el mensaje.`);
+                    console.log(`[UI]    ⚠️ No hay agente conectado para recibir el ${msg.type}.`);
                 }
             }
         } catch (e) {
