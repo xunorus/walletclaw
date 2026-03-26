@@ -56,13 +56,14 @@ app.post('/sign', (req, res) => {
     res.json({ status: 'sent_to_wallet', requestId });
 });
 
-const restServer = app.listen(REST_PORT, () => {
+const restServer = app.listen(REST_PORT, '0.0.0.0', () => {
     console.log(`\n╔══════════════════════════════════════════════╗`);
     console.log(`║    WalletClaw Bridge — ¡ONLINE!  🦾🦞       ║`);
     console.log(`╚══════════════════════════════════════════════╝`);
-    console.log(`[REST]      Escuchando en http://localhost:${REST_PORT}/sign`);
-    console.log(`[AGENT_WS]  Escuchando en ws://localhost:${REST_PORT}/ws-agent`);
-    console.log(`[UI_WS]     Escuchando en ws://localhost:${REST_PORT}/ws-ui`);
+    console.log(`[REST]      Escuchando en http://0.0.0.0:${REST_PORT}/sign`);
+    console.log(`[AGENT_WS]  Escuchando en ws://0.0.0.0:${REST_PORT}/ws-agent`);
+    console.log(`[UI_WS]     Escuchando en ws://0.0.0.0:${REST_PORT}/ws-ui`);
+    console.log(`[NOTE]      Si te conectas desde otra máquina, usa la IP real (ej: 192.168.1.42)`);
 });
 
 

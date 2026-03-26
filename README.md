@@ -6,6 +6,7 @@
 [![Network](https://img.shields.io/badge/network-Avalanche%20Fuji-e84142?style=flat-square&logo=avalanche)](https://testnet.snowtrace.io)
 [![License](https://img.shields.io/badge/license-MIT-ff8c42?style=flat-square)](#license)
 [![Hackathon](https://img.shields.io/badge/hackathon-Aleph%202026-ffd166?style=flat-square)](#)
+[![Hackathon](https://img.shields.io/badge/hackathon-PL__Genesis-4fc3f7?style=flat-square)](#)
 
 ---
 
@@ -302,6 +303,6 @@ MIT — use freely, build boldly.
 ---
 
 <div align="center">
-  Built with 🦞 at the Aleph Hackathon 2026<br>
-  <sub>Avalanche Fuji Testnet · ethers.js · XMTP · WebCrypto</sub>
+  Built with 🦞 at the <b>PL_Genesis: Frontiers of Collaboration Hackathon </b>and  <b> Aleph Hackathon 2026</b><br>
+  <sub>Ethers.js · XMTP · WebCrypto · </sub>
 </div>

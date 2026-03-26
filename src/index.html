@@ -95,15 +95,20 @@
     }
 
     .status-pill .dot {
-      width: 6px;
-      height: 6px;
+      width: 7px;
+      height: 7px;
+      flex-shrink: 0;
       border-radius: 50%;
       background: var(--text3);
+      position: relative;
+      border: 1px solid rgba(0, 0, 0, 0.2);
     }
 
     .status-pill.connected .dot {
-      background: var(--teal);
-      box-shadow: 0 0 6px var(--teal);
+      background: #00FF8C;
+      box-shadow:
+        inset 0 0 2px rgba(255, 255, 255, 0.6),
+        0 0 4px rgba(0, 255, 140, 0.3);
     }
 
     .layout {
@@ -1284,13 +1289,17 @@
         <div class="balance-label" id="wallet-network">No network</div>
 
         <div style="margin:12px 0 10px">
-          <div class="btn-row">
-            <button class="btn-primary btn-full" onclick="generateWallet()">Generate wallet</button>
-            <button class="btn-secondary" onclick="importWallet()">Import</button>
+          <!-- Section to hide when wallet is active -->
+          <div id="wallet-setup-section">
+            <div class="btn-row">
+              <button class="btn-primary btn-full" onclick="generateWallet()">Generate wallet</button>
+              <button class="btn-secondary" onclick="importWallet()">Import</button>
+            </div>
+            <div style="margin-top:6px">
+              <button class="btn-secondary btn-full" onclick="connectMetaMask()">Connect MetaMask</button>
+            </div>
           </div>
-          <div style="margin-top:6px">
-            <button class="btn-secondary btn-full" onclick="connectMetaMask()">Connect MetaMask</button>
-          </div>
+
           <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between">
             <span class="lock-badge" id="lock-badge" style="display:none">
               <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
@@ -1300,8 +1309,16 @@
               </svg>
               Encrypted
             </span>
-            <button class="forget-btn" id="forget-btn" onclick="forgetWallet()" style="display:none">Forget
-              wallet</button>
+            <button class="forget-btn" id="forget-btn" title="Forget wallet" onclick="forgetWallet()"
+              style="display:none; padding: 4px; line-height: 0;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                <line x1="10" y1="11" x2="10" y2="17"></line>
+                <line x1="14" y1="11" x2="14" y2="17"></line>
+              </svg>
+            </button>
           </div>
         </div>
 
@@ -1404,7 +1421,8 @@
                 <code id="con-api-key-display">— generate wallet first —</code>
                 <button class="btn-secondary" style="font-size:10px;padding:4px 8px;white-space:nowrap"
                   onclick="copyApiKey()">Copy</button>
-                <button class="btn-secondary" style="font-size:10px;padding:4px 8px;white-space:nowrap; border-left: 1px solid rgba(255,255,255,0.1)"
+                <button class="btn-secondary"
+                  style="font-size:10px;padding:4px 8px;white-space:nowrap; border-left: 1px solid rgba(255,255,255,0.1)"
                   onclick="generateApiKey(true)">Rotate</button>
               </div>
             </div>
@@ -1433,16 +1451,24 @@
             <p class="section-note">Ultra-low latency. OpenClaw connects to WalletClaw's local bridge. Authentication
               via API Key sync. Bidirectional: WalletClaw can push approvals and status to the agent.</p>
 
-            <div style="margin-top:15px; background: rgba(255,140,66,0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,140,66,0.2);">
-              <div style="font-weight: 700; color: var(--teal); font-size: 13px; margin-bottom: 8px;">🦾 Launching the Bridge</div>
-              
+            <div
+              style="margin-top:15px; background: rgba(255,140,66,0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,140,66,0.2);">
+              <div style="font-weight: 700; color: var(--teal); font-size: 13px; margin-bottom: 8px;">🦾 Launching the
+                Bridge</div>
+
               <div style="font-size: 11px; margin-bottom: 5px; color: var(--text3);">1. Install dependencies:</div>
-              <div style="background:rgba(0,0,0,0.3); padding: 6px; border-radius: 4px; font-family: monospace; font-size: 10px; color: var(--teal);">npm install express ws cors</div>
-              
-              <div style="font-size: 11px; margin-top: 10px; margin-bottom: 5px; color: var(--text3);">2. Run the bridge in a terminal:</div>
-              <div style="background:rgba(0,0,0,0.3); padding: 6px; border-radius: 4px; font-family: monospace; font-size: 10px; color: var(--teal);">node src/bridge.js</div>
-              
-              <div style="font-size: 11px; margin-top: 10px; color: var(--text3);">3. <b>In WalletClaw (This Tab)</b>: Click "Start bridge" below.</div>
+              <div
+                style="background:rgba(0,0,0,0.3); padding: 6px; border-radius: 4px; font-family: monospace; font-size: 10px; color: var(--teal);">
+                npm install express ws cors</div>
+
+              <div style="font-size: 11px; margin-top: 10px; margin-bottom: 5px; color: var(--text3);">2. Run the bridge
+                in a terminal:</div>
+              <div
+                style="background:rgba(0,0,0,0.3); padding: 6px; border-radius: 4px; font-family: monospace; font-size: 10px; color: var(--teal);">
+                node src/bridge.js</div>
+
+              <div style="font-size: 11px; margin-top: 10px; color: var(--text3);">3. <b>In WalletClaw (This Tab)</b>:
+                Click "Start bridge" below.</div>
             </div>
 
             <div class="code-block" style="margin-top:12px"><span class="cmt">// In OpenClaw's tool definition
@@ -1539,6 +1565,7 @@
                   style="display:none; background:var(--purple); border:1px solid var(--border2); color:white; padding:4px 10px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:11px; box-shadow: 0 0 10px var(--purple-glow);">[
                   >> ] List</button>
                 <span id="active-contact-addr" style="font-size:11px; font-weight:700;">OpenClaw Agent</span>
+                <span id="active-contact-status-dot" class="presence-dot" style="margin-left: 0;"></span>
               </div>
               <button onclick="clearResidualChats()"
                 style="background:none; border:none; color:var(--text3); font-size:9px; text-decoration:underline; cursor:pointer;">Clear
@@ -1564,7 +1591,8 @@
             <p class="section-note" style="font-size: 13px;">General application settings and profile.</p>
 
             <div style="margin-top:12px">
-              <label style="font-size: 13px; font-weight: 600; color: var(--text);">Agent's XMTP Address (Primary AI Target)</label>
+              <label style="font-size: 13px; font-weight: 600; color: var(--text);">Agent's XMTP Address (Primary AI
+                Target)</label>
               <div style="display:flex; flex-direction:column; gap:4px">
                 <input type="text" id="hector-addr-input" class="chat-input" placeholder="0x..."
                   onchange="updateAgentAddr(this.value)" />
@@ -1578,8 +1606,10 @@
 
           <div>
             <div class="card-title">🔐 Session Security</div>
-            <p class="section-note" style="font-size: 13px;">Control how your password is cached during this session.</p>
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:14px; padding: 4px 0;">
+            <p class="section-note" style="font-size: 13px;">Control how your password is cached during this session.
+            </p>
+            <div
+              style="display:flex; align-items:center; justify-content:space-between; margin-top:14px; padding: 4px 0;">
               <span style="font-size:14px; font-weight: 600;">Remember password in session</span>
               <label class="switch">
                 <input type="checkbox" id="remember-session-toggle" onchange="setRememberSession(this.checked)">
@@ -1590,6 +1620,40 @@
               ⚠️ If enabled, your password will stay in browser memory (sessionStorage) until the tab is closed. This
               prevents re-typing but is less secure.
             </p>
+          </div>
+
+          <div class="divider"></div>
+
+          <div>
+            <div class="card-title">🦾 Bridge Configuration</div>
+            <p class="section-note" style="font-size: 13px;">Configure the WebSocket connection to your local OpenClaw
+              bridge.</p>
+
+            <div
+              style="background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-top: 10px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <label style="font-size: 12px; font-weight: 600; color: var(--text3); margin:0">BRIDGE URL</label>
+                <div class="status-pill" id="settings-bridge-status" style="font-size:9px; padding: 2px 8px;">
+                  <div class="dot"></div><span>Stopped</span>
+                </div>
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:8px">
+                <input type="text" id="bridge-url-input" class="chat-input" placeholder="ws://192.168.1.42:18789/ws-ui"
+                  style="border: 1px solid var(--border); background: var(--bg3);" />
+                <div style="display:flex; gap:8px">
+                  <button class="btn-secondary btn-full" onclick="updateBridgeUrl()" style="font-size:11px">Apply &
+                    Save</button>
+                  <button class="btn-teal" id="settings-bridge-toggle" onclick="toggleWsServer(this)"
+                    style="font-size:11px; white-space:nowrap; padding: 0 15px;">Connect</button>
+                </div>
+              </div>
+
+              <p class="section-note" style="color:var(--text3); font-size:10px; margin-top:10px; line-height: 1.4;">
+                <b>Tip:</b> Default is <code>ws://192.168.1.42:18789/ws-ui</code>. Ensure you include the protocol
+                (ws/wss) and the <code>/ws-ui</code> path.
+              </p>
+            </div>
           </div>
 
           <div class="divider"></div>
@@ -1678,7 +1742,8 @@
       pendingTxs: [],
       wsAgents: 0,
       xmtpRequests: {}, // { messageId: { pendingId, status: 'pending'|'signed'|'rejected' } }
-      rememberSession: localStorage.getItem('remember_session') === 'true'
+      rememberSession: localStorage.getItem('remember_session') === 'true',
+      bridgeUrl: localStorage.getItem('walletclaw_bridge_url') || (location.protocol === 'https:' ? `wss://${location.host}/ws-ui` : `ws://192.168.1.42:18789/ws-ui`)
     };
 
     window.setRememberSession = function (enabled) {
@@ -1690,6 +1755,22 @@
       log(`Session persistence ${enabled ? 'enabled' : 'disabled'}.`, 'inf');
     };
 
+    window.updateBridgeUrl = function (val) {
+      const input = document.getElementById('bridge-url-input');
+      const newVal = val || (input ? input.value.trim() : null);
+      if (newVal) {
+        state.bridgeUrl = newVal;
+        localStorage.setItem('walletclaw_bridge_url', newVal);
+        log(`Bridge URL updated to: ${newVal}`, 'ok');
+        // Restart bridge if online
+        if (bridgeSocket) {
+          log('Restarting bridge connection...', 'inf');
+          toggleWsServer(); // stop
+          setTimeout(() => toggleWsServer(), 500); // restart
+        }
+      }
+    };
+
     // ─── TrustedHTML Policy ─────────────────────────────────
     const policy = window.trustedTypes ?
       window.trustedTypes.createPolicy('default', { createHTML: s => s }) :
@@ -1698,7 +1779,7 @@
     // ─── Crypto persistence (AES-GCM via WebCrypto) ──────────
     const STORAGE_KEY = 'walletclaw_v1';
     const SESSION_PW_KEY = 'walletclaw_session_pw';
-    const APP_VERSION = 'v0.7.1';
+    const APP_VERSION = 'v0.7.3';
 
     function renderVersion() {
       const badge = document.getElementById('version-badge');
@@ -1788,6 +1869,8 @@
       localStorage.removeItem(STORAGE_KEY);
       document.getElementById('lock-badge').style.display = 'none';
       document.getElementById('forget-btn').style.display = 'none';
+      const setupSection = document.getElementById('wallet-setup-section');
+      if (setupSection) setupSection.style.display = 'block';
       log('Wallet removed from browser storage', 'wrn');
     }
 
@@ -1904,6 +1987,9 @@
       const sessionToggle = document.getElementById('remember-session-toggle');
       if (sessionToggle) sessionToggle.checked = state.rememberSession;
 
+      const bridgeUrlInput = document.getElementById('bridge-url-input');
+      if (bridgeUrlInput) bridgeUrlInput.value = state.bridgeUrl;
+
       const lastTab = localStorage.getItem('last_tab');
       const lastSubTab = localStorage.getItem('last_sub_tab') || 'ws';
 
@@ -1937,7 +2023,7 @@
             updateWalletUI(wallet.address);
             if (!state.apiKey) window.generateApiKey();
             else if (window.syncUIWithApiKey) window.syncUIWithApiKey();
-            
+
             log(`Wallet auto-unlocked via session storage.`, 'ok');
             document.getElementById('lock-badge').style.display = 'inline-flex';
             document.getElementById('forget-btn').style.display = 'inline';
@@ -1970,7 +2056,7 @@
             updateWalletUI(wallet.address);
             if (!state.apiKey) window.generateApiKey();
             else if (window.syncUIWithApiKey) window.syncUIWithApiKey();
-            
+
             log(`Wallet restored: ${wallet.address.slice(0, 12)}...`, 'ok');
             tryConnectProvider(wallet);
             connectXmtp();
@@ -2131,7 +2217,7 @@
       document.getElementById('wallet-status-pill').classList.add('connected');
       document.getElementById('wallet-status-text').textContent = 'Connected';
 
-            const xmtpDisp = document.getElementById('xmtp-addr-display');
+      const xmtpDisp = document.getElementById('xmtp-addr-display');
       if (xmtpDisp) xmtpDisp.textContent = address;
 
       // Update Conexion tab elements
@@ -2151,6 +2237,12 @@
 
       const hectorInput = document.getElementById('hector-addr-input');
       if (hectorInput) hectorInput.value = AGENT_ADDR;
+
+      // Hide generation buttons when wallet is active
+      const setupSection = document.getElementById('wallet-setup-section');
+      if (setupSection) setupSection.style.display = 'none';
+      const forgetBtn = document.getElementById('forget-btn');
+      if (forgetBtn) forgetBtn.style.display = 'block';
     }
 
     // ─── API Key ─────────────────────────────────────────────
@@ -2164,7 +2256,7 @@
         .map(b => b.toString(16).padStart(2, '0')).join('');
       state.apiKey = key;
       localStorage.setItem('walletclaw_api_key', key);
-      
+
       window.syncUIWithApiKey();
       log(`API key generated: ${key.slice(0, 12)}...`, 'ok');
     }
@@ -2199,7 +2291,7 @@
       if (mainContainer) {
         mainContainer.querySelectorAll(':scope > .tab').forEach(t => t.classList.remove('active'));
       }
-      
+
       // 2. Reset ONLY top-level main panels (direct children of main)
       const mainContent = document.querySelector('.main');
       if (mainContent) {
@@ -2238,47 +2330,67 @@
     let bridgeSocket = null;
 
     window.toggleWsServer = function (btnElement) {
-      const el = document.getElementById('con-ws-status') || document.getElementById('ws-status');
-      const btn = btnElement || (event ? event.target : null) || document.getElementById('tab-conexion-bridge-btn');
+      const statusEls = [
+        document.getElementById('con-ws-status'),
+        document.getElementById('ws-status'),
+        document.getElementById('settings-bridge-status')
+      ].filter(Boolean);
+
+      const buttons = [
+        btnElement,
+        document.getElementById('settings-bridge-toggle'),
+        document.getElementById('tab-conexion-bridge-btn'),
+        document.getElementById('subtab-ws')
+      ].filter(Boolean);
+
+      const updateUI = (status, btnText, isConnected, isErr = false) => {
+        statusEls.forEach(el => {
+          el.classList.remove('connected', 'connecting');
+          if (isConnected) el.classList.add('connected');
+          const span = el.querySelector('span');
+          if (span) {
+            span.textContent = status;
+            span.style.color = isErr ? 'var(--purple-neon)' : '';
+          }
+        });
+        buttons.forEach(b => {
+          if (b.tagName === 'BUTTON') b.textContent = btnText;
+          if (b.classList.contains('btn-teal')) {
+            b.style.background = isConnected ? 'var(--purple-dim)' : '';
+          }
+        });
+      };
 
       if (bridgeSocket) {
-        // Stop current connection
         bridgeSocket.close();
         bridgeSocket = null;
         state.wsStatus = 'Stopped';
-        if (el) {
-          el.classList.remove('connected');
-          const span = el.querySelector('span');
-          if (span) span.textContent = 'Stopped';
-        }
-        if (btn) btn.textContent = 'Start bridge';
+        updateUI('Stopped', 'Connect', false);
         log('Local bridge connection closed', 'wrn');
         return;
       }
 
-      // Start new connection to bridge.js (Smart Port Detection)
       try {
-        const isSecure = location.protocol === 'https:';
-        // We use v0.6.7's logic: if secure, use the host's wss
-        const bridgeUrl = isSecure
-          ? `wss://${location.host}/ws-ui`
-          : `ws://127.0.0.1:18789/ws-ui`;
+        let bridgeUrl = state.bridgeUrl;
 
+        // Auto-fix: if no path and not ends with /, add /ws-ui
+        if (!bridgeUrl.includes('/ws-ui')) {
+          const parts = bridgeUrl.split('/');
+          if (parts.length <= 3) { // ws://host:port or ws://host
+            bridgeUrl = bridgeUrl.endsWith('/') ? bridgeUrl + 'ws-ui' : bridgeUrl + '/ws-ui';
+          }
+        }
+
+        updateUI('Connecting...', 'Stop', false);
         log(`Connecting to Bridge: ${bridgeUrl}`, 'inf');
         bridgeSocket = new WebSocket(bridgeUrl);
 
         bridgeSocket.onopen = () => {
-          log('Connected to Local Bridge', 'ok');
+          log('✅ Connected to Local Bridge', 'ok');
           state.wsStatus = 'Connected';
-          if (el) {
-            el.classList.add('connected');
-            const span = el.querySelector('span');
-            if (span) span.textContent = 'Connected';
-          }
-          if (btn) btn.textContent = 'Stop bridge';
+          updateUI('Connected', 'Disconnect', true);
           renderConversations();
 
-          // Handshake: Sync API Key with the bridge
           const keyEl = document.getElementById('con-api-key-display') || document.getElementById('api-key-display');
           const currentKey = state.apiKey || (keyEl ? keyEl.textContent : null);
           if (currentKey && !currentKey.includes('—') && !currentKey.includes('Key Loading...')) {
@@ -2289,15 +2401,12 @@
         bridgeSocket.onmessage = (event) => {
           try {
             const msg = JSON.parse(event.data);
-            console.log('[bridge] Received:', msg);
-
             if (msg.type === 'SIGN_REQUEST') {
               const p = msg.payload || {};
               log(`Received sign request from local agent`, 'inf');
               addAgentTx('REST/Local', p.to || '0x...', p.value || '0.0', 'local', msg.id);
             }
             if (msg.type === 'CHAT_MESSAGE') {
-              console.log('[Bridge] <<', msg.content);
               log('New message from local agent', 'ok');
               if (!state.messages['local']) state.messages['local'] = [];
               state.messages['local'].push({
@@ -2307,7 +2416,6 @@
                 sent: Date.now()
               });
               renderMessages();
-              // Scroll to bottom
               const msgList = document.getElementById('chat-messages');
               if (msgList) msgList.scrollTop = msgList.scrollHeight;
             }
@@ -2319,38 +2427,20 @@
             log('Disconnected from Local Bridge', 'err');
             bridgeSocket = null;
             state.wsStatus = 'Stopped';
-            if (el) {
-              el.classList.remove('connected');
-              const span = el.querySelector('span');
-              if (span) span.textContent = 'Disconnected';
-            }
-            if (btn) btn.textContent = 'Start bridge';
-            renderConversations();
+            updateUI('Stopped', 'Connect', false);
           }
         };
 
-        bridgeSocket.onerror = (err) => {
-          log('Bridge connection failed (Ensure bridge.js is running)', 'err');
-          if (btn) btn.textContent = 'Start bridge';
-          console.error('[bridge] error:', err);
+        bridgeSocket.onerror = (e) => {
+          log('Bridge connection error. Check URL and ensure bridge.js is running.', 'err');
+          updateUI('Error', 'Retry', false, true);
         };
 
-      } catch (e) {
-        log(`Failed to initiate bridge: ${e.message}`, 'err');
+      } catch (err) {
+        log(`Connection failed: ${err.message}`, 'err');
+        updateUI('Error', 'Connect', false, true);
       }
-
-      // Sync status with Conexion tab
-      const conWsStatus = document.getElementById('con-ws-status');
-      if (conWsStatus) {
-        if (state.wsStatus === 'Connected') {
-          conWsStatus.classList.add('connected');
-          conWsStatus.querySelector('span').textContent = 'Connected';
-        } else {
-          conWsStatus.classList.remove('connected');
-          conWsStatus.querySelector('span').textContent = state.wsStatus;
-        }
-      }
-    }
+    };
 
     // ─── XMTP & Chat Integration ────────────────────────
     const ContentTypeTyping = {
@@ -2672,17 +2762,27 @@
       // 1. PINNED: Agent (Dynamic based on Handshake)
       html += `
         <div class="contact-item ${isAgentActive ? 'active' : ''}" onclick="selectAgent()">
-            <div class="contact-addr">🦞 Agent <span class="agent-badge">AI Agent</span></div>
-            <div class="contact-last">${AGENT_ADDR.slice(0, 10)}...${AGENT_ADDR.slice(-6)}</div>
+            <div class="contact-addr">
+              🦞 Agent <span class="agent-badge">AI Agent</span>
+              <span class="presence-dot ${state.xmtpConnected ? 'online' : ''}" style="margin-left: 4px; vertical-align: middle;"></span>
+            </div>
+            <div class="contact-last">
+              Status: ${state.xmtpConnected ? '<span style="color:#2ecc71;">Online</span>' : '<span style="color:var(--text3);">Offline (Tap to connect)</span>'}
+            </div>
+            <div class="contact-last" style="font-size: 8px; opacity: 0.5;">${AGENT_ADDR.slice(0, 10)}...${AGENT_ADDR.slice(-6)}</div>
         </div>
       `;
 
       // 2. SYSTEM: Local Agent (ONLY if active or running)
       if (state.wsStatus !== 'Stopped' || (state.selectedConversation && state.selectedConversation.id === 'local')) {
         const localActive = state.selectedConversation && state.selectedConversation.id === 'local';
+        const wsConnected = state.wsStatus === 'Connected';
         html += `
           <div class="contact-item ${localActive ? 'active' : ''}" onclick="selectLocalAgent()">
-              <div class="contact-addr">Local Agent <span class="agent-badge">REST/WS</span></div>
+              <div class="contact-addr">
+                Local Agent <span class="agent-badge">REST/WS</span>
+                <span class="presence-dot ${wsConnected ? 'online' : ''}" style="margin-left: 4px; vertical-align: middle;"></span>
+              </div>
               <div class="contact-last">Status: ${state.wsStatus}</div>
           </div>
         `;
@@ -2710,6 +2810,17 @@
       }
 
       list.innerHTML = policy.createHTML(html);
+
+      // Update header status if current selection is affected
+      const sd = document.getElementById('active-contact-status-dot');
+      if (sd && state.selectedConversation) {
+        if (state.selectedConversation.id === 'local') {
+          sd.className = `presence-dot ${state.wsStatus === 'Connected' ? 'online' : ''}`;
+        } else {
+          // Both Agent and other XMTP convos depend on xmtpConnected
+          sd.className = `presence-dot ${state.xmtpConnected ? 'online' : ''}`;
+        }
+      }
     }
 
     window.selectAgent = function () {
@@ -2718,10 +2829,14 @@
       if (existing) {
         selectConversation(existing.id);
       } else {
-        state.selectedConversation = { id: 'hector', type: 'xmtp', peerAddress: AGENT_ADDR };
-        const hb = document.getElementById('active-contact-addr');
-        if (hb) hb.textContent = '🦞 Agent (OpenClaw)';
-        renderConversations();
+      state.selectedConversation = { id: 'hector', type: 'xmtp', peerAddress: AGENT_ADDR };
+      const hb = document.getElementById('active-contact-addr');
+      const sd = document.getElementById('active-contact-status-dot');
+      if (hb) hb.textContent = '🦞 Agent (OpenClaw)';
+      if (sd) {
+        sd.className = `presence-dot ${state.xmtpConnected ? 'online' : ''}`;
+      }
+      renderConversations();
         renderMessages();
       }
     }
@@ -2729,7 +2844,11 @@
     window.selectLocalAgent = function () {
       state.selectedConversation = { id: 'local', type: 'local', peerAddress: 'Local Agent' };
       const hb = document.getElementById('active-contact-addr');
+      const sd = document.getElementById('active-contact-status-dot');
       if (hb) hb.textContent = 'Local Agent (OpenClaw)';
+      if (sd) {
+        sd.className = `presence-dot ${state.wsStatus === 'Connected' ? 'online' : ''}`;
+      }
       renderConversations();
       renderMessages();
     }
@@ -2741,6 +2860,10 @@
       state.selectedConversation = convo;
       const addr = convo.peerAddress || "Unknown";
       document.getElementById('active-contact-addr').textContent = addr;
+      const sd = document.getElementById('active-contact-status-dot');
+      if (sd) {
+        sd.className = `presence-dot ${state.xmtpConnected ? 'online' : ''}`;
+      }
       renderConversations();
 
       const key = convo.id || convo.topic;
@@ -3075,6 +3198,25 @@
           try {
             // Map the XMTP message to the internal pending Tx
             const parsed = JSON.parse(msg.content);
+            
+            // --- NEW: OpenClaw V2 Handshake ---
+            if (parsed.type === 'claw:handshake') {
+              const agentAddr = parsed.agentAddress;
+              log(`🤝 [XMTP] Secure Handshake received from: ${agentAddr.slice(0, 10)}...`, 'ok');
+              
+              // Only update if it's different to avoid redundant logs
+              if (agentAddr.toLowerCase() !== AGENT_ADDR.toLowerCase()) {
+                AGENT_ADDR = agentAddr;
+                localStorage.setItem('agent_addr', agentAddr);
+                log('🦾 Agente automatizado sincronizado con WalletClaw.', 'ok');
+              }
+              
+              // Move to the conversation if not selected
+              if (!state.selectedConversation || state.selectedConversation.peerAddress.toLowerCase() !== agentAddr.toLowerCase()) {
+                log(`Agent is starting communication...`, 'inf');
+              }
+            }
+            
             if (parsed.type === 'sign_tx' || parsed.command === 'sendTransaction') {
               const to = (parsed.data?.to || parsed.to || '0x...');
               const pId = addAgentTx('XMTP', to, '0.0', convId, parsed.requestId);
