@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WalletClaw 🦞</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;800&display=swap');
 
@@ -1142,11 +1143,150 @@
       transform: translateX(20px);
       background-color: var(--teal);
     }
+
+    /* ── Toast Notifications ── */
+    .toast-container {
+      position: fixed;
+      top: 25px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10000;
+      width: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      pointer-events: none;
+    }
+
+    .toast-item {
+      background: var(--bg2);
+      border: 1px solid var(--purple-glow);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9), 
+                  0 0 15px var(--purple-dim),
+                  inset 0 0 1px rgba(255,255,255,0.1);
+      border-radius: 14px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      animation: toastIn 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+      pointer-events: auto;
+      border-left: 4px solid var(--purple);
+    }
+
+    .toast-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .toast-title {
+      font-family: var(--display);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--purple);
+    }
+
+    .toast-body {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .toast-info {
+      flex: 1;
+    }
+
+    .toast-to {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--teal);
+      word-break: break-all;
+      margin-bottom: 2px;
+    }
+
+    .toast-amount {
+      font-family: var(--display);
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .toast-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    @keyframes toastIn {
+      0% { transform: translateY(-120%); opacity: 0; filter: blur(4px); }
+      100% { transform: translateY(0); opacity: 1; filter: blur(0); }
+    }
+
+    @keyframes toastOut {
+      0% { transform: translateY(0) scale(1); opacity: 1; }
+      100% { transform: translateY(-20px) scale(0.95); opacity: 0; }
+    }
+
+    .toast-item.removing {
+      animation: toastOut 0.4s ease-in forwards;
+    }
+
+    .btn-icon {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      border-radius: 6px;
+      padding: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .btn-icon:hover {
+      background: var(--bg3);
+      color: var(--teal);
+      border-color: var(--teal-dim);
+    }
+
+    .btn-icon svg {
+      transition: transform 0.4s ease;
+    }
+
+    .btn-icon:active svg {
+      transform: rotate(180deg);
+    }
+
+    .balance-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    /* ── Responsive Adjustments ── */
+    @media (max-width: 1200px) {
+      .status-pill span { display: none; }
+      .status-pill { padding: 0; width: 24px; height: 24px; justify-content: center; flex-shrink: 0; }
+      .status-pill .dot { margin: 0; width: 8px; height: 8px; }
+      header { gap: 10px; }
+    }
+
+    @media (max-width: 850px) {
+      .logo span, .version-badge { display: none; }
+      header { padding: 10px 16px; min-height: 50px; }
+      .layout { grid-template-columns: 1fr; height: calc(100vh - 51px); }
+      .sidebar { border-right: none; border-bottom: 1px solid var(--border); max-height: 40vh; }
+    }
   </style>
 
 </head>
 
 <body>
+  <div id="toast-container" class="toast-container"></div>
 
   <header>
     <div class="logo" style="display:flex;align-items:center;gap:10px">
@@ -1203,19 +1343,41 @@
     <div style="display:flex;align-items:center;gap:12px">
       <div class="status-pill" id="wallet-status-pill">
         <div class="dot"></div>
-        <span id="wallet-status-text">No wallet</span>
+        <span id="wallet-status-text">Wallet missing</span>
       </div>
       <div class="status-pill" id="xmtp-status-pill">
         <div class="dot"></div>
         <span id="xmtp-status-text">XMTP offline</span>
       </div>
+      <div class="status-pill" id="bridge-status-pill">
+        <div class="dot"></div>
+        <span id="bridge-status-text">Bridge offline</span>
+      </div>
+      <div class="status-pill" id="auto-approve-pill">
+        <div class="dot"></div>
+        <span id="auto-approve-text">Auto-Approve: OFF</span>
+      </div>
       <div class="version-badge" id="version-badge">
-        v0.6.1
+        v0.7.0
         <div class="version-dropdown">
           <div class="version-dropdown-title">Changelog</div>
 
           <div class="vlog-entry">
-            <div class="vlog-tag current">v0.6.1</div>
+            <div class="vlog-tag current">v0.7.0</div>
+            <div class="vlog-info">
+              <div class="vlog-desc">Bridge REST Debug & UX Polish</div>
+              <div class="vlog-date">Today</div>
+              <div class="vlog-pills">
+                <span class="vlog-pill feat">toast-notif</span>
+                <span class="vlog-pill feat">tone-js</span>
+                <span class="vlog-pill feat">funding-bt</span>
+                <span class="vlog-pill sec">bridge-fix</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="vlog-entry">
+            <div class="vlog-tag">v0.6.1</div>
             <div class="vlog-info">
               <div class="vlog-desc">Neural Chat & XMTP V3 Integration</div>
               <div class="vlog-date">Today</div>
@@ -1284,7 +1446,16 @@
 
         <div class="address-display" id="wallet-address">—</div>
 
-        <div class="balance-big" id="wallet-balance">0.0000 <span style="font-size:14px;color:var(--text2)">ETH</span>
+        <div class="balance-container">
+          <div class="balance-big" id="wallet-balance">
+            0.0000 <span style="font-size:14px;color:var(--text2)">AVAX</span>
+          </div>
+          <button class="btn-icon" onclick="manualRefreshBalance()" title="Refresh balance">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+          </button>
         </div>
         <div class="balance-label" id="wallet-network">No network</div>
 
@@ -1295,9 +1466,19 @@
               <button class="btn-primary btn-full" onclick="generateWallet()">Generate wallet</button>
               <button class="btn-secondary" onclick="importWallet()">Import</button>
             </div>
-            <div style="margin-top:6px">
-              <button class="btn-secondary btn-full" onclick="connectMetaMask()">Connect MetaMask</button>
-            </div>
+          </div>
+
+          <!-- Persistent Funding section -->
+          <div id="funding-section" style="display:none; margin-top:10px">
+              <button class="btn-teal btn-full" onclick="fundFromExternal()" title="Top up from MetaMask">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                  <path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h7"></path>
+                  <line x1="16" y1="19" x2="22" y2="19"></line>
+                  <line x1="19" y1="16" x2="19" y2="22"></line>
+                </svg>
+                Fund Wallet
+              </button>
+              <p class="section-note" style="text-align:center; font-size:9px">Top up this wallet using MetaMask</p>
           </div>
 
           <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between">
@@ -1867,6 +2048,11 @@
     function forgetWallet() {
       if (!confirm('Remove saved wallet from this browser? Your funds are safe as long as you have the private key.')) return;
       localStorage.removeItem(STORAGE_KEY);
+      const pill = document.getElementById('wallet-status-pill');
+      if (pill) {
+        pill.classList.remove('connected');
+        document.getElementById('wallet-status-text').textContent = 'Wallet missing';
+      }
       document.getElementById('lock-badge').style.display = 'none';
       document.getElementById('forget-btn').style.display = 'none';
       const setupSection = document.getElementById('wallet-setup-section');
@@ -2099,34 +2285,57 @@
     }
 
     async function connectMetaMask() {
-      if (!window.ethereum) { log('MetaMask not found', 'err'); return; }
+      // (Deprecated for main wallet, moved to fundFromExternal)
+      log('MetaMask direct connect is legacy. Use "Fund Wallet" to top up.', 'wrn');
+    }
+
+    async function fundFromExternal() {
+      if (!window.ethereum) { 
+        log('MetaMask not found', 'err'); 
+        alert('MetaMask not found. Please install the extension.');
+        return; 
+      }
+      
+      const targetAddress = state.wallet ? (state.wallet.address || state.wallet._address) : null;
+      if (!targetAddress) {
+        log('Please generate or import a wallet first', 'wrn');
+        return;
+      }
+
       try {
+        log('Connecting to MetaMask for funding...', 'inf');
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const from = accounts[0];
+
+        // Ensure we are on Fuji if the wallet is on Fuji
         try {
           await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0xA869' }] });
-        } catch (switchErr) {
-          if (switchErr.code === 4902) {
-            await window.ethereum.request({
-              method: 'wallet_addEthereumChain', params: [{
-                chainId: '0xA869', chainName: 'Avalanche Fuji Testnet',
-                nativeCurrency: { name: 'AVAX', symbol: 'AVAX', decimals: 18 },
-                rpcUrls: ['https://api.avax-test.network/ext/bc/C/rpc'],
-                blockExplorerUrls: ['https://testnet.snowtrace.io']
-              }]
-            });
-          }
+        } catch (e) {
+          log('Please switch MetaMask to Avalanche Fuji Testnet', 'wrn');
         }
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        const signer = await provider.getSigner();
-        const address = await signer.getAddress();
-        state.wallet = signer;
-        state.provider = provider;
-        updateWalletUI(address);
-        generateApiKey();
-        log(`MetaMask connected on Avalanche Fuji: ${address.slice(0, 12)}...`, 'ok');
-        updateBalance(address, provider);
-        updateNetworkInfo(provider);
+
+        const amount = prompt(`Fund WalletClaw from MetaMask\n\nTo: ${targetAddress}\n\nEnter AVAX amount to send:`, "0.05");
+        if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
+          log('Funding cancelled', 'wrn');
+          return;
+        }
+
+        const txParams = {
+          from: from,
+          to: targetAddress,
+          value: '0x' + (BigInt(Math.floor(parseFloat(amount) * 1e18)).toString(16)),
+        };
+
+        log(`Requesting ${amount} AVAX from ${from.slice(0, 10)}...`, 'inf');
+        const txHash = await window.ethereum.request({
+          method: 'eth_sendTransaction',
+          params: [txParams],
+        });
+
+        log(`Funding tx sent! Hash: ${txHash.slice(0, 20)}...`, 'ok');
+        log('Balance will update in a few seconds.', 'ok');
       } catch (e) {
-        log(`MetaMask error: ${e.message}`, 'err');
+        log(`Funding error: ${e.message}`, 'err');
       }
     }
 
@@ -2212,10 +2421,47 @@
       } catch (e) { }
     }
 
+    window.manualRefreshBalance = async function () {
+      if (!state.wallet || !state.provider) {
+        log('No active provider to refresh.', 'wrn');
+        return;
+      }
+      log('Refreshing balance...', 'inf');
+      const address = state.wallet.address || state.wallet._address;
+      await updateBalance(address, state.provider);
+      log('Balance updated ✓', 'ok');
+    }
+
+    // ─── Tone.js Sound Logic ─────────────────────────────────
+    const playTouchdown = async () => {
+      try {
+        await Tone.start();
+        const now = Tone.now();
+
+        // Layer 1: Thud (Low impact)
+        const thud = new Tone.MembraneSynth({
+          pitchDecay: 0.05, octaves: 5,
+          envelope: { attack: 0.001, decay: 0.2, sustain: 0, release: 0.1 }
+        }).toDestination();
+        thud.volume.value = -2;
+        thud.triggerAttackRelease("C2", "8n", now);
+
+        // Layer 2: Success (Bright chord)
+        const success = new Tone.PolySynth(Tone.Synth, {
+          oscillator: { type: "triangle" },
+          envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.5 }
+        }).toDestination();
+        success.volume.value = -10;
+        success.triggerAttackRelease(["C5", "E5", "G5"], "16n", now + 0.1);
+      } catch (e) {
+        console.warn("Sound failed (user interaction required):", e.message);
+      }
+    };
+
     function updateWalletUI(address) {
       document.getElementById('wallet-address').textContent = address;
       document.getElementById('wallet-status-pill').classList.add('connected');
-      document.getElementById('wallet-status-text').textContent = 'Connected';
+      document.getElementById('wallet-status-text').textContent = 'Wallet OK';
 
       const xmtpDisp = document.getElementById('xmtp-addr-display');
       if (xmtpDisp) xmtpDisp.textContent = address;
@@ -2241,6 +2487,10 @@
       // Hide generation buttons when wallet is active
       const setupSection = document.getElementById('wallet-setup-section');
       if (setupSection) setupSection.style.display = 'none';
+
+      const fundingSection = document.getElementById('funding-section');
+      if (fundingSection) fundingSection.style.display = 'block';
+
       const forgetBtn = document.getElementById('forget-btn');
       if (forgetBtn) forgetBtn.style.display = 'block';
     }
@@ -2359,6 +2609,14 @@
             b.style.background = isConnected ? 'var(--purple-dim)' : '';
           }
         });
+        
+        // Update header pills
+        const bridgePill = document.getElementById('bridge-status-pill');
+        const bridgeText = document.getElementById('bridge-status-text');
+        if (bridgePill && bridgeText) {
+          bridgePill.className = 'status-pill' + (isConnected ? ' connected' : '');
+          bridgeText.textContent = isConnected ? 'Bridge online' : 'Bridge offline';
+        }
       };
 
       if (bridgeSocket) {
@@ -3243,27 +3501,42 @@
       const id = ++pendingId;
       if (topic || requestId) pendingMetadata[id] = { topic, requestId };
 
-      const container = document.getElementById('pending-txs');
-      const note = container.querySelector('div[style]');
-      if (note) note.remove();
+      // Play notification sound
+      playTouchdown();
 
+      // NEW: Toast notification
+      const container = document.getElementById('toast-container');
       const el = document.createElement('div');
-      el.className = 'tx-item';
+      el.className = 'toast-item';
       el.id = 'ptx-' + id;
       el.innerHTML = policy.createHTML(`
-    <div class="tx-info">
-      <div class="tx-method">via ${method} · OpenClaw agent</div>
-      <div class="tx-data">to: ${to.slice(0, 18)}...</div>
-    </div>
-    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-      <div class="tx-amount" style="color:var(--amber)">${value} ETH</div>
-      <div style="display:flex;gap:6px">
-        <button class="approve-btn" onclick="approveAgentTx(${id}, '${to}', '${value}')">✓ Approve</button>
-        <button class="reject-btn" onclick="rejectAgentTx(${id})">✗</button>
-      </div>
-    </div>
-  `);
+        <div class="toast-header">
+          <div class="toast-title">🛸 Incoming Sign Request</div>
+          <div class="badge-rest" style="font-size:8px; padding: 2px 6px;">${method}</div>
+        </div>
+        <div class="toast-body">
+          <div class="toast-info">
+            <div class="toast-to">to: ${to}</div>
+            <div class="toast-amount">${value} <span style="font-size:12px;color:var(--text2)">AVAX</span></div>
+          </div>
+        </div>
+        <div class="toast-actions">
+           <button class="btn-primary btn-full" onclick="approveAgentTx(${id}, '${to}', '${value}')">Approvar Firma 🦞</button>
+           <button class="btn-secondary" onclick="rejectAgentTx(${id})">Reject</button>
+        </div>
+      `);
       container.appendChild(el);
+
+      // (Legacy sync with side card if it exists)
+      const sideContainer = document.getElementById('pending-txs');
+      if (sideContainer) {
+        const note = sideContainer.querySelector('div[style]');
+        if (note) note.remove();
+        const sideEl = document.createElement('div');
+        sideEl.className = 'tx-item';
+        // ... (can keep side item as backup)
+      }
+
       if (!topic) {
         state.messages['local'].push({
           senderAddress: 'assistant',
@@ -3274,8 +3547,8 @@
       }
 
       if (state.autoApprove) {
-        log(`Auto-approving tx from agent (${value} ETH)`, 'wrn');
-        setTimeout(() => approveAgentTx(id, to, value), 800);
+        log(`Auto-approving tx from agent (${value} AVAX)`, 'wrn');
+        setTimeout(() => approveAgentTx(id, to, value), 1200);
       }
       return id;
     }
@@ -3283,7 +3556,7 @@
     async function approveAgentTx(id, to, value) {
       const el = document.getElementById('ptx-' + id);
       if (!el) return;
-      el.style.opacity = '0.4';
+      el.classList.add('removing');
 
       let txHash = null;
       if (state.wallet) {
@@ -3352,7 +3625,9 @@
 
     async function rejectAgentTx(id) {
       const el = document.getElementById('ptx-' + id);
-      if (el) el.remove();
+      if (el) el.classList.add('removing');
+      setTimeout(() => { if (el) el.remove(); }, 400);
+      
       const meta = pendingMetadata[id];
 
       // Notify via XMTP
@@ -3421,10 +3696,17 @@
     }
 
     // ─── Permissions ─────────────────────────────────────────
-    function toggleAutoApprove(on) {
+    window.toggleAutoApprove = function(on) {
       state.autoApprove = on;
       document.getElementById('auto-approve-stat').textContent = on ? 'ON' : 'OFF';
       log(`Auto-approve ${on ? 'ENABLED' : 'DISABLED'}`, on ? 'wrn' : 'ok');
+      
+      const autoPill = document.getElementById('auto-approve-pill');
+      const autoText = document.getElementById('auto-approve-text');
+      if (autoPill && autoText) {
+        autoPill.className = 'status-pill' + (on ? ' connected' : '');
+        autoText.textContent = `Auto-Approve: ${on ? 'ON' : 'OFF'}`;
+      }
     }
 
     function savePermissions() {
@@ -3501,6 +3783,7 @@
     window.deleteConversation = deleteConversation;
     window.connectXmtp = connectXmtp;
     window.toggleXmtp = toggleXmtp;
+    window.fundFromExternal = fundFromExternal;
 
   </script>
 
