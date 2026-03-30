@@ -1,133 +1,121 @@
 /**
- * OpenClawXMTP.js  (v2 — con persistencia por instancia de WalletClaw)
- *
- * La identidad de OpenClaw persiste entre sesiones, cifrada con los datos
- * de la instancia WalletClaw. Mismo address XMTP siempre que sea la misma
- * instancia de WalletClaw en la misma chain.
- *
- * Node.js + ethers v6 + @xmtp/xmtp-js
+ * OpenClawXMTP.js — v0.8.1 (V3 Protocol)
+ * ─────────────────────────────────────────────────────────────
+ * Migrado a XMTP V3 (MLS/LibXMTP) para Node.js.
+ * Utiliza @xmtp/node-sdk para mayor seguridad y persistencia.
  */
 
-import { Client } from "@xmtp/xmtp-js";
+import { Client } from "@xmtp/node-sdk";
 import { ClawKeyStore } from "./ClawKeyStore.js";
+import { ethers } from "ethers";
 
 export class OpenClawXMTP {
   /**
    * @param {object} opts
-   * @param {string}   opts.walletClawAddress  - Address de la instancia WalletClaw
-   * @param {number}   opts.chainId            - Chain ID
-   * @param {string}   [opts.env]              - "production" | "dev"
-   * @param {string}   [opts.storePath]        - Ruta archivo cifrado (opcional)
-   * @param {function} [opts.onMessage]        - Callback mensajes entrantes
+   * @param {string}   opts.walletClawAddress - Address de WalletClaw (propietario)
+   * @param {number}   opts.chainId           - Chain ID
+   * @param {string}   [opts.env]             - "production" | "dev"
+   * @param {string}   [opts.storeFolder]     - Folder para la DB de XMTP
+   * @param {function} [opts.onMessage]       - Callback mensajes
    */
-  constructor({ walletClawAddress, chainId, env = "production", storePath, onMessage }) {
-    this._store = new ClawKeyStore({ walletClawAddress, chainId, storePath });
+  constructor({ walletClawAddress, chainId, env = "dev", storeFolder = "./.xmtp", onMessage }) {
+    this._store = new ClawKeyStore({ walletClawAddress, chainId });
     this._env = env;
     this._onMessage = onMessage;
-    this._identity = null;
+    this._dbPath = `${storeFolder}/agent_${walletClawAddress.toLowerCase()}.db`;
     this._xmtp = null;
-    this._conversations = new Map();
-    this._stream = null;
+    this._identity = null;
+    this._isStreaming = false;
   }
 
-  /**
-   * Inicializa OpenClaw. Carga la identidad persistida (o genera una nueva)
-   * y conecta a XMTP.
-   */
   async init() {
     if (this._xmtp) return this;
 
-    // Cargar o crear identidad — privateKey siempre en closure dentro del handle
+    // 1. Cargar o crear identidad EOA
     this._identity = await this._store.loadOrCreate();
-    console.info(`[OpenClawXMTP] Identidad: ${this._identity.address}`);
+    console.info(`[OpenClawXMTP] Identidad V3: ${this._identity.address}`);
 
-    this._xmtp = await Client.create(this._identity.signer, { env: this._env });
-    console.info("[OpenClawXMTP] XMTP conectado.");
+    // 2. Crear Cliente V3
+    // Adaptamos el signer al formato que espera node-sdk
+    const walletSigner = {
+      type: "EOA",
+      getIdentifier: () => ({ identifier: this._identity.address, identifierKind: 0 }),
+      signMessage: async (msg) => ethers.getBytes(await this._identity.signer.signMessage(msg)),
+    };
 
-    this._startStream();
-    return this;
+    try {
+      this._xmtp = await Client.create(walletSigner, {
+        env: this._env,
+        dbPath: this._dbPath
+      });
+      console.info("[OpenClawXMTP] Cliente V3 online.");
+      
+      // Sincronizar conversaciones previas
+      await this._xmtp.conversations.syncAll();
+
+      this._startStream();
+      return this;
+    } catch (e) {
+      console.error("[OpenClawXMTP] Error en init V3:", e.message);
+      throw e;
+    }
   }
 
-  /** Address público de OpenClaw (estable entre sesiones para la misma WalletClaw instance) */
   get address() {
-    this._assertReady();
-    return this._identity.address;
+    return this._identity?.address;
   }
 
-  /**
-   * Envía mensaje o payload JSON a un address XMTP.
-   * @param {string} toAddress
-   * @param {string|object} payload
-   */
+  /** Envía mensaje a un address XMTP */
   async send(toAddress, payload) {
-    this._assertReady();
+    if (!this._xmtp) throw new Error("No inicializado.");
     const content = typeof payload === "string" ? payload : JSON.stringify(payload);
 
-    let conv = this._conversations.get(toAddress);
-    if (!conv) {
-      const canMessage = await this._xmtp.canMessage(toAddress);
-      if (!canMessage) throw new Error(`[OpenClawXMTP] ${toAddress} no tiene XMTP activo.`);
-      conv = await this._xmtp.conversations.newConversation(toAddress);
-      this._conversations.set(toAddress, conv);
+    try {
+      let conv = await this._xmtp.conversations.createDmWithIdentifier({
+        identifier: toAddress.toLowerCase(),
+        identifierKind: 0
+      });
+      await conv.send(content);
+    } catch (e) {
+      console.error(`[OpenClawXMTP] Error enviando a ${toAddress}:`, e.message);
+      throw e;
     }
-
-    await conv.send(content);
   }
 
-  /**
-   * Handshake firmado hacia WalletClaw.
-   * WalletClaw puede verificar criptográficamente que quien habla es OpenClaw.
-   * @param {string} walletClawAddress
-   */
+  /** Handshake firmado */
   async handshake(walletClawAddress) {
-    this._assertReady();
     const payload = {
       type: "claw:handshake",
       agentAddress: this.address,
       timestamp: Date.now(),
     };
-    const signature = await this._identity.signMessage(JSON.stringify(payload));
+    const signature = await this._identity.signer.signMessage(JSON.stringify(payload));
     await this.send(walletClawAddress, { ...payload, signature });
-    console.info("[OpenClawXMTP] Handshake enviado →", walletClawAddress);
+    console.info("[OpenClawXMTP] Handshake V3 enviado.");
   }
-
-  /**
-   * Rota la identidad de OpenClaw: elimina la clave guardada.
-   * La próxima llamada a init() generará un nuevo wallet con nuevo address XMTP.
-   * ATENCIÓN: WalletClaw necesitará un nuevo handshake después de la rotación.
-   */
-  async rotateIdentity() {
-    await this.destroy();
-    await this._store.rotate();
-    console.info("[OpenClawXMTP] Identidad rotada. Llamá init() para la nueva identidad.");
-  }
-
-  /** Cierra la sesión limpiamente. */
-  async destroy() {
-    if (this._stream) await this._stream.return?.();
-    this._xmtp = null;
-    this._identity = null;
-    this._conversations.clear();
-    this._stream = null;
-    console.info("[OpenClawXMTP] Sesión cerrada.");
-  }
-
-  // ─── Privados ─────────────────────────────────────────────────────────────
 
   async _startStream() {
-    this._stream = await this._xmtp.conversations.streamAllMessages();
-    for await (const message of this._stream) {
-      if (message.senderAddress === this._identity?.address) continue;
-      try {
-        const parsed = JSON.parse(message.content);
-        this._onMessage?.({ from: message.senderAddress, payload: parsed, raw: message });
-      } catch {
-        this._onMessage?.({ from: message.senderAddress, payload: message.content, raw: message });
-      }
-    }
-  }
+    if (this._isStreaming) return;
+    this._isStreaming = true;
+    console.info("[OpenClawXMTP] Escuchando mensajes (Streaming)...");
 
-  _assertReady() {
-    if (!this._xmtp) throw new Error("[OpenClawXMTP] No inicializado. Llamá init() primero.");
+    try {
+      const stream = await this._xmtp.conversations.streamAllMessages();
+      for await (const message of stream) {
+        if (message.senderAddress.toLowerCase() === this.address.toLowerCase()) continue;
+        
+        let parsed = message.content;
+        try { parsed = JSON.parse(message.content); } catch (e) {}
+
+        this._onMessage?.({ 
+          from: message.senderAddress, 
+          payload: parsed, 
+          raw: message 
+        });
+      }
+    } catch (e) {
+      console.error("[OpenClawXMTP] Error en stream:", e.message);
+      this._isStreaming = false;
+    }
   }
 }
