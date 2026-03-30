@@ -1161,9 +1161,9 @@
     .toast-item {
       background: var(--bg2);
       border: 1px solid var(--purple-glow);
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9), 
-                  0 0 15px var(--purple-dim),
-                  inset 0 0 1px rgba(255,255,255,0.1);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9),
+        0 0 15px var(--purple-dim),
+        inset 0 0 1px rgba(255, 255, 255, 0.1);
       border-radius: 14px;
       padding: 18px;
       display: flex;
@@ -1220,13 +1220,29 @@
     }
 
     @keyframes toastIn {
-      0% { transform: translateY(-120%); opacity: 0; filter: blur(4px); }
-      100% { transform: translateY(0); opacity: 1; filter: blur(0); }
+      0% {
+        transform: translateY(-120%);
+        opacity: 0;
+        filter: blur(4px);
+      }
+
+      100% {
+        transform: translateY(0);
+        opacity: 1;
+        filter: blur(0);
+      }
     }
 
     @keyframes toastOut {
-      0% { transform: translateY(0) scale(1); opacity: 1; }
-      100% { transform: translateY(-20px) scale(0.95); opacity: 0; }
+      0% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
+
+      100% {
+        transform: translateY(-20px) scale(0.95);
+        opacity: 0;
+      }
     }
 
     .toast-item.removing {
@@ -1269,17 +1285,209 @@
 
     /* ── Responsive Adjustments ── */
     @media (max-width: 1200px) {
-      .status-pill span { display: none; }
-      .status-pill { padding: 0; width: 24px; height: 24px; justify-content: center; flex-shrink: 0; }
-      .status-pill .dot { margin: 0; width: 8px; height: 8px; }
-      header { gap: 10px; }
+      .status-pill {
+        padding: 0;
+        width: 26px;
+        height: 26px;
+        justify-content: center;
+        flex-shrink: 0;
+        position: relative;
+        cursor: help;
+      }
+
+      .status-pill .dot {
+        margin: 0;
+        width: 8px;
+        height: 8px;
+      }
+
+      header {
+        gap: 10px;
+      }
+
+      .status-pill span {
+        display: block;
+        /* Override none if any */
+        position: absolute;
+        top: calc(100% + 10px);
+        right: 0;
+        background: var(--bg2);
+        color: var(--text2);
+        border: 1px solid var(--border2);
+        padding: 6px 14px;
+        border-radius: 8px;
+        white-space: nowrap;
+        font-size: 11px;
+        z-index: 1000;
+        box-shadow: 0 5px 25px rgba(0, 0, 0, 0.8);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-8px);
+        transition: all 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        pointer-events: none;
+        backdrop-filter: blur(8px);
+      }
+
+      .status-pill:hover span,
+      .status-pill:focus span,
+      .status-pill:active span {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+
+      /* Subtle arrow for tooltip */
+      .status-pill:hover::after {
+        content: '';
+        position: absolute;
+        top: calc(100% + 4px);
+        right: 8px;
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+        border-bottom: 6px solid var(--bg2);
+        opacity: 0;
+        animation: fadeIn 0.2s forwards;
+        z-index: 1001;
+      }
+    }
+
+    @keyframes fadeIn {
+      to {
+        opacity: 1;
+      }
     }
 
     @media (max-width: 850px) {
-      .logo span, .version-badge { display: none; }
-      header { padding: 10px 16px; min-height: 50px; }
-      .layout { grid-template-columns: 1fr; height: calc(100vh - 51px); }
-      .sidebar { border-right: none; border-bottom: 1px solid var(--border); max-height: 40vh; }
+
+      /* Keep logo text visible on mobile */
+      .version-badge {
+        display: none;
+      }
+
+      header {
+        padding: 10px 16px;
+        min-height: 50px;
+        justify-content: flex-start;
+        gap: 0;
+      }
+
+      .menu-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        background: var(--bg2);
+        border: 1px solid var(--border2);
+        border-radius: 8px;
+        color: var(--text);
+        cursor: pointer;
+        margin-right: 15px;
+        flex-shrink: 0;
+      }
+
+      .layout {
+        display: block;
+        height: calc(100vh - 51px);
+        overflow: hidden;
+        position: relative;
+      }
+
+      .sidebar {
+        width: 100%;
+        height: 100%;
+        overflow-y: auto;
+        border-right: none;
+        padding: 16px;
+        padding-bottom: 90px;
+        background: var(--bg);
+      }
+
+      .main {
+        position: fixed;
+        top: 0;
+        left: -320px;
+        width: 85%;
+        max-width: 320px;
+        height: 100vh;
+        z-index: 5000;
+        background: var(--bg);
+        border-right: 1px solid var(--border);
+        box-shadow: 15px 0 40px rgba(0, 0, 0, 0.8);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        padding: 16px;
+        margin: 0;
+      }
+
+      .main.open {
+        transform: translateX(320px);
+      }
+
+      .drawer-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(3px);
+        z-index: 4999;
+        display: none;
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+
+      .drawer-overlay.open {
+        display: block;
+        opacity: 1;
+      }
+
+      .quick-chat-bar {
+        display: flex;
+        position: fixed;
+        bottom: 12px;
+        left: 12px;
+        right: 12px;
+        padding: 10px;
+        background: var(--bg2);
+        border: 1px solid var(--border2);
+        border-radius: 14px;
+        gap: 8px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+        z-index: 4000;
+        backdrop-filter: blur(10px);
+      }
+
+      .quick-chat-bar input {
+        flex: 1;
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        color: var(--text);
+        padding: 0 14px;
+        height: 42px;
+        font-size: 14px;
+      }
+
+      .quick-chat-bar button {
+        width: 42px;
+        height: 42px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--purple);
+        border-radius: 10px;
+        border: none;
+        color: white;
+        flex-shrink: 0;
+      }
+    }
+
+    @media (min-width: 851px) {
+
+      .menu-toggle,
+      .quick-chat-bar,
+      .drawer-overlay {
+        display: none !important;
+      }
     }
   </style>
 
@@ -1289,6 +1497,14 @@
   <div id="toast-container" class="toast-container"></div>
 
   <header>
+    <button class="menu-toggle" onclick="toggleMainDrawer()">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
     <div class="logo" style="display:flex;align-items:center;gap:10px">
       <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg"
         style="flex-shrink:0">
@@ -1338,7 +1554,7 @@
         <path d="M13 26 Q17 31 21 26" stroke="#c0392b" stroke-width="2" stroke-linecap="round" fill="none" />
         <path d="M14.5 27.5 Q17 30 19.5 27.5" stroke="#e74c3c" stroke-width="1.2" stroke-linecap="round" fill="none" />
       </svg>
-      Wallet<span>Claw</span>
+      Wallet <span>Claw</span>
     </div>
     <div style="display:flex;align-items:center;gap:12px">
       <div class="status-pill" id="wallet-status-pill">
@@ -1358,20 +1574,66 @@
         <span id="auto-approve-text">Auto-Approve: OFF</span>
       </div>
       <div class="version-badge" id="version-badge">
-        v0.7.0
+        v0.7.8
         <div class="version-dropdown">
           <div class="version-dropdown-title">Changelog</div>
 
           <div class="vlog-entry">
-            <div class="vlog-tag current">v0.7.0</div>
+            <div class="vlog-tag current">v0.7.8</div>
             <div class="vlog-info">
-              <div class="vlog-desc">Bridge REST Debug & UX Polish</div>
+              <div class="vlog-desc">Soporte para Contratos y Mensajes (EIP-712/191)</div>
               <div class="vlog-date">Today</div>
               <div class="vlog-pills">
-                <span class="vlog-pill feat">toast-notif</span>
-                <span class="vlog-pill feat">tone-js</span>
-                <span class="vlog-pill feat">funding-bt</span>
-                <span class="vlog-pill sec">bridge-fix</span>
+                <span class="vlog-pill feat">smart-txs</span>
+                <span class="vlog-pill feat">ethers-ab</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="vlog-entry">
+            <div class="vlog-tag">v0.7.6</div>
+            <div class="vlog-info">
+              <div class="vlog-desc">Consolidated Connection Panels (Local/Remote)</div>
+              <div class="vlog-date">Today</div>
+              <div class="vlog-pills">
+                <span class="vlog-pill feat">ux-cleanup</span>
+                <span class="vlog-pill feat">unified-tabs</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="vlog-entry">
+            <div class="vlog-tag">v0.7.5</div>
+            <div class="vlog-info">
+              <div class="vlog-desc">Bridge Layout Unified & Copy UX Feedback</div>
+              <div class="vlog-date">Today</div>
+              <div class="vlog-pills">
+                <span class="vlog-pill feat">copy-ux</span>
+                <span class="vlog-pill feat">layout-unify</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="vlog-entry">
+            <div class="vlog-tag">v0.7.4</div>
+            <div class="vlog-info">
+              <div class="vlog-desc">Bridge Node Clarification & Module Consolidation</div>
+              <div class="vlog-date">Today</div>
+              <div class="vlog-pills">
+                <span class="vlog-pill feat">bridge-doc</span>
+                <span class="vlog-pill fix">ui-sync</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="vlog-entry">
+            <div class="vlog-tag">v0.7.3</div>
+            <div class="vlog-info">
+              <div class="vlog-desc">Connection Tab Unified & REST Flow Polish</div>
+              <div class="vlog-date">Today</div>
+              <div class="vlog-pills">
+                <span class="vlog-pill feat">unified-tabs</span>
+                <span class="vlog-pill fix">label-fix</span>
               </div>
             </div>
           </div>
@@ -1435,10 +1697,24 @@
     </div>
   </header>
 
+  <div class="drawer-overlay" id="drawer-overlay" onclick="toggleMainDrawer()"></div>
   <div class="layout">
 
     <!-- SIDEBAR: Wallet -->
     <aside class="sidebar">
+
+      <!-- Quick Chat at bottom (only Mobile) -->
+      <div class="quick-chat-bar">
+        <input type="text" id="quick-chat-input" placeholder="Ask your agent..."
+          onkeydown="if(event.key==='Enter')window.sendChatMessage(true)">
+        <button onclick="window.sendChatMessage(true)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
 
       <!-- Wallet Card -->
       <div class="card">
@@ -1451,8 +1727,10 @@
             0.0000 <span style="font-size:14px;color:var(--text2)">AVAX</span>
           </div>
           <button class="btn-icon" onclick="manualRefreshBalance()" title="Refresh balance">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 4v6h-6"></path>
+              <path d="M1 20v-6h6"></path>
               <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
             </svg>
           </button>
@@ -1470,15 +1748,16 @@
 
           <!-- Persistent Funding section -->
           <div id="funding-section" style="display:none; margin-top:10px">
-              <button class="btn-teal btn-full" onclick="fundFromExternal()" title="Top up from MetaMask">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
-                  <path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h7"></path>
-                  <line x1="16" y1="19" x2="22" y2="19"></line>
-                  <line x1="19" y1="16" x2="19" y2="22"></line>
-                </svg>
-                Fund Wallet
-              </button>
-              <p class="section-note" style="text-align:center; font-size:9px">Top up this wallet using MetaMask</p>
+            <button class="btn-teal btn-full" onclick="fundFromExternal()" title="Top up from MetaMask">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                <path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h7"></path>
+                <line x1="16" y1="19" x2="22" y2="19"></line>
+                <line x1="19" y1="16" x2="19" y2="22"></line>
+              </svg>
+              Fund Wallet
+            </button>
+            <p class="section-note" style="text-align:center; font-size:9px">Top up this wallet using MetaMask</p>
           </div>
 
           <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between">
@@ -1584,146 +1863,54 @@
       <div class="tab-panel" id="panel-conexion">
         <div class="card" style="border:none; background:transparent; padding:0">
           <div class="card-title">🤖 OpenClaw connection methods</div>
-          <div class="tabs" style="margin-top:10px">
-            <button class="tab active" id="subtab-rest" onclick="switchSubTab('rest', this)">① REST API</button>
-            <button class="tab" id="subtab-ws" onclick="switchSubTab('ws', this)">② WebSocket</button>
-            <button class="tab" id="subtab-xmtp" onclick="switchSubTab('xmtp', this)">③ XMTP</button>
-          </div>
 
-          <!-- REST method -->
-          <div class="tab-panel active" id="panel-con-rest">
-            <div class="method-badge badge-rest">REST /sign · API Key</div>
-            <p class="section-note">WalletClaw exposes a local REST endpoint. OpenClaw sends sign requests with an API
-              key. Best for local deployments.</p>
-
-            <div style="margin-top:12px">
+          <!-- 1. REST method -->
+          <div style="margin-top:15px; background: rgba(224, 53, 48, 0.05); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
+            <label style="font-size: 11px; font-weight: 700; color: var(--purple); letter-spacing: 0.5px; margin-bottom: 8px; display: block; text-transform: uppercase;">REST API Configuration</label>
+            <div style="margin-top:10px">
               <label>Your API Key (add to OpenClaw env)</label>
               <div class="api-key-display">
                 <code id="con-api-key-display">— generate wallet first —</code>
-                <button class="btn-secondary" style="font-size:10px;padding:4px 8px;white-space:nowrap"
-                  onclick="copyApiKey()">Copy</button>
-                <button class="btn-secondary"
-                  style="font-size:10px;padding:4px 8px;white-space:nowrap; border-left: 1px solid rgba(255,255,255,0.1)"
-                  onclick="generateApiKey(true)">Rotate</button>
-              </div>
-            </div>
-
-            <div class="code-block" style="margin-top:12px"><span class="cmt"># In your OpenClaw instance (env vars or
-                config.toml)
-                # Network: Avalanche Fuji Testnet (chainId 43113)</span>
-              <span class="kw">WALLETCLAW_URL</span>=<span class="str">"http://localhost:18789"</span>
-              <span class="kw">WALLETCLAW_API_KEY</span>=<span class="str">"<span
-                  id="con-api-key-env">YOUR_API_KEY</span>"</span>
-
-              <span class="cmt"># OpenClaw calls this to sign a tx:</span>
-              <span class="kw">POST</span> /sign
-              {
-              <span class="str">"to"</span>: <span class="str">"0x..."</span>,
-              <span class="str">"value"</span>: <span class="str">"0.01"</span>,
-              <span class="str">"data"</span>: <span class="str">"0x"</span>,
-              <span class="str">"agentId"</span>: <span class="str">"openclaw-001"</span>
-              }
-            </div>
-          </div>
-
-          <!-- WebSocket method -->
-          <div class="tab-panel" id="panel-con-ws">
-            <div class="method-badge badge-ws">WebSocket :18789 · Bridge</div>
-            <p class="section-note">Ultra-low latency. OpenClaw connects to WalletClaw's local bridge. Authentication
-              via API Key sync. Bidirectional: WalletClaw can push approvals and status to the agent.</p>
-
-            <div
-              style="margin-top:15px; background: rgba(255,140,66,0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,140,66,0.2);">
-              <div style="font-weight: 700; color: var(--teal); font-size: 13px; margin-bottom: 8px;">🦾 Launching the
-                Bridge</div>
-
-              <div style="font-size: 11px; margin-bottom: 5px; color: var(--text3);">1. Install dependencies:</div>
-              <div
-                style="background:rgba(0,0,0,0.3); padding: 6px; border-radius: 4px; font-family: monospace; font-size: 10px; color: var(--teal);">
-                npm install express ws cors</div>
-
-              <div style="font-size: 11px; margin-top: 10px; margin-bottom: 5px; color: var(--text3);">2. Run the bridge
-                in a terminal:</div>
-              <div
-                style="background:rgba(0,0,0,0.3); padding: 6px; border-radius: 4px; font-family: monospace; font-size: 10px; color: var(--teal);">
-                node src/bridge.js</div>
-
-              <div style="font-size: 11px; margin-top: 10px; color: var(--text3);">3. <b>In WalletClaw (This Tab)</b>:
-                Click "Start bridge" below.</div>
-            </div>
-
-            <div class="code-block" style="margin-top:12px"><span class="cmt">// In OpenClaw's tool definition
-                (custom_tools/wallet.py)</span>
-              <span class="kw">import</span> websockets, json
-
-              <span class="kw">async def</span> <span class="var">sign_transaction</span>(to, value, data=<span
-                class="str">"0x"</span>):
-              <span class="kw">async with</span> websockets.connect(
-              <span class="str">"ws://localhost:18789/ws-agent"</span>
-              ) <span class="kw">as</span> ws:
-              <span class="cmt"># Send tx request over bridge</span>
-              <span class="kw">await</span> ws.send(json.dumps({
-              <span class="str">"type"</span>: <span class="str">"sign_tx"</span>,
-              <span class="str">"to"</span>: to, <span class="str">"value"</span>: value, <span
-                class="str">"data"</span>: data
-              }))
-              result = json.loads(<span class="kw">await</span> ws.recv())
-              <span class="kw">return</span> result[<span class="str">"txHash"</span>]
-            </div>
-
-            <div style="margin-top:10px">
-              <label>Bridge status</label>
-              <div style="display:flex;align-items:center;gap:12px;margin-top:10px">
-                <div class="status-pill" id="con-ws-status">
-                  <div class="dot"></div><span>Stopped</span>
-                </div>
-                <button class="btn-teal" style="font-size:10px" onclick="toggleWsServer(this)">Start bridge</button>
+                <button class="btn-secondary" style="font-size:10px;padding:4px 8px;white-space:nowrap" onclick="copyApiKey(this)">Copy</button>
+                <button class="btn-secondary" style="font-size:10px;padding:4px 8px;white-space:nowrap; border-left: 1px solid rgba(255,255,255,0.1)" onclick="generateApiKey(true)">Rotate</button>
               </div>
             </div>
           </div>
 
-          <!-- XMTP method -->
-          <div class="tab-panel" id="panel-con-xmtp">
-            <div class="method-badge badge-xmtp">XMTP · E2E encrypted</div>
-            <p class="section-note">Best for remote agents. OpenClaw sends sign requests as XMTP messages to your wallet
-              address. End-to-end encrypted. Works across networks — your agent can be anywhere.</p>
+          <!-- 2. Configuration Module for the Local Bridge -->
+          <div style="margin-top:15px; background: rgba(255,140,66,0.05); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <label style="font-size: 11px; font-weight: 700; color: var(--teal); letter-spacing: 0.5px; margin:0; text-transform: uppercase;">Bridge Configuration</label>
+              <div class="status-pill" id="con-ws-status" style="font-size:9px; padding: 2px 8px;">
+                <div class="dot"></div><span>Stopped</span>
+              </div>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <input type="text" id="bridge-url-input" placeholder="ws://localhost:18789/ws-ui" style="flex:1; border: 1px solid var(--border); background: var(--bg3); font-family: var(--mono); font-size: 11px; padding: 8px 12px; border-radius: 8px;" />
+              <button class="btn-teal" id="con-ws-bridge-toggle" onclick="toggleWsServer(this)" style="font-size:11px; white-space:nowrap; padding: 0 20px; min-width: 100px;">Connect</button>
+            </div>
+          </div>
 
-            <div id="xmtp-qr-container"
-              style="display:flex; flex-direction:column; align-items:center; margin: 15px 0; gap: 10px;">
+          <!-- 3. XMTP method -->
+          <div style="margin-top:15px; background: rgba(184, 159, 255, 0.05); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <label style="font-size: 11px; font-weight: 700; color: #b89fff; letter-spacing: 0.5px; margin:0; text-transform: uppercase;">XMTP Configuration</label>
+              <div class="status-pill" id="xmtp-status-pill-sub" style="font-size:9px; padding: 2px 8px;">
+                <div class="dot"></div><span>XMTP offline</span>
+              </div>
+            </div>
+            <div id="xmtp-qr-container" style="display:flex; flex-direction:column; align-items:center; gap: 10px;">
               <div id="xmtp-qr-image" style="background:#fff; padding:10px; border-radius:8px; display:none;">
-                <img id="qr-img" width="150" height="150" />
+                <img id="qr-img" width="120" height="120" />
               </div>
-              <div class="address-display" id="con-xmtp-addr-display" style="width:100%; text-align:center;">— generate
-                wallet first —</div>
+              <div class="address-display" id="con-xmtp-addr-display" style="width:100%; text-align:center; font-size: 10px;">— generate wallet first —</div>
             </div>
-
-            <div class="code-block" style="margin-top:12px"><span class="cmt">// In OpenClaw
-                (openclaw_tools/walletclaw_xmtp.ts)</span>
-              <span class="kw">import</span> { Client } <span class="kw">from</span> <span
-                class="str">"@xmtp/xmtp-js"</span>
-
-              <span class="kw">const</span> <span class="var">xmtp</span> = <span class="kw">await</span>
-              Client.create(agentSigner)
-
-              <span class="cmt">// Send sign request to WalletClaw address</span>
-              <span class="kw">const</span> <span class="var">convo</span> = <span class="kw">await</span>
-              xmtp.conversations.newConversation(
-              <span class="str">"<span id="con-xmtp-addr-text">YOUR_WALLET_ADDRESS</span>"</span>
-              )
-              <span class="kw">await</span> convo.send(JSON.stringify({
-              type: <span class="str">"sign_tx"</span>,
-              to: <span class="str">"0x..."</span>,
-              value: <span class="str">"0.01"</span>,
-              requestId: crypto.randomUUID()
-              }))
-            </div>
-
-            <div style="margin-top:10px;display:flex;gap:8px">
-              <button id="con-xmtp-connect-btn" class="btn-primary btn-full" onclick="toggleXmtp()">Connect
-                XMTP</button>
-              <button class="btn-secondary" onclick="copyWalletForXmtp()">Copy address</button>
+            <div style="margin-top:12px;display:flex;gap:8px">
+              <button id="con-xmtp-connect-btn" class="btn-primary btn-full" onclick="toggleXmtp()" style="font-size:11px">Connect XMTP</button>
+              <button class="btn-secondary" onclick="copyWalletForXmtp(this)" style="font-size:11px">Copy</button>
             </div>
           </div>
+
         </div>
       </div>
 
@@ -1802,42 +1989,6 @@
               prevents re-typing but is less secure.
             </p>
           </div>
-
-          <div class="divider"></div>
-
-          <div>
-            <div class="card-title">🦾 Bridge Configuration</div>
-            <p class="section-note" style="font-size: 13px;">Configure the WebSocket connection to your local OpenClaw
-              bridge.</p>
-
-            <div
-              style="background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-top: 10px;">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <label style="font-size: 12px; font-weight: 600; color: var(--text3); margin:0">BRIDGE URL</label>
-                <div class="status-pill" id="settings-bridge-status" style="font-size:9px; padding: 2px 8px;">
-                  <div class="dot"></div><span>Stopped</span>
-                </div>
-              </div>
-
-              <div style="display:flex; flex-direction:column; gap:8px">
-                <input type="text" id="bridge-url-input" class="chat-input" placeholder="ws://192.168.1.42:18789/ws-ui"
-                  style="border: 1px solid var(--border); background: var(--bg3);" />
-                <div style="display:flex; gap:8px">
-                  <button class="btn-secondary btn-full" onclick="updateBridgeUrl()" style="font-size:11px">Apply &
-                    Save</button>
-                  <button class="btn-teal" id="settings-bridge-toggle" onclick="toggleWsServer(this)"
-                    style="font-size:11px; white-space:nowrap; padding: 0 15px;">Connect</button>
-                </div>
-              </div>
-
-              <p class="section-note" style="color:var(--text3); font-size:10px; margin-top:10px; line-height: 1.4;">
-                <b>Tip:</b> Default is <code>ws://192.168.1.42:18789/ws-ui</code>. Ensure you include the protocol
-                (ws/wss) and the <code>/ws-ui</code> path.
-              </p>
-            </div>
-          </div>
-
-          <div class="divider"></div>
 
           <div>
             <div class="card-title">🛠 Maintenance</div>
@@ -1924,7 +2075,10 @@
       wsAgents: 0,
       xmtpRequests: {}, // { messageId: { pendingId, status: 'pending'|'signed'|'rejected' } }
       rememberSession: localStorage.getItem('remember_session') === 'true',
-      bridgeUrl: localStorage.getItem('walletclaw_bridge_url') || (location.protocol === 'https:' ? `wss://${location.host}/ws-ui` : `ws://192.168.1.42:18789/ws-ui`)
+      bridgeUrl: localStorage.getItem('walletclaw_bridge_url') || 
+            ((location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname.startsWith('192.168.')) 
+              ? `ws://${location.hostname}:18789/ws-ui` 
+              : `wss://${location.host}/ws-ui`)
     };
 
     window.setRememberSession = function (enabled) {
@@ -1933,6 +2087,12 @@
       if (!enabled) {
         sessionStorage.removeItem(SESSION_PW_KEY);
       }
+      // Keep all toggles in sync
+      const toggles = ['remember-session-toggle', 'pw-remember-session'];
+      toggles.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.checked = enabled;
+      });
       log(`Session persistence ${enabled ? 'enabled' : 'disabled'}.`, 'inf');
     };
 
@@ -1940,9 +2100,14 @@
       const input = document.getElementById('bridge-url-input');
       const newVal = val || (input ? input.value.trim() : null);
       if (newVal) {
-        state.bridgeUrl = newVal;
-        localStorage.setItem('walletclaw_bridge_url', newVal);
-        log(`Bridge URL updated to: ${newVal}`, 'ok');
+        // Enforce protocol
+        let fixedVal = newVal;
+        if (!fixedVal.includes('://')) {
+          fixedVal = (location.protocol === 'https:' ? 'wss://' : 'ws://') + fixedVal;
+        }
+        state.bridgeUrl = fixedVal;
+        localStorage.setItem('walletclaw_bridge_url', fixedVal);
+        log(`Bridge URL updated to: ${fixedVal}`, 'ok');
         // Restart bridge if online
         if (bridgeSocket) {
           log('Restarting bridge connection...', 'inf');
@@ -1960,7 +2125,7 @@
     // ─── Crypto persistence (AES-GCM via WebCrypto) ──────────
     const STORAGE_KEY = 'walletclaw_v1';
     const SESSION_PW_KEY = 'walletclaw_session_pw';
-    const APP_VERSION = 'v0.7.3';
+    const APP_VERSION = 'v0.7.8';
 
     function renderVersion() {
       const badge = document.getElementById('version-badge');
@@ -2170,22 +2335,16 @@
       renderVersion();
 
       // UI Init: Toggle Session Preference
-      const sessionToggle = document.getElementById('remember-session-toggle');
-      if (sessionToggle) sessionToggle.checked = state.rememberSession;
+      ['remember-session-toggle', 'pw-remember-session'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.checked = state.rememberSession;
+      });
 
       const bridgeUrlInput = document.getElementById('bridge-url-input');
       if (bridgeUrlInput) bridgeUrlInput.value = state.bridgeUrl;
 
       const lastTab = localStorage.getItem('last_tab');
-      const lastSubTab = localStorage.getItem('last_sub_tab') || 'ws';
-
-      // 1. Initial UI restoration (Immediate)
       const targetTab = lastTab || (hasSavedWallet() ? 'chat' : 'conexion');
-      const targetSub = lastSubTab || 'ws';
-
-      // Restore Sub-tab state (always, so it's ready when the user visits the panel)
-      const subTabBtn = document.getElementById('subtab-' + targetSub);
-      if (subTabBtn) window.switchSubTab(targetSub, subTabBtn);
 
       // Restore Main-tab state
       const tabBtn = document.getElementById('tab-' + targetTab);
@@ -2252,8 +2411,8 @@
         log('No wallet configured. Please generate or import a wallet to begin.', 'wrn');
         // If no wallet, ensure we are on conexion tab
         if (targetTab !== 'conexion') {
-          window.switchTab('conexion', document.getElementById('tab-conexion'));
-          window.switchSubTab('ws', document.getElementById('subtab-ws'));
+          const tabBtnCon = document.getElementById('tab-conexion');
+          if (tabBtnCon) window.switchTab('conexion', tabBtnCon);
         }
       }
     });
@@ -2290,12 +2449,12 @@
     }
 
     async function fundFromExternal() {
-      if (!window.ethereum) { 
-        log('MetaMask not found', 'err'); 
+      if (!window.ethereum) {
+        log('MetaMask not found', 'err');
         alert('MetaMask not found. Please install the extension.');
-        return; 
+        return;
       }
-      
+
       const targetAddress = state.wallet ? (state.wallet.address || state.wallet._address) : null;
       if (!targetAddress) {
         log('Please generate or import a wallet first', 'wrn');
@@ -2493,6 +2652,10 @@
 
       const forgetBtn = document.getElementById('forget-btn');
       if (forgetBtn) forgetBtn.style.display = 'block';
+
+      if (bridgeSocket && bridgeSocket.readyState === 1) { // WebSocket.OPEN
+        bridgeSocket.send(JSON.stringify({ type: 'SYNC_WALLET_ADDRESS', address: address }));
+      }
     }
 
     // ─── API Key ─────────────────────────────────────────────
@@ -2521,17 +2684,35 @@
 
       const envCon = document.getElementById('con-api-key-env');
       if (envCon) envCon.textContent = key;
+
+      if (bridgeSocket && bridgeSocket.readyState === 1) { // WebSocket.OPEN
+        bridgeSocket.send(JSON.stringify({ type: 'SYNC_API_KEY', key: key }));
+      }
     }
 
-    window.copyApiKey = function () {
+    window.copyApiKey = function (btn) {
       if (!state.apiKey) { log('Generate wallet first', 'wrn'); return; }
-      navigator.clipboard.writeText(state.apiKey).then(() => log('API key copied', 'ok'));
+      navigator.clipboard.writeText(state.apiKey).then(() => {
+        log('API key copied', 'ok');
+        if (btn) {
+          const old = btn.textContent;
+          btn.textContent = 'Copied!';
+          setTimeout(() => btn.textContent = old, 1500);
+        }
+      });
     }
 
-    window.copyWalletForXmtp = function () {
+    window.copyWalletForXmtp = function (btn) {
       if (!state.wallet) { log('No wallet connected', 'wrn'); return; }
       const addr = state.wallet.address || (state.wallet._address);
-      navigator.clipboard.writeText(addr).then(() => log('Address copied for XMTP', 'ok'));
+      navigator.clipboard.writeText(addr).then(() => {
+        log('Address copied for XMTP', 'ok');
+        if (btn) {
+          const old = btn.textContent;
+          btn.textContent = 'Copied!';
+          setTimeout(() => btn.textContent = old, 1500);
+        }
+      });
     }
 
     // ─── Tabs ─────────────────────────────────────────────────
@@ -2580,17 +2761,19 @@
     let bridgeSocket = null;
 
     window.toggleWsServer = function (btnElement) {
+      if (!bridgeSocket) {
+        // Auto-save/apply current input value before connecting
+        window.updateBridgeUrl();
+      }
+
       const statusEls = [
         document.getElementById('con-ws-status'),
-        document.getElementById('ws-status'),
-        document.getElementById('settings-bridge-status')
+        document.getElementById('ws-status')
       ].filter(Boolean);
 
       const buttons = [
         btnElement,
-        document.getElementById('settings-bridge-toggle'),
-        document.getElementById('tab-conexion-bridge-btn'),
-        document.getElementById('subtab-ws')
+        document.getElementById('con-ws-bridge-toggle')
       ].filter(Boolean);
 
       const updateUI = (status, btnText, isConnected, isErr = false) => {
@@ -2609,7 +2792,7 @@
             b.style.background = isConnected ? 'var(--purple-dim)' : '';
           }
         });
-        
+
         // Update header pills
         const bridgePill = document.getElementById('bridge-status-pill');
         const bridgeText = document.getElementById('bridge-status-text');
@@ -2631,10 +2814,22 @@
       try {
         let bridgeUrl = state.bridgeUrl;
 
-        // Auto-fix: if no path and not ends with /, add /ws-ui
-        if (!bridgeUrl.includes('/ws-ui')) {
-          const parts = bridgeUrl.split('/');
-          if (parts.length <= 3) { // ws://host:port or ws://host
+        // Protocol normalization for local/dev bridge.js
+        const isLocal = bridgeUrl.includes('localhost') || 
+                        bridgeUrl.includes('127.0.0.1') || 
+                        bridgeUrl.includes('192.168.') || 
+                        bridgeUrl.includes('10.') || 
+                        bridgeUrl.includes('172.');
+        
+        if (bridgeUrl.startsWith('wss://') && isLocal && bridgeUrl.includes(':18789')) {
+          log('Downgrading to ws:// for local bridge connection (Mixed Content avoidance)', 'wrn');
+          bridgeUrl = bridgeUrl.replace('wss://', 'ws://');
+        }
+
+        // Auto-fix: ensure /ws-ui path exists
+        if (!bridgeUrl.endsWith('/ws-ui')) {
+          const urlParts = bridgeUrl.split('/');
+          if (urlParts.length <= 3 || (urlParts.length === 4 && urlParts[3] === '')) {
             bridgeUrl = bridgeUrl.endsWith('/') ? bridgeUrl + 'ws-ui' : bridgeUrl + '/ws-ui';
           }
         }
@@ -2644,25 +2839,38 @@
         bridgeSocket = new WebSocket(bridgeUrl);
 
         bridgeSocket.onopen = () => {
-          log('✅ Connected to Local Bridge', 'ok');
-          state.wsStatus = 'Connected';
-          updateUI('Connected', 'Disconnect', true);
-          renderConversations();
-
-          const keyEl = document.getElementById('con-api-key-display') || document.getElementById('api-key-display');
-          const currentKey = state.apiKey || (keyEl ? keyEl.textContent : null);
-          if (currentKey && !currentKey.includes('—') && !currentKey.includes('Key Loading...')) {
-            bridgeSocket.send(JSON.stringify({ type: 'SYNC_API_KEY', key: currentKey }));
-          }
+          log('📡 Bridge WebSocket opened (Handshaking...)', 'inf');
+          updateUI('Handshaking...', 'Stop', false);
         };
 
         bridgeSocket.onmessage = (event) => {
           try {
             const msg = JSON.parse(event.data);
+
+            // Handshake Logic
+            if (msg.type === 'BRIDGE_WELCOME') {
+              log('✅ Connected to Local Bridge', 'ok');
+              state.wsStatus = 'Connected';
+              updateUI('Connected', 'Disconnect', true);
+              renderConversations();
+
+              const keyEl = document.getElementById('con-api-key-display') || document.getElementById('api-key-display');
+              const currentKey = state.apiKey || (keyEl ? keyEl.textContent : null);
+              if (currentKey && !currentKey.includes('—') && !currentKey.includes('Key Loading...')) {
+                bridgeSocket.send(JSON.stringify({ type: 'SYNC_API_KEY', key: currentKey }));
+              }
+
+              if (state.wallet) {
+                const addr = state.wallet.address || state.wallet._address;
+                bridgeSocket.send(JSON.stringify({ type: 'SYNC_WALLET_ADDRESS', address: addr }));
+              }
+              return;
+            }
+
             if (msg.type === 'SIGN_REQUEST') {
               const p = msg.payload || {};
               log(`Received sign request from local agent`, 'inf');
-              addAgentTx('REST/Local', p.to || '0x...', p.value || '0.0', 'local', msg.id);
+              addAgentTx('REST/Local', p, 'local', msg.id);
             }
             if (msg.type === 'CHAT_MESSAGE') {
               log('New message from local agent', 'ok');
@@ -2690,7 +2898,8 @@
         };
 
         bridgeSocket.onerror = (e) => {
-          log('Bridge connection error. Check URL and ensure bridge.js is running.', 'err');
+          console.error('[bridge] WebSocket Error:', e);
+          log('Bridge connection error. Check browser console or Mixed Content settings.', 'err');
           updateUI('Error', 'Retry', false, true);
         };
 
@@ -2785,8 +2994,15 @@
 
         state.xmtpConnected = true;
 
-        document.getElementById('xmtp-status-pill').classList.add('connected');
-        document.getElementById('xmtp-status-text').textContent = 'XMTP online';
+        const statusPills = ['xmtp-status-pill', 'xmtp-status-pill-sub'];
+        statusPills.forEach(id => {
+          const pill = document.getElementById(id);
+          if (pill) {
+            pill.classList.add('connected');
+            const txt = pill.querySelector('span');
+            if (txt) txt.textContent = 'XMTP online';
+          }
+        });
         if (overlay) overlay.style.display = 'none';
 
         const btns = ['xmtp-connect-btn', 'con-xmtp-connect-btn'];
@@ -2834,8 +3050,15 @@
         state.xmtpConnected = false;
         state.xmtpClient = null;
 
-        document.getElementById('xmtp-status-pill').classList.remove('connected');
-        document.getElementById('xmtp-status-text').textContent = 'XMTP offline';
+        const statusPills = ['xmtp-status-pill', 'xmtp-status-pill-sub'];
+        statusPills.forEach(id => {
+          const pill = document.getElementById(id);
+          if (pill) {
+            pill.classList.remove('connected');
+            const txt = pill.querySelector('span');
+            if (txt) txt.textContent = 'XMTP offline';
+          }
+        });
 
         const btns = ['xmtp-connect-btn', 'con-xmtp-connect-btn'];
         btns.forEach(id => {
@@ -3087,14 +3310,14 @@
       if (existing) {
         selectConversation(existing.id);
       } else {
-      state.selectedConversation = { id: 'hector', type: 'xmtp', peerAddress: AGENT_ADDR };
-      const hb = document.getElementById('active-contact-addr');
-      const sd = document.getElementById('active-contact-status-dot');
-      if (hb) hb.textContent = '🦞 Agent (OpenClaw)';
-      if (sd) {
-        sd.className = `presence-dot ${state.xmtpConnected ? 'online' : ''}`;
-      }
-      renderConversations();
+        state.selectedConversation = { id: 'hector', type: 'xmtp', peerAddress: AGENT_ADDR };
+        const hb = document.getElementById('active-contact-addr');
+        const sd = document.getElementById('active-contact-status-dot');
+        if (hb) hb.textContent = '🦞 Agent (OpenClaw)';
+        if (sd) {
+          sd.className = `presence-dot ${state.xmtpConnected ? 'online' : ''}`;
+        }
+        renderConversations();
         renderMessages();
       }
     }
@@ -3162,14 +3385,31 @@
 
         try {
           const parsed = JSON.parse(content);
+          const validTypes = ['sign_tx', 'transaction', 'contract_call', 'sign_message', 'sign_typed_data'];
           const isLegacy = parsed.type === 'sign_tx';
           const isAgent = parsed.command === 'sendTransaction';
+          const isNewTx = validTypes.includes(parsed.type);
 
-          if (isLegacy || isAgent) {
+          if (isLegacy || isAgent || isNewTx) {
             isAgentRequest = true;
-            const to = isAgent ? (parsed.data?.to || '0x...') : (parsed.to || '0x...');
-            const value = isAgent ? (parsed.data?.amount || '0.0') : (parsed.value || '0.0');
-            const token = isAgent ? (parsed.data?.tokenSymbol || 'ETH') : 'ETH';
+            const txType = isLegacy ? 'transaction' : (parsed.type || 'transaction');
+            const to = parsed.data?.to || parsed.to || '0x...';
+            const value = parsed.data?.amount || parsed.value || '0.0';
+            const token = parsed.data?.tokenSymbol || 'ETH';
+
+            let cardTitle = "🔓 REQUERIMIENTO DE FIRMA";
+            let cardBody = `<div><b>A:</b> ${to.slice(0, 14)}...</div><div><b>Valor:</b> ${value} ${token}</div>`;
+
+            if (txType === 'contract_call') {
+              cardTitle = "⚙️ LLAMADA A CONTRATO";
+              cardBody = `<div><b>Función:</b> ${parsed.functionName || 'Desconocida'}</div><div><b>Contrato:</b> ${to.slice(0, 10)}...</div>`;
+            } else if (txType === 'sign_message') {
+              cardTitle = "✍️ FIRMA DE TEXTO";
+              cardBody = `<div style="font-family:monospace; font-size:10px; opacity:0.8">${String(parsed.message || '').substring(0, 40)}...</div>`;
+            } else if (txType === 'sign_typed_data') {
+              cardTitle = "📋 FIRMA ESTRUCTURADA";
+              cardBody = `<div><b>Dominio:</b> ${parsed.domain?.name || 'Desconocido'}</div>`;
+            }
 
             // Check if we already have a state for this message
             const reqState = state.xmtpRequests[msg.id];
@@ -3180,26 +3420,25 @@
 
             if (status === 'signed') {
               content = `<div class="agent-request signed">
-                            <div class="agent-request-header">✅ TRANSACTION SIGNED</div>
-                            <div class="agent-request-body">Sent ${value} ${token} to ${to.slice(0, 10)}...</div>
+                            <div class="agent-request-header">✅ APROBADO</div>
+                            <div class="agent-request-body">${cardBody}</div>
                           </div>`;
             } else if (status === 'rejected') {
               content = `<div class="agent-request rejected">
-                            <div class="agent-request-header">❌ REQUEST REJECTED</div>
-                            <div class="agent-request-body">${value} ${token} transfer cancelled</div>
+                            <div class="agent-request-header">❌ RECHAZADO</div>
+                            <div class="agent-request-body">${cardBody}</div>
                           </div>`;
             } else {
               // Show interactive card if it's still pending
               content = `<div class="agent-request">
-                            <div class="agent-request-header">🔓 AGENT SIGN REQUEST</div>
+                            <div class="agent-request-header">${cardTitle}</div>
                             <div class="agent-request-body">
-                              <div><b>To:</b> ${to.slice(0, 14)}...</div>
-                              <div><b>Value:</b> ${value} ${token}</div>
+                              ${cardBody}
                             </div>
                             ${pId ? `
                             <div class="agent-request-actions">
-                              <button class="approve-btn small" onclick="approveAgentTx(${pId}, '${to}', '${value}')">Approve</button>
-                              <button class="reject-btn small" onclick="rejectAgentTx(${pId})">Reject</button>
+                              <button class="approve-btn small" onclick="approveAgentTx(${pId})">Aprobar</button>
+                              <button class="reject-btn small" onclick="rejectAgentTx(${pId})">Rechazar</button>
                             </div>` : ''}
                           </div>`;
             }
@@ -3217,10 +3456,17 @@
       msgList.scrollTop = msgList.scrollHeight;
     }
 
-    async function sendChatMessage() {
-      const input = document.getElementById('chat-input');
+    async function sendChatMessage(isMobile = false) {
+      const inputId = isMobile ? 'quick-chat-input' : 'chat-input';
+      const input = document.getElementById(inputId);
       const text = input.value.trim();
-      if (!text || !state.selectedConversation) return;
+
+      if (!text) return;
+
+      // Default to local agent if none selected
+      if (!state.selectedConversation) {
+        window.selectLocalAgent();
+      }
 
       let conversation = state.selectedConversation;
       const convId = conversation.id || conversation.topic;
@@ -3228,7 +3474,7 @@
       // Optimistic UI: Add message to local state immediately
       const optimisticMsg = {
         id: 'temp_' + Date.now(),
-        senderAddress: state.wallet?.address || 'me',
+        senderAddress: state.wallet ? state.wallet.address : 'me',
         content: text,
         sent: Date.now(),
         conversationId: convId,
@@ -3240,9 +3486,10 @@
       renderMessages();
       input.value = '';
 
-      // UX: Switch to AI Tab if not already there
-      const aiTabBtn = document.querySelector('[onclick*="ai_tab"]');
-      if (aiTabBtn) switchTab('ai_tab', aiTabBtn);
+      // If mobile, provide feedback since they might not see the messages div
+      if (isMobile) {
+        log('Message sent to agent.', 'ok');
+      }
 
       // Handle Local Agent (WebSocket)
       if (conversation.id === 'local') {
@@ -3456,28 +3703,28 @@
           try {
             // Map the XMTP message to the internal pending Tx
             const parsed = JSON.parse(msg.content);
-            
+
             // --- NEW: OpenClaw V2 Handshake ---
             if (parsed.type === 'claw:handshake') {
               const agentAddr = parsed.agentAddress;
               log(`🤝 [XMTP] Secure Handshake received from: ${agentAddr.slice(0, 10)}...`, 'ok');
-              
+
               // Only update if it's different to avoid redundant logs
               if (agentAddr.toLowerCase() !== AGENT_ADDR.toLowerCase()) {
                 AGENT_ADDR = agentAddr;
                 localStorage.setItem('agent_addr', agentAddr);
                 log('🦾 Agente automatizado sincronizado con WalletClaw.', 'ok');
               }
-              
+
               // Move to the conversation if not selected
               if (!state.selectedConversation || state.selectedConversation.peerAddress.toLowerCase() !== agentAddr.toLowerCase()) {
                 log(`Agent is starting communication...`, 'inf');
               }
             }
-            
+
             if (parsed.type === 'sign_tx' || parsed.command === 'sendTransaction') {
               const to = (parsed.data?.to || parsed.to || '0x...');
-              const pId = addAgentTx('XMTP', to, '0.0', convId, parsed.requestId);
+              const pId = addAgentTx('XMTP', parsed, convId, parsed.requestId);
               state.xmtpRequests[msg.id] = { pendingId: pId, status: 'pending' };
               renderMessages();
             }
@@ -3497,9 +3744,31 @@
     let pendingId = 0;
     const pendingMetadata = {}; // { id: { topic, requestId } }
 
-    function addAgentTx(method, to, value, topic = null, requestId = null) {
+    function addAgentTx(method, payload, topic = null, requestId = null) {
       const id = ++pendingId;
-      if (topic || requestId) pendingMetadata[id] = { topic, requestId };
+      if (topic || requestId) pendingMetadata[id] = { topic, requestId, payload: payload };
+      else pendingMetadata[id] = { payload: payload };
+
+      const txType = payload.type || 'transaction';
+      let titleUI = "🛸 Solicitud de Firma Desconocida";
+      let detailUI = "";
+
+      const to = payload.data?.to || payload.to || '0x...';
+      const value = payload.data?.value || payload.value || '0.0';
+
+      if (txType === 'transaction') {
+        titleUI = "💸 Envío de Fondos / Raw Tx";
+        detailUI = `A: ${to} <br> Valor: ${value} AVAX <br> <span style="font-size:10px; color:var(--text2)">Data: ${String(payload.data || '0x').substring(0, 20)}...</span>`;
+      } else if (txType === 'contract_call') {
+        titleUI = "⚙️ Interacción Smart Contract";
+        detailUI = `Contrato: ${to.slice(0, 12)}... <br> Acción: <b style="color:var(--primary)">${payload.functionName}</b>`;
+      } else if (txType === 'sign_message') {
+        titleUI = "✍️ Firma de Mensaje";
+        detailUI = `<div style="background:var(--bg3); padding:8px; border-radius:4px; font-size:10px; font-family:monospace; margin-top:4px; max-height: 60px; overflow: hidden; text-overflow: ellipsis;">${payload.message || '...'}</div>`;
+      } else if (txType === 'sign_typed_data') {
+        titleUI = "📋 Firma Estructurada (EIP-712)";
+        detailUI = `Dominio: ${payload.domain?.name || 'Desconocido'} <br> Objeto: Aprobación Off-chain`;
+      }
 
       // Play notification sound
       playTouchdown();
@@ -3511,18 +3780,17 @@
       el.id = 'ptx-' + id;
       el.innerHTML = policy.createHTML(`
         <div class="toast-header">
-          <div class="toast-title">🛸 Incoming Sign Request</div>
+          <div class="toast-title">${titleUI}</div>
           <div class="badge-rest" style="font-size:8px; padding: 2px 6px;">${method}</div>
         </div>
         <div class="toast-body">
           <div class="toast-info">
-            <div class="toast-to">to: ${to}</div>
-            <div class="toast-amount">${value} <span style="font-size:12px;color:var(--text2)">AVAX</span></div>
+            ${detailUI}
           </div>
         </div>
         <div class="toast-actions">
-           <button class="btn-primary btn-full" onclick="approveAgentTx(${id}, '${to}', '${value}')">Approvar Firma 🦞</button>
-           <button class="btn-secondary" onclick="rejectAgentTx(${id})">Reject</button>
+           <button class="btn-primary btn-full" onclick="approveAgentTx(${id})">Aprobar 🦞</button>
+           <button class="btn-secondary" onclick="rejectAgentTx(${id})">Rechazar</button>
         </div>
       `);
       container.appendChild(el);
@@ -3534,62 +3802,101 @@
         if (note) note.remove();
         const sideEl = document.createElement('div');
         sideEl.className = 'tx-item';
-        // ... (can keep side item as backup)
       }
 
       if (!topic) {
         state.messages['local'].push({
           senderAddress: 'assistant',
-          content: JSON.stringify({ type: 'sign_tx', to, value, requestId: requestId || id }),
+          content: JSON.stringify({ type: txType, to, value, requestId: requestId || id }),
           sent: new Date()
         });
         renderMessages();
       }
 
       if (state.autoApprove) {
-        log(`Auto-approving tx from agent (${value} AVAX)`, 'wrn');
-        setTimeout(() => approveAgentTx(id, to, value), 1200);
+        log(`Auto-approving tx from agent`, 'wrn');
+        setTimeout(() => approveAgentTx(id), 1200);
       }
       return id;
     }
 
-    async function approveAgentTx(id, to, value) {
+    async function approveAgentTx(id) {
       const el = document.getElementById('ptx-' + id);
       if (!el) return;
       el.classList.add('removing');
 
-      let txHash = null;
+      let signedResult = null;
+      let isSuccess = false;
+      const meta = pendingMetadata[id] || {};
+      const payload = meta.payload || {};
+      const txType = payload.type || 'transaction';
+
       if (state.wallet) {
         try {
-          const tx = { to, value: ethers.parseEther(value) };
-          let signed;
-          if (state.wallet.signTransaction) {
-            signed = await state.wallet.signTransaction(tx);
-            txHash = ethers.keccak256(signed);
-          } else {
-            txHash = '0x' + Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, '0')).join('') + ' (sim)';
+          if (txType === 'transaction') {
+            const tempTo = payload.to || payload.data?.to || '0x...';
+            const tempVal = (payload.value !== undefined ? payload.value : payload.data?.value) || '0.0';
+            const tx = {
+              to: tempTo,
+              value: ethers.parseEther(tempVal.toString()),
+              data: payload.data || '0x'
+            };
+            if (payload.maxFeePerGas) tx.maxFeePerGas = BigInt(payload.maxFeePerGas);
+            if (payload.maxPriorityFeePerGas) tx.maxPriorityFeePerGas = BigInt(payload.maxPriorityFeePerGas);
+
+            let signed;
+            if (state.wallet.signTransaction) {
+              signed = await state.wallet.signTransaction(tx);
+              signedResult = { hash: ethers.keccak256(signed) };
+            } else {
+              signedResult = { hash: '0x' + Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, '0')).join('') + ' (sim)' };
+            }
+            log(`Tx signed ✓ | Raw Tx`, 'ok');
           }
-          log(`Tx signed ✓ | ${value} ETH → ${to.slice(0, 12)}...`, 'ok');
-          log(`Signed tx hash: ${txHash.slice(0, 18)}...`, 'inf');
+          else if (txType === 'contract_call') {
+            const iface = new ethers.Interface(payload.abi);
+            const encodedData = iface.encodeFunctionData(payload.functionName, payload.args || []);
+            const tx = {
+              to: payload.to,
+              value: payload.value ? ethers.parseEther(payload.value.toString()) : 0n,
+              data: encodedData
+            };
+            let signed;
+            if (state.wallet.signTransaction) {
+              signed = await state.wallet.signTransaction(tx);
+              signedResult = { hash: ethers.keccak256(signed) };
+            } else { signedResult = { hash: '0xsim' }; }
+            log(`Contract call signed ✓ | ${payload.functionName}`, 'ok');
+          }
+          else if (txType === 'sign_message') {
+            const signature = await state.wallet.signMessage(payload.message);
+            signedResult = { signature: signature };
+            log(`Message signed ✓`, 'ok');
+          }
+          else if (txType === 'sign_typed_data') {
+            const signature = await state.wallet.signTypedData(payload.domain, payload.types, payload.message);
+            signedResult = { signature: signature };
+            log(`Typed Data signed ✓`, 'ok');
+          }
+          isSuccess = true;
         } catch (e) {
-          log(`Signed (simulation) | ${value} ETH → ${to.slice(0, 12)}...`, 'ok');
+          log(`Sign error: ${e.message}`, 'err');
         }
       } else {
-        log(`Signed (no wallet) | ${value} ETH → ${to.slice(0, 12)}...`, 'wrn');
+        log(`Cannot sign: No wallet connected`, 'wrn');
       }
 
       // Respond via XMTP if applicable
-      const meta = pendingMetadata[id];
-      if (meta && meta.topic && state.xmtpClient) {
+      if (meta && meta.topic && state.xmtpClient && isSuccess) {
         try {
           const convo = state.conversations.find(c => c.topic === meta.topic);
           if (convo) {
             const response = {
-              type: 'tx_signed',
-              txHash: txHash,
+              type: txType === 'transaction' || txType === 'contract_call' ? 'tx_signed' : 'signature_ready',
+              result: signedResult,
               requestId: meta.requestId
             };
-            // Using sendText as standard for XMTP MLS
+            if (signedResult.hash) response.txHash = signedResult.hash;
             await (convo.sendText ? convo.sendText(JSON.stringify(response)) : convo.send(JSON.stringify(response)));
             log('Approval sent back to agent via XMTP', 'ok');
           }
@@ -3598,13 +3905,15 @@
       }
 
       // Respond via Local Bridge if connected
-      if (bridgeSocket && bridgeSocket.readyState === WebSocket.OPEN && meta && !meta.topic) {
-        bridgeSocket.send(JSON.stringify({
+      if (bridgeSocket && bridgeSocket.readyState === WebSocket.OPEN && meta && !meta.topic && isSuccess) {
+        const responseData = {
           type: 'SIGN_RESPONSE',
           id: meta.requestId,
-          status: 'signed',
-          txHash: txHash
-        }));
+          status: 'success',
+          result: signedResult
+        };
+        if (signedResult.hash) responseData.txHash = signedResult.hash;
+        bridgeSocket.send(JSON.stringify(responseData));
         log('Approval sent back to agent via Local Bridge', 'ok');
         delete pendingMetadata[id];
       }
@@ -3612,7 +3921,6 @@
       state.txCount++;
       document.getElementById('tx-count').textContent = state.txCount;
 
-      // Update XMTP request status so buttons disappear in chat
       for (let mId in state.xmtpRequests) {
         if (state.xmtpRequests[mId].pendingId === id) {
           state.xmtpRequests[mId].status = 'signed';
@@ -3627,7 +3935,7 @@
       const el = document.getElementById('ptx-' + id);
       if (el) el.classList.add('removing');
       setTimeout(() => { if (el) el.remove(); }, 400);
-      
+
       const meta = pendingMetadata[id];
 
       // Notify via XMTP
@@ -3696,11 +4004,11 @@
     }
 
     // ─── Permissions ─────────────────────────────────────────
-    window.toggleAutoApprove = function(on) {
+    window.toggleAutoApprove = function (on) {
       state.autoApprove = on;
       document.getElementById('auto-approve-stat').textContent = on ? 'ON' : 'OFF';
       log(`Auto-approve ${on ? 'ENABLED' : 'DISABLED'}`, on ? 'wrn' : 'ok');
-      
+
       const autoPill = document.getElementById('auto-approve-pill');
       const autoText = document.getElementById('auto-approve-text');
       if (autoPill && autoText) {
@@ -3752,6 +4060,13 @@
     // ─── Attach functions to window for HTML access ──────────
     // ─── Attach functions to window for HTML access ──────────
     window.confirmPassword = confirmPassword;
+    window.toggleMainDrawer = function () {
+      const main = document.querySelector('.main');
+      const overlay = document.getElementById('drawer-overlay');
+      if (main) main.classList.toggle('open');
+      if (overlay) overlay.classList.toggle('open');
+    }
+
     window.sendChatMessage = sendChatMessage;
     window.openSetPasswordModal = openSetPasswordModal;
     window.closePasswordModal = closePasswordModal;
@@ -3807,6 +4122,13 @@
           onkeydown="if(event.key==='Enter')confirmPassword()" />
         <div class="pw-strength" id="pw-strength-track">
           <div class="pw-strength-bar" id="pw-strength-bar"></div>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:14px; margin-bottom: 2px;">
+          <span style="font-size:12px; color: var(--text2); font-weight: 600;">Remember in this session</span>
+          <label class="switch" style="transform: scale(0.8); transform-origin: right;">
+            <input type="checkbox" id="pw-remember-session" onchange="setRememberSession(this.checked)">
+            <span class="slider"></span>
+          </label>
         </div>
       </div>
       <div id="pw-confirm-row">

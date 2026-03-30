@@ -6,11 +6,9 @@ import http from 'http';
 /**
  * WalletClaw Bridge — El puente real entre OpenClaw y tu Navegador.
  * ───────────────────────────────────────────────────────────────────
- * Puertos:
- *   - 3000: API REST para OpenClaw (POST /sign)
- *   - 7777: WebSocket para OpenClaw (Agentes locales)
- *   - 8000: WebSocket para WalletClaw UI (Control Panel)
  */
+
+const BRIDGE_VERSION = 'v0.7.8';
 
 const app = express();
 app.use(cors());
@@ -23,6 +21,7 @@ const REST_PORT = 18789; // Puerto único para REST, Agentes y UI (vía Caddy)
 let uiSocket = null; // Conexión con el navegador (WalletClaw)
 let activeAgentSocket = null; // Último agente conectado
 let activeApiKey = null; // Se sincroniza desde el navegador
+let activeWalletAddress = null; // Se sincroniza desde el navegador
 
 // ─── 1. SERVIDOR REST PARA OPENCLAW (Port 3000) ───────────────────────────
 
@@ -56,14 +55,45 @@ app.post('/sign', (req, res) => {
     res.json({ status: 'sent_to_wallet', requestId });
 });
 
-const restServer = app.listen(REST_PORT, '0.0.0.0', () => {
+// Endpoint para obtener la dirección de la wallet conectada. 
+// Soporta múltiples alias para compatibilidad máxima con agentes.
+app.get(['/wallet', '/wallet/address', '/address', '/api/wallet', '/api/wallet/address', '/api/v1/wallet/address'], (req, res) => {
+    const receivedKey = req.headers['x-api-key'] || (req.headers['authorization'] ? req.headers['authorization'].replace('Bearer ', '') : null);
+    
+    // Validación de API Key
+    if (!activeApiKey || receivedKey !== activeApiKey) {
+        return res.status(401).json({ error: 'Unauthorized: Invalid or missing API Key' });
+    }
+
+    if (!activeWalletAddress) {
+        return res.status(404).json({ error: 'Not Found: Wallet address not synced yet. Please connect the UI.' });
+    }
+
+    res.json({ address: activeWalletAddress });
+});
+
+const HOST = process.argv[2] || '0.0.0.0';
+
+const restServer = app.listen(REST_PORT, HOST, () => {
     console.log(`\n╔══════════════════════════════════════════════╗`);
     console.log(`║    WalletClaw Bridge — ¡ONLINE!  🦾🦞       ║`);
+    console.log(`║    Versión: ${BRIDGE_VERSION}                    ║`);
     console.log(`╚══════════════════════════════════════════════╝`);
-    console.log(`[REST]      Escuchando en http://0.0.0.0:${REST_PORT}/sign`);
-    console.log(`[AGENT_WS]  Escuchando en ws://0.0.0.0:${REST_PORT}/ws-agent`);
-    console.log(`[UI_WS]     Escuchando en ws://0.0.0.0:${REST_PORT}/ws-ui`);
-    console.log(`[NOTE]      Si te conectas desde otra máquina, usa la IP real (ej: 192.168.1.42)`);
+    console.log(`\n[REST]      Escuchando en http://${HOST}:${REST_PORT}/api/wallet`);
+    console.log(`[REST]      Escuchando en http://${HOST}:${REST_PORT}/sign`);
+    console.log(`[AGENT_WS]  Escuchando en ws://${HOST}:${REST_PORT}/ws-agent`);
+    console.log(`[UI_WS]     Escuchando en ws://${HOST}:${REST_PORT}/ws-ui`);
+    console.log(`[NOTE]      Puedes cambiar la IP ejecutando: node src/bridge.js <IP>`);
+}).on('error', (err) => {
+    if (err.code === 'EADDRNOTAVAIL') {
+        console.error(`\n❌ ERROR: La IP ${HOST} no está disponible en esta máquina.`);
+        console.error(`💡 Intenta usar 127.0.0.1 o no pases ningún parámetro para usar 0.0.0.0`);
+    } else if (err.code === 'EADDRINUSE') {
+        console.error(`\n❌ ERROR: El puerto ${REST_PORT} ya está en uso.`);
+    } else {
+        console.error(`\n❌ ERROR CRÍTICO:`, err.message);
+    }
+    process.exit(1);
 });
 
 
@@ -74,6 +104,7 @@ const agentWss = new WebSocketServer({ noServer: true });
 
 restServer.on('upgrade', (request, socket, head) => {
     const url = new URL(request.url, `http://${request.headers.host}`);
+    console.log(`[BRIDGE] 🛰️  Intento de conexión WS: ${url.pathname} desde ${request.headers.origin || 'N/A'}`);
     
     // Ruta para el Navegador (WalletClaw UI)
     if (url.pathname === '/ws-ui') {
@@ -88,6 +119,7 @@ restServer.on('upgrade', (request, socket, head) => {
         });
     } 
     else {
+        console.log(`[BRIDGE] 🔴 Ruta WS desconocida: ${url.pathname}. Destruyendo socket.`);
         socket.destroy();
     }
 });
@@ -99,14 +131,26 @@ uiWss.on('connection', (ws) => {
     console.log(`[UI]    🟢 WalletClaw (Navegador) conectado.`);
     uiSocket = ws;
 
+    // Send handshake
+    ws.send(JSON.stringify({
+        type: 'BRIDGE_WELCOME',
+        version: BRIDGE_VERSION,
+        status: 'ready'
+    }));
+
     ws.on('message', (data) => {
         try {
             const msg = JSON.parse(data);
             
-            // 1. Sincronización de API Key desde el Navegador
+            // 1. Sincronización de API Key y Dirección desde el Navegador
             if (msg.type === 'SYNC_API_KEY') {
                 activeApiKey = msg.key;
                 console.log(`[UI]    🦾 API Key sincronizada y ACTIVA.`);
+            }
+
+            if (msg.type === 'SYNC_WALLET_ADDRESS') {
+                activeWalletAddress = msg.address;
+                console.log(`[UI]    🏦 Dirección de Wallet sincronizada: ${activeWalletAddress}`);
             }
 
             // 2. Respuesta de Firma o Chat del usuario

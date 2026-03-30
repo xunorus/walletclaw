@@ -1,6 +1,6 @@
 {
   "name": "aleph1",
-  "version": "0.6.1",
+  "version": "0.7.7",
   "type": "module",
   "packageManager": "yarn@4.6.0",
   "dependencies": {

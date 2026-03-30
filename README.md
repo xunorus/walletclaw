@@ -2,7 +2,7 @@
 
 > **Self-custody crypto wallet with superpowers for AI agents — built for the OpenClaw ecosystem.**
 
-[![Version](https://img.shields.io/badge/version-v0.7.1-e03530?style=flat-square)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.7.7-e03530?style=flat-square)](./CHANGELOG.md)
 [![Network](https://img.shields.io/badge/network-Avalanche%20Fuji-e84142?style=flat-square&logo=avalanche)](https://testnet.snowtrace.io)
 [![License](https://img.shields.io/badge/license-MIT-ff8c42?style=flat-square)](#license)
 [![Hackathon](https://img.shields.io/badge/hackathon-Aleph%202026-ffd166?style=flat-square)](#)
@@ -107,6 +107,17 @@ The wallet survives browser refreshes. Private keys are encrypted with your pass
 5. OpenClaw receives the hash and continues its workflow
 ```
 
+### Querying Wallet Address
+OpenClaw can query the currently active wallet address on the bridge via `GET /wallet`:
+
+```bash
+# Get current wallet address (requires API Key)
+curl -H "x-api-key: wc_your_key_here" http://localhost:18789/wallet
+```
+
+Returns: `{ "address": "0x..." }`
+
+
 ### Agent signs a transaction (XMTP flow)
 
 ```
@@ -187,11 +198,25 @@ flowchart TD
 |--------|-----------|
 | Agent steals private key | Key never sent to agent — only signed txs are returned |
 | Malicious agent drains wallet | Per-tx and daily limits, allowlist, manual approval mode |
-| Browser storage compromise | AES-GCM 256-bit encryption with password-derived key (PBKDF2, 200k iterations) |
+| Browser storage compromise | **AES-256-GCM** encryption with password-derived key (**PBKDF2**, 200k iterations) |
 | Prompt injection via XMTP | XMTP messages require approval before signing — agent cannot self-approve |
 | Man-in-the-middle (REST) | API key auth; in production, run over HTTPS/localhost only |
 
-**WalletClaw is self-custody by design.** No private key is ever sent to a server, stored in plaintext, or accessible to the agent. The worst case is a drained testnet wallet within your configured limits.
+### 🔐 Technical Data Storage
+
+**Where is the password saved?**
+- **In-Memory**: The password stays in application memory while active.
+- **Session Storage**: If "Remember Session" is enabled, the password is saved in `sessionStorage` (stays alive as long as the tab/window is open). It is NOT saved in `localStorage`.
+
+**How is the Private Key saved?**
+- **Encrypted LocalStorage**: Your key is stored in `localStorage` under `walletclaw_v1`.
+- **Encryption Algorithm**: **AES-256-GCM** (authenticated encryption).
+- **Key Derivation**: We use **PBKDF2-SHA256** with **200,000 iterations** to derive the encryption key from your password.
+- **Native Implementation**: All cryptographic operations use the browser's built-in **WebCrypto API** (native performance and security).
+
+**Server-Side (Agent) Security**:
+- The OpenClaw Agent uses `ClawKeyStore.js` which implements **HKDF-SHA256** key derivation tied to the `wallet address` + `chainId`, ensuring keys can't be easily moved between environment instances.
+
 
 ---
 
@@ -257,7 +282,6 @@ yarn
 
 # Run
 ```
-yarn parcel src/index.html    --port 3233 --https
 yarn parcel src/index.html    --port 3233 --https
 
 ```
