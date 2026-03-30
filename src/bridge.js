@@ -2,13 +2,14 @@ import express from 'express';
 import { WebSocketServer, WebSocket } from 'ws';
 import cors from 'cors';
 import http from 'http';
+import { exec, execSync } from 'child_process';
 
 /**
  * WalletClaw Bridge — El puente real entre OpenClaw y tu Navegador.
  * ───────────────────────────────────────────────────────────────────
  */
 
-const BRIDGE_VERSION = 'v0.7.8';
+const BRIDGE_VERSION = 'v0.7.9';
 
 const app = express();
 app.use(cors());
@@ -23,15 +24,32 @@ let activeAgentSocket = null; // Último agente conectado
 let activeApiKey = null; // Se sincroniza desde el navegador
 let activeWalletAddress = null; // Se sincroniza desde el navegador
 
+// --- Utilidades Premium ---
+const playSound = (sound = 'Glass.aiff') => {
+    if (process.platform !== 'darwin') return; // Solo Mac
+    exec(`afplay /System/Library/Sounds/${sound}`, (err) => {
+        if (err) console.error('[SOUND_ERR]', err.message);
+    });
+};
+
 // ─── 1. SERVIDOR REST PARA OPENCLAW (Port 3000) ───────────────────────────
 
-app.post('/sign', (req, res) => {
-    const receivedKey = req.headers['x-api-key'] || (req.headers['authorization'] ? req.headers['authorization'].replace('Bearer ', '') : null);
+// Endpoint para solicitar firma de transacción o mensaje.
+// Soporta múltiples alias para compatibilidad con distintos agentes.
+app.post(['/sign', '/sign_tx', '/send', '/api/wallet/send'], (req, res) => {
+    const receivedKey = req.headers['x-api-key'] || 
+                       (req.headers['authorization'] ? req.headers['authorization'].replace('Bearer ', '') : null) || 
+                       (req.body?.apiKey) || (req.body?.key) || (req.query?.apiKey) || (req.query?.key) || null;
     
     // Validación de API Key
-    if (!activeApiKey || receivedKey !== activeApiKey) {
-        console.log(`[REST] 🔴 Intento de firma bloqueado: API Key inválida o no configurada. Recibido: ${receivedKey}`);
-        return res.status(401).json({ error: 'Unauthorized: Invalid or missing API Key' });
+    if (!activeApiKey) {
+        console.log(`[REST] 🔴 Bloqueado: Bridge sin API Key. Abre WalletClaw y conéctalo.`);
+        return res.status(503).json({ error: 'Bridge not synced with UI. Please open WalletClaw.' });
+    }
+
+    if (receivedKey !== activeApiKey) {
+        console.log(`[REST] 🔴 Acceso denegado: API Key recibida (${receivedKey}) no coincide con la de la UI.`);
+        return res.status(401).json({ error: 'Unauthorized: Invalid API Key' });
     }
 
     if (!uiSocket || uiSocket.readyState !== WebSocket.OPEN) {
@@ -58,11 +76,17 @@ app.post('/sign', (req, res) => {
 // Endpoint para obtener la dirección de la wallet conectada. 
 // Soporta múltiples alias para compatibilidad máxima con agentes.
 app.get(['/wallet', '/wallet/address', '/address', '/api/wallet', '/api/wallet/address', '/api/v1/wallet/address'], (req, res) => {
-    const receivedKey = req.headers['x-api-key'] || (req.headers['authorization'] ? req.headers['authorization'].replace('Bearer ', '') : null);
+    const receivedKey = req.headers['x-api-key'] || 
+                       (req.headers['authorization'] ? req.headers['authorization'].replace('Bearer ', '') : null) || 
+                       (req.body?.apiKey) || (req.body?.key) || (req.query?.apiKey) || (req.query?.key) || null;
     
     // Validación de API Key
-    if (!activeApiKey || receivedKey !== activeApiKey) {
-        return res.status(401).json({ error: 'Unauthorized: Invalid or missing API Key' });
+    if (!activeApiKey) {
+        return res.status(503).json({ error: 'Bridge not synced with UI' });
+    }
+
+    if (receivedKey !== activeApiKey) {
+        return res.status(401).json({ error: 'Unauthorized: Invalid API Key' });
     }
 
     if (!activeWalletAddress) {
@@ -89,12 +113,30 @@ const restServer = app.listen(REST_PORT, HOST, () => {
         console.error(`\n❌ ERROR: La IP ${HOST} no está disponible en esta máquina.`);
         console.error(`💡 Intenta usar 127.0.0.1 o no pases ningún parámetro para usar 0.0.0.0`);
     } else if (err.code === 'EADDRINUSE') {
-        console.error(`\n❌ ERROR: El puerto ${REST_PORT} ya está en uso.`);
+        console.error(`\n[BRIDGE] ⚠️  El puerto ${REST_PORT} está ocupado.`);
+        if (process.platform === 'darwin') {
+            try {
+                console.log(`[BRIDGE] 🧹 Intentando limpiar el proceso anterior...`);
+                execSync(`lsof -i :${REST_PORT} -t | xargs kill -9`);
+                console.log(`[BRIDGE] ✅ Limpieza exitosa. Por favor, vuelve a ejecutar el comando.`);
+            } catch (e) {
+                console.error(`[BRIDGE] ❌ No se pudo limpiar automáticamente.`);
+            }
+        }
     } else {
         console.error(`\n❌ ERROR CRÍTICO:`, err.message);
     }
     process.exit(1);
 });
+
+// --- Manejo de Salida Grácil ---
+const handleExit = () => {
+    console.log('\n[BRIDGE] 🛑 Cerrando bridge logicamente...');
+    playSound('Basso.aiff');
+    process.exit();
+};
+process.on('SIGINT', handleExit);
+process.on('SIGTERM', handleExit);
 
 
 // ─── 2. WEBSOCKETS (noServer mode) ──────────────────────────────────────────
@@ -128,6 +170,7 @@ restServer.on('upgrade', (request, socket, head) => {
 // ─── 3. LÓGICA DE CONEXIÓN UI ───────────────────────────────────────────────
 
 uiWss.on('connection', (ws) => {
+    playSound('Tink.aiff');
     console.log(`[UI]    🟢 WalletClaw (Navegador) conectado.`);
     uiSocket = ws;
 
@@ -168,6 +211,7 @@ uiWss.on('connection', (ws) => {
     });
 
     ws.on('close', () => {
+        playSound('Basso.aiff');
         console.log(`[UI]    🔴 WalletClaw desconectado.`);
         uiSocket = null;
     });
@@ -186,6 +230,7 @@ agentWss.on('connection', (ws, req) => {
     }
 
     console.log(`[WS_AGENT] 🟢 Agente OpenClaw conectado.`);
+    playSound('Glass.aiff');
     activeAgentSocket = ws;
 
     ws.on('message', (data) => {
@@ -198,6 +243,7 @@ agentWss.on('connection', (ws, req) => {
     });
 
     ws.on('close', () => {
+        playSound('Pop.aiff');
         console.log(`[WS_AGENT] 🔴 Agente OpenClaw desconectado.`);
         if (activeAgentSocket === ws) activeAgentSocket = null;
     });

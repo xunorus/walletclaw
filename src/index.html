@@ -1574,12 +1574,49 @@
         <span id="auto-approve-text">Auto-Approve: OFF</span>
       </div>
       <div class="version-badge" id="version-badge">
-        v0.7.8
+        v0.7.9
         <div class="version-dropdown">
           <div class="version-dropdown-title">Changelog</div>
 
           <div class="vlog-entry">
-            <div class="vlog-tag current">v0.7.8</div>
+            <div class="vlog-tag current">v0.8.1</div>
+            <div class="vlog-info">
+              <div class="vlog-desc">Robust API Auth & Bridge Fixes</div>
+              <div class="vlog-date">Today</div>
+              <div class="vlog-pills">
+                <span class="vlog-pill feat">bridge-auth</span>
+                <span class="vlog-pill fix">undefined-fix</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="vlog-entry">
+            <div class="vlog-tag">v0.8.0</div>
+            <div class="vlog-info">
+              <div class="vlog-desc">Multi-Network & Advanced API Logic</div>
+              <div class="vlog-date">Today</div>
+              <div class="vlog-pills">
+                <span class="vlog-pill feat">custom-rpc</span>
+                <span class="vlog-pill feat">manual-api</span>
+                <span class="vlog-pill feat">ux-reorg</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="vlog-entry">
+            <div class="vlog-tag">v0.7.9</div>
+            <div class="vlog-info">
+              <div class="vlog-desc">Real On-chain Approvals & Explorer Feedback</div>
+              <div class="vlog-date">Today</div>
+              <div class="vlog-pills">
+                <span class="vlog-pill feat">broadcaster</span>
+                <span class="vlog-pill feat">ui-unify</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="vlog-entry">
+            <div class="vlog-tag">v0.7.8</div>
             <div class="vlog-info">
               <div class="vlog-desc">Soporte para Contratos y Mensajes (EIP-712/191)</div>
               <div class="vlog-date">Today</div>
@@ -1735,7 +1772,7 @@
             </svg>
           </button>
         </div>
-        <div class="balance-label" id="wallet-network">No network</div>
+        <div class="balance-label" id="wallet-network" onclick="promptNetworkSwitch()" style="cursor:pointer; display:inline-block; border-bottom:1px dotted var(--text3)">No network</div>
 
         <div style="margin:12px 0 10px">
           <!-- Section to hide when wallet is active -->
@@ -1824,29 +1861,7 @@
         </div>
       </div>
 
-      <!-- Auto-approve settings -->
-      <div class="card">
-        <div class="card-title">⚙️ Agent permissions</div>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;color:var(--text2)">
-            <input type="checkbox" id="auto-approve" onchange="toggleAutoApprove(this.checked)" style="width:auto">
-            Auto-approve agent txs
-          </label>
-          <div>
-            <label>Max ETH per tx</label>
-            <input id="max-eth" type="number" step="0.001" value="0.01" />
-          </div>
-          <div>
-            <label>Daily limit (ETH)</label>
-            <input id="daily-limit" type="number" step="0.01" value="0.1" />
-          </div>
-          <div>
-            <label>Allowed agent addresses (one per line)</label>
-            <textarea id="allowed-agents" placeholder="OpenClaw instance address..."></textarea>
-          </div>
-          <button class="btn-secondary btn-full" onclick="savePermissions()">Save permissions</button>
-        </div>
-      </div>
+      <!-- Auto-restore on load is handled by script -->
 
     </aside>
 
@@ -1865,49 +1880,65 @@
           <div class="card-title">🤖 OpenClaw connection methods</div>
 
           <!-- 1. REST method -->
-          <div style="margin-top:15px; background: rgba(224, 53, 48, 0.05); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
-            <label style="font-size: 11px; font-weight: 700; color: var(--purple); letter-spacing: 0.5px; margin-bottom: 8px; display: block; text-transform: uppercase;">REST API Configuration</label>
+          <div
+            style="margin-top:15px; background: rgba(224, 53, 48, 0.05); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
+            <label
+              style="font-size: 11px; font-weight: 700; color: var(--purple); letter-spacing: 0.5px; margin-bottom: 8px; display: block; text-transform: uppercase;">REST
+              API Configuration</label>
             <div style="margin-top:10px">
               <label>Your API Key (add to OpenClaw env)</label>
               <div class="api-key-display">
                 <code id="con-api-key-display">— generate wallet first —</code>
-                <button class="btn-secondary" style="font-size:10px;padding:4px 8px;white-space:nowrap" onclick="copyApiKey(this)">Copy</button>
-                <button class="btn-secondary" style="font-size:10px;padding:4px 8px;white-space:nowrap; border-left: 1px solid rgba(255,255,255,0.1)" onclick="generateApiKey(true)">Rotate</button>
+                <button class="btn-secondary" style="font-size:10px;padding:4px 8px;white-space:nowrap"
+                  onclick="copyApiKey(this)">Copy</button>
+                <button class="btn-secondary"
+                  style="font-size:10px;padding:4px 8px;white-space:nowrap; border-left: 1px solid rgba(255,255,255,0.1)"
+                  onclick="generateApiKey(true)">Rotate</button>
+                <button class="btn-secondary"
+                  style="font-size:10px;padding:4px 8px;white-space:nowrap; border-left: 1px solid rgba(255,255,255,0.1)"
+                  onclick="generateApiKey('manual')">Set Manual</button>
               </div>
             </div>
           </div>
 
           <!-- 2. Configuration Module for the Local Bridge -->
-          <div style="margin-top:15px; background: rgba(255,140,66,0.05); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
+          <div
+            style="margin-top:15px; background: rgba(255,140,66,0.05); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-              <label style="font-size: 11px; font-weight: 700; color: var(--teal); letter-spacing: 0.5px; margin:0; text-transform: uppercase;">Bridge Configuration</label>
+              <label
+                style="font-size: 11px; font-weight: 700; color: var(--teal); letter-spacing: 0.5px; margin:0; text-transform: uppercase;">Bridge
+                Configuration</label>
               <div class="status-pill" id="con-ws-status" style="font-size:9px; padding: 2px 8px;">
                 <div class="dot"></div><span>Stopped</span>
               </div>
             </div>
             <div style="display:flex; gap:8px;">
-              <input type="text" id="bridge-url-input" placeholder="ws://localhost:18789/ws-ui" style="flex:1; border: 1px solid var(--border); background: var(--bg3); font-family: var(--mono); font-size: 11px; padding: 8px 12px; border-radius: 8px;" />
-              <button class="btn-teal" id="con-ws-bridge-toggle" onclick="toggleWsServer(this)" style="font-size:11px; white-space:nowrap; padding: 0 20px; min-width: 100px;">Connect</button>
+              <input type="text" id="bridge-url-input" placeholder="ws://localhost:18789/ws-ui"
+                style="flex:1; border: 1px solid var(--border); background: var(--bg3); font-family: var(--mono); font-size: 11px; padding: 8px 12px; border-radius: 8px;" />
+              <button class="btn-teal" id="con-ws-bridge-toggle" onclick="toggleWsServer(this)"
+                style="font-size:11px; white-space:nowrap; padding: 0 20px; min-width: 100px;">Connect</button>
             </div>
           </div>
 
           <!-- 3. XMTP method -->
-          <div style="margin-top:15px; background: rgba(184, 159, 255, 0.05); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
+          <div
+            style="margin-top:15px; background: rgba(184, 159, 255, 0.05); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-              <label style="font-size: 11px; font-weight: 700; color: #b89fff; letter-spacing: 0.5px; margin:0; text-transform: uppercase;">XMTP Configuration</label>
+              <label
+                style="font-size: 11px; font-weight: 700; color: #b89fff; letter-spacing: 0.5px; margin:0; text-transform: uppercase;">XMTP
+                Configuration</label>
               <div class="status-pill" id="xmtp-status-pill-sub" style="font-size:9px; padding: 2px 8px;">
                 <div class="dot"></div><span>XMTP offline</span>
               </div>
             </div>
-            <div id="xmtp-qr-container" style="display:flex; flex-direction:column; align-items:center; gap: 10px;">
-              <div id="xmtp-qr-image" style="background:#fff; padding:10px; border-radius:8px; display:none;">
-                <img id="qr-img" width="120" height="120" />
-              </div>
-              <div class="address-display" id="con-xmtp-addr-display" style="width:100%; text-align:center; font-size: 10px;">— generate wallet first —</div>
-            </div>
-            <div style="margin-top:12px;display:flex;gap:8px">
-              <button id="con-xmtp-connect-btn" class="btn-primary btn-full" onclick="toggleXmtp()" style="font-size:11px">Connect XMTP</button>
-              <button class="btn-secondary" onclick="copyWalletForXmtp(this)" style="font-size:11px">Copy</button>
+            <div style="display:flex; gap:8px;">
+              <div id="con-xmtp-addr-display"
+                style="flex:1; border: 1px solid var(--border); background: var(--bg3); font-family: var(--mono); font-size: 11px; padding: 8px 12px; border-radius: 8px; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                — generate wallet first —</div>
+              <button id="con-xmtp-connect-btn" class="btn-primary" onclick="toggleXmtp()"
+                style="font-size:11px; white-space:nowrap; padding: 0 20px; min-width: 100px;">Connect</button>
+              <button class="btn-secondary" onclick="copyWalletForXmtp(this)"
+                style="font-size:11px; padding: 0 12px;">Copy</button>
             </div>
           </div>
 
@@ -1988,6 +2019,40 @@
               ⚠️ If enabled, your password will stay in browser memory (sessionStorage) until the tab is closed. This
               prevents re-typing but is less secure.
             </p>
+          </div>
+
+          <!-- Agent permissions moved from sidebar -->
+          <div>
+            <div class="card-title">⚙️ Agent Permissions & Auto-Approve</div>
+            <p class="section-note" style="font-size: 13px; margin-bottom: 12px;">Configure self-execution limits for known agents.</p>
+            
+            <div style="display:flex;flex-direction:column;gap:12px; background: var(--bg3); padding: 16px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 8px;">
+                <span style="font-size:14px; font-weight: 600;">Enable Auto-Approve</span>
+                <label class="switch">
+                  <input type="checkbox" id="auto-approve" onchange="toggleAutoApprove(this.checked)">
+                  <span class="slider"></span>
+                </label>
+              </div>
+              
+              <div class="grid-2">
+                <div>
+                  <label>Max ETH per tx</label>
+                  <input id="max-eth" type="number" step="0.001" value="0.01" />
+                </div>
+                <div>
+                  <label>Daily limit (ETH)</label>
+                  <input id="daily-limit" type="number" step="0.01" value="0.1" />
+                </div>
+              </div>
+              
+              <div>
+                <label>Allowed agent addresses (one per line)</label>
+                <textarea id="allowed-agents" placeholder="0x..." style="min-height: 80px;"></textarea>
+              </div>
+              
+              <button class="btn-primary btn-full" onclick="savePermissions()">Save Permissions</button>
+            </div>
           </div>
 
           <div>
@@ -2075,10 +2140,10 @@
       wsAgents: 0,
       xmtpRequests: {}, // { messageId: { pendingId, status: 'pending'|'signed'|'rejected' } }
       rememberSession: localStorage.getItem('remember_session') === 'true',
-      bridgeUrl: localStorage.getItem('walletclaw_bridge_url') || 
-            ((location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname.startsWith('192.168.')) 
-              ? `ws://${location.hostname}:18789/ws-ui` 
-              : `wss://${location.host}/ws-ui`)
+      bridgeUrl: localStorage.getItem('walletclaw_bridge_url') ||
+        ((location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname.startsWith('192.168.'))
+          ? `ws://${location.hostname}:18789/ws-ui`
+          : `wss://${location.host}/ws-ui`)
     };
 
     window.setRememberSession = function (enabled) {
@@ -2125,7 +2190,7 @@
     // ─── Crypto persistence (AES-GCM via WebCrypto) ──────────
     const STORAGE_KEY = 'walletclaw_v1';
     const SESSION_PW_KEY = 'walletclaw_session_pw';
-    const APP_VERSION = 'v0.7.8';
+    const APP_VERSION = 'v0.8.1';
 
     function renderVersion() {
       const badge = document.getElementById('version-badge');
@@ -2533,22 +2598,68 @@
         faucet: null
       }
     };
-    const DEFAULT_NETWORK = NETWORKS.fuji;
+    let CURRENT_NETWORK = JSON.parse(localStorage.getItem('walletclaw_current_network')) || NETWORKS.fuji;
+    let USER_NETWORKS = JSON.parse(localStorage.getItem('walletclaw_user_networks') || '[]');
+
+    window.promptNetworkSwitch = function() {
+      const allNets = [
+        { id: 'fuji', ...NETWORKS.fuji },
+        { id: 'mainnet', ...NETWORKS.mainnet },
+        ...USER_NETWORKS
+      ];
+
+      let promptText = "Select Network:\n\n";
+      allNets.forEach((net, idx) => {
+        const isCurrent = CURRENT_NETWORK.chainId === net.chainId;
+        promptText += `${idx + 1}. ${net.name}${isCurrent ? ' (Active)' : ''}\n`;
+      });
+      promptText += `${allNets.length + 1}. + Add Custom Network\n`;
+
+      const choice = prompt(promptText, "1");
+      if (!choice) return;
+
+      const idx = parseInt(choice) - 1;
+      if (idx >= 0 && idx < allNets.length) {
+        const selected = allNets[idx];
+        CURRENT_NETWORK = selected;
+        localStorage.setItem('walletclaw_current_network', JSON.stringify(selected));
+        log(`Switched to ${selected.name}`, 'ok');
+        if (state.wallet) tryConnectProvider(state.wallet);
+      } else if (idx === allNets.length) {
+        const name = prompt("Network Name (e.g. Polygon)", "Custom Network");
+        const rpc = prompt("RPC URL (e.g. https://...)", "https://");
+        const chainId = prompt("Chain ID (Number)", "");
+        const explorer = prompt("Explorer URL (Optional)", "https://");
+        const symbol = prompt("Currency Symbol (Optional)", "ETH");
+
+        if (name && rpc && chainId) {
+          const newNet = { id: 'custom_' + Date.now(), name, rpc, chainId: Number(chainId), explorer, symbol: symbol || 'ETH' };
+          USER_NETWORKS.push(newNet);
+          localStorage.setItem('walletclaw_user_networks', JSON.stringify(USER_NETWORKS));
+          
+          CURRENT_NETWORK = newNet;
+          localStorage.setItem('walletclaw_current_network', JSON.stringify(newNet));
+          
+          log(`Added and switched to ${name}`, 'ok');
+          if (state.wallet) tryConnectProvider(state.wallet);
+        }
+      }
+    }
 
     async function tryConnectProvider(wallet) {
       try {
-        const provider = new ethers.JsonRpcProvider(DEFAULT_NETWORK.rpc, {
-          chainId: DEFAULT_NETWORK.chainId,
-          name: DEFAULT_NETWORK.name
+        const provider = new ethers.JsonRpcProvider(CURRENT_NETWORK.rpc, {
+          chainId: CURRENT_NETWORK.chainId,
+          name: CURRENT_NETWORK.name
         });
         const connected = wallet.connect(provider);
         state.provider = provider;
         state.wallet = connected;
         await updateBalance(wallet.address, provider);
         await updateNetworkInfo(provider);
-        log(`Connected to ${DEFAULT_NETWORK.name}`, 'ok');
-        if (DEFAULT_NETWORK.faucet) {
-          log(`Get testnet AVAX → ${DEFAULT_NETWORK.faucet}`, 'inf');
+        log(`Connected to ${CURRENT_NETWORK.name}`, 'ok');
+        if (CURRENT_NETWORK.faucet) {
+          log(`Get testnet AVAX → ${CURRENT_NETWORK.faucet}`, 'inf');
         }
       } catch (e) {
         log('No RPC connection (wallet works offline)', 'wrn');
@@ -2561,8 +2672,9 @@
         const bal = await provider.getBalance(address);
         const avax = parseFloat(ethers.formatEther(bal)).toFixed(4);
         const net = state.provider ? await state.provider.getNetwork().catch(() => null) : null;
-        const symbol = (net && net.chainId === 43113n || net && net.chainId === 43114n) ? 'AVAX' : 'ETH';
-        document.getElementById('wallet-balance').innerHTML = `${avax} <span style="font-size:14px;color:var(--text2)">${symbol}</span>`;
+        const symbol = CURRENT_NETWORK.symbol || 'AVAX';
+        const chainId = (net && net.chainId) ? Number(net.chainId) : CURRENT_NETWORK.chainId;
+        document.getElementById('wallet-balance').innerHTML = `${avax} <span style="font-size:14px;color:var(--text2)">${symbol}</span> <span style="font-size:10px;color:var(--text3);opacity:0.6">(${chainId})</span>`;
       } catch (e) { }
     }
 
@@ -2632,13 +2744,7 @@
       const conXmtpText = document.getElementById('con-xmtp-addr-text');
       if (conXmtpText) conXmtpText.textContent = address;
 
-      // Generate QR Code for the address
-      const qrImg = document.getElementById('qr-img');
-      const qrContainer = document.getElementById('xmtp-qr-image');
-      if (qrImg && qrContainer) {
-        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${address}`;
-        qrContainer.style.display = 'block';
-      }
+
 
       const hectorInput = document.getElementById('hector-addr-input');
       if (hectorInput) hectorInput.value = AGENT_ADDR;
@@ -2660,6 +2766,16 @@
 
     // ─── API Key ─────────────────────────────────────────────
     window.generateApiKey = function (forceNew = false) {
+      if (forceNew === 'manual') {
+        const manual = prompt('Set manual API Key (arbitrary string)', state.apiKey || '');
+        if (!manual || manual.trim() === '') return;
+        state.apiKey = manual.trim();
+        localStorage.setItem('walletclaw_api_key', state.apiKey);
+        window.syncUIWithApiKey();
+        log(`API key set manually: ${state.apiKey.slice(0, 12)}...`, 'ok');
+        return;
+      }
+
       if (!forceNew && state.apiKey) {
         window.syncUIWithApiKey();
         return;
@@ -2815,14 +2931,15 @@
         let bridgeUrl = state.bridgeUrl;
 
         // Protocol normalization for local/dev bridge.js
-        const isLocal = bridgeUrl.includes('localhost') || 
-                        bridgeUrl.includes('127.0.0.1') || 
-                        bridgeUrl.includes('192.168.') || 
-                        bridgeUrl.includes('10.') || 
-                        bridgeUrl.includes('172.');
-        
+        const isLocal = bridgeUrl.includes('localhost') ||
+          bridgeUrl.includes('127.0.0.1') ||
+          bridgeUrl.includes('192.168.') ||
+          bridgeUrl.includes('10.') ||
+          bridgeUrl.includes('172.');
+
         if (bridgeUrl.startsWith('wss://') && isLocal && bridgeUrl.includes(':18789')) {
-          log('Downgrading to ws:// for local bridge connection (Mixed Content avoidance)', 'wrn');
+          log('⚠️ Using ws:// for local bridge on an HTTPS page. If it fails, Browser may block Mixed Content.', 'wrn');
+          log('💡 Fix: Run parcel without --https OR use localhost instead of an IP address.', 'inf');
           bridgeUrl = bridgeUrl.replace('wss://', 'ws://');
         }
 
@@ -3419,9 +3536,14 @@
             }
 
             if (status === 'signed') {
+              const hash = reqState.hash || '';
+              const explorerUrl = `${CURRENT_NETWORK.explorer}/tx/${hash}`;
               content = `<div class="agent-request signed">
-                            <div class="agent-request-header">✅ APROBADO</div>
-                            <div class="agent-request-body">${cardBody}</div>
+                            <div class="agent-request-header">✅ APROBADO EN CHAIN</div>
+                            <div class="agent-request-body">
+                              ${cardBody}
+                              ${hash ? `<div style="margin-top:8px"><a href="${explorerUrl}" target="_blank" style="color:var(--teal);text-decoration:none;font-size:9px">↗️ VER EN EXPLORADOR</a></div>` : ''}
+                            </div>
                           </div>`;
             } else if (status === 'rejected') {
               content = `<div class="agent-request rejected">
@@ -3836,37 +3958,93 @@
           if (txType === 'transaction') {
             const tempTo = payload.to || payload.data?.to || '0x...';
             const tempVal = (payload.value !== undefined ? payload.value : payload.data?.value) || '0.0';
+            
+            // Robust parsing for hex or decimal
+            let parsedValue;
+            try {
+              if (typeof tempVal === 'string' && tempVal.startsWith('0x')) {
+                parsedValue = BigInt(tempVal);
+              } else {
+                parsedValue = ethers.parseEther(tempVal.toString());
+              }
+            } catch (e) {
+              parsedValue = 0n;
+            }
+
             const tx = {
               to: tempTo,
-              value: ethers.parseEther(tempVal.toString()),
+              value: parsedValue,
               data: payload.data || '0x'
             };
             if (payload.maxFeePerGas) tx.maxFeePerGas = BigInt(payload.maxFeePerGas);
             if (payload.maxPriorityFeePerGas) tx.maxPriorityFeePerGas = BigInt(payload.maxPriorityFeePerGas);
 
-            let signed;
-            if (state.wallet.signTransaction) {
-              signed = await state.wallet.signTransaction(tx);
-              signedResult = { hash: ethers.keccak256(signed) };
-            } else {
-              signedResult = { hash: '0x' + Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, '0')).join('') + ' (sim)' };
+            try {
+              log(`Simulating transaction...`, 'inf');
+              const gasLimit = await state.wallet.estimateGas(tx);
+              tx.gasLimit = (gasLimit * 120n) / 100n; // 20% buffer
+              log(`Simulation successful (Gas: ${gasLimit.toString()})`, 'ok');
+            } catch (e) {
+              log(`Simulation warning: ${e.message.split('(')[0]}`, 'wrn');
             }
-            log(`Tx signed ✓ | Raw Tx`, 'ok');
+
+            log(`Broadcasting transaction to network...`, 'inf');
+            const txRes = await state.wallet.sendTransaction(tx);
+            signedResult = { hash: txRes.hash };
+
+            const explorerUrl = `${CURRENT_NETWORK.explorer}/tx/${txRes.hash}`;
+            log(`Tx sent! <a href="${explorerUrl}" target="_blank" style="color:var(--teal)">View on Explorer</a>`, 'ok');
+
+            // Background wait for confirmation
+            txRes.wait().then(receipt => {
+              log(`Transaction confirmed in block ${receipt.blockNumber} ✓`, 'ok');
+              manualRefreshBalance();
+            });
           }
           else if (txType === 'contract_call') {
-            const iface = new ethers.Interface(payload.abi);
+            const iface = new ethers.Interface(payload.abi || []);
             const encodedData = iface.encodeFunctionData(payload.functionName, payload.args || []);
+            
+            let parsedValue = 0n;
+            if (payload.value) {
+              try {
+                if (typeof payload.value === 'string' && payload.value.startsWith('0x')) {
+                  parsedValue = BigInt(payload.value);
+                } else {
+                  parsedValue = ethers.parseEther(payload.value.toString());
+                }
+              } catch(e) {}
+            }
+
             const tx = {
               to: payload.to,
-              value: payload.value ? ethers.parseEther(payload.value.toString()) : 0n,
+              value: parsedValue,
               data: encodedData
             };
-            let signed;
-            if (state.wallet.signTransaction) {
-              signed = await state.wallet.signTransaction(tx);
-              signedResult = { hash: ethers.keccak256(signed) };
-            } else { signedResult = { hash: '0xsim' }; }
-            log(`Contract call signed ✓ | ${payload.functionName}`, 'ok');
+            
+            if (payload.maxFeePerGas) tx.maxFeePerGas = BigInt(payload.maxFeePerGas);
+            if (payload.maxPriorityFeePerGas) tx.maxPriorityFeePerGas = BigInt(payload.maxPriorityFeePerGas);
+
+            try {
+              log(`Simulating contract call...`, 'inf');
+              const gasLimit = await state.wallet.estimateGas(tx);
+              tx.gasLimit = (gasLimit * 120n) / 100n;
+              log(`Simulation successful (Gas: ${gasLimit.toString()})`, 'ok');
+            } catch (e) {
+              log(`Simulation warning: ${e.message.split('(')[0]}`, 'wrn');
+            }
+
+            log(`Executing contract call: ${payload.functionName}...`, 'inf');
+            const txRes = await state.wallet.sendTransaction(tx);
+            signedResult = { hash: txRes.hash };
+
+            const explorerUrl = `${CURRENT_NETWORK.explorer}/tx/${txRes.hash}`;
+            log(`Contract call sent! <a href="${explorerUrl}" target="_blank" style="color:var(--teal)">Explorer</a>`, 'ok');
+
+            txRes.wait().then(() => {
+              log(`Contract call confirmed ✓`, 'ok');
+              manualRefreshBalance();
+            });
           }
           else if (txType === 'sign_message') {
             const signature = await state.wallet.signMessage(payload.message);
@@ -3924,6 +4102,7 @@
       for (let mId in state.xmtpRequests) {
         if (state.xmtpRequests[mId].pendingId === id) {
           state.xmtpRequests[mId].status = 'signed';
+          if (signedResult.hash) state.xmtpRequests[mId].hash = signedResult.hash;
         }
       }
       renderMessages();
@@ -3952,8 +4131,20 @@
             log('Rejection sent back to agent via XMTP', 'wrn');
           }
         } catch (e) { }
-        delete pendingMetadata[id];
       }
+
+      // Notify via Local Bridge
+      if (meta && !meta.topic && bridgeSocket && bridgeSocket.readyState === WebSocket.OPEN) {
+        bridgeSocket.send(JSON.stringify({
+          type: 'SIGN_RESPONSE',
+          id: meta.requestId,
+          status: 'rejected',
+          error: 'User rejected the signature request'
+        }));
+        log('Rejection sent back to agent via Local Bridge', 'wrn');
+      }
+
+      delete pendingMetadata[id];
 
       // Update XMTP request status so buttons disappear in chat
       for (let mId in state.xmtpRequests) {
@@ -4123,7 +4314,8 @@
         <div class="pw-strength" id="pw-strength-track">
           <div class="pw-strength-bar" id="pw-strength-bar"></div>
         </div>
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:14px; margin-bottom: 2px;">
+        <div
+          style="display:flex; align-items:center; justify-content:space-between; margin-top:14px; margin-bottom: 2px;">
           <span style="font-size:12px; color: var(--text2); font-weight: 600;">Remember in this session</span>
           <label class="switch" style="transform: scale(0.8); transform-origin: right;">
             <input type="checkbox" id="pw-remember-session" onchange="setRememberSession(this.checked)">

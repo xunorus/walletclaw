@@ -1,25 +1,26 @@
-# 🦞 WalletClaw
+# 🦞 WalletClaw: Human-Controlled Hot Wallet for AI Agents
 
-> **Self-custody crypto wallet with superpowers for AI agents — built for the OpenClaw ecosystem.**
+> **An open source hot wallet for AI agents controlled by people. WalletClaw is the "Signing Authority" for the OpenClaw ecosystem.**
 
-[![Version](https://img.shields.io/badge/version-v0.7.7-e03530?style=flat-square)](./CHANGELOG.md)
-[![Network](https://img.shields.io/badge/network-Avalanche%20Fuji-e84142?style=flat-square&logo=avalanche)](https://testnet.snowtrace.io)
+[![Version](https://img.shields.io/badge/version-v0.8.1-e03530?style=flat-square)](./CHANGELOG.md)
+[![Network](https://img.shields.io/badge/network-Avalanche%20|%20Custom-e84142?style=flat-square&logo=avalanche)](https://snowtrace.io)
 [![License](https://img.shields.io/badge/license-MIT-ff8c42?style=flat-square)](#license)
 [![Hackathon](https://img.shields.io/badge/hackathon-Aleph%202026-ffd166?style=flat-square)](#)
 [![Hackathon](https://img.shields.io/badge/hackathon-PL__Genesis-4fc3f7?style=flat-square)](#)
 
 ---
 
-## The problem
+---
 
-AI agents are becoming powerful — they can browse the web, write code, manage files, and execute complex workflows. But they can't safely touch money.
+## The Vision: Signing Authority for Autonomous Agents
 
-Today, if you want an OpenClaw agent to pay for an API call, swap tokens, or sign a contract on-chain, you have two bad options:
+AI agents (like OpenClaw) live in untrusted environments. If you give an agent a private key in a `.env` file, that key is compromised by design. 
 
-1. **Give the agent your private key** — complete loss of custody, one prompt injection away from losing everything.
-2. **Do it manually** — copy-paste addresses, context-switch, approve transactions yourself, killing the agent's autonomy.
-
-There is no middle ground. No way to say *"agent, you can spend up to 0.01 AVAX per transaction, max 0.1 AVAX/day, and I want to approve anything bigger."*
+**WalletClaw** solves this by acting as the **Authorized Signing Layer**:
+1. **Separation of Concerns**: The Agent proposes; the Human (via WalletClaw) disposes.
+2. **Beyond Crypto**: WalletClaw signs anything—transactions, contract calls, or arbitrary data (EIP-712/191)—enabling the agent to prove it has human authorization for any action.
+3. **MPC-Lite Architecture**: The private key never leaves the encrypted browser storage. The agent only receives the resulting signature/hash.
+4. **Multi-Network Ready**: Switch between Fuji Testnet, Avalanche Mainnet, or any custom EVM RPC with a single click.
 
 ---
 
@@ -41,16 +42,6 @@ graph LR
     B -- Signed Tx --> D[Blockchain]
 ```
 
----
-
-## Why Avalanche?
-
-- **Fast finality** — sub-second confirmations mean agents don't block waiting for txs
-- **Low fees** — agents can sign dozens of small transactions without burning funds on gas
-- **EVM compatible** — works with all standard ethers.js tooling, no new SDKs needed
-- **Fuji testnet** — free test AVAX at [faucet.avax.network](https://faucet.avax.network), perfect for hackathon demos
-
----
 
 ## Key features
 
@@ -66,10 +57,10 @@ Your private key never leaves your device. WalletClaw generates or imports keys 
 | **XMTP messaging** | Cross-app communication | ~200ms | **Remote / Global** |
 
 ### ⚙️ Granular agent permissions
-- Max ETH/AVAX per transaction
-- Daily spending limit
-- Allowlist of authorized agent addresses
-- Auto-approve toggle (for fully autonomous agents)
+- **Auto-Approve Toggle**: For fully autonomous agents (with safety limits).
+- **Spending Limits**: Max amount per transaction and daily limits.
+- **Agent Whitelist**: Restrict signing to known agent addresses.
+- **Manual API Keys**: Set a custom API Key or rotate local ones for the REST Bridge.
 
 ### 💬 XMTP integration
 Agents communicate with the wallet via **encrypted on-chain messages**. An OpenClaw instance running anywhere in the world can request a signature by sending an XMTP message to your wallet address — no open ports, no tunneling, no VPN.
@@ -108,7 +99,7 @@ The wallet survives browser refreshes. Private keys are encrypted with your pass
 ```
 
 ### Querying Wallet Address
-OpenClaw can query the currently active wallet address on the bridge via `GET /wallet`:
+OpenClaw can query the currently active wallet address on the bridge via `GET /wallet` (also `/address` or `/wallet/address`):
 
 ```bash
 # Get current wallet address (requires API Key)
@@ -116,6 +107,18 @@ curl -H "x-api-key: wc_your_key_here" http://localhost:18789/wallet
 ```
 
 Returns: `{ "address": "0x..." }`
+
+### Sending/Signing Transactions
+To send a transaction or request a signature, use `POST /send`, `/sign` or `/api/wallet/send`:
+
+```bash
+# Simple transaction request
+curl -X POST -H "x-api-key: wc_abc..." \
+     -H "Content-Type: application/json" \
+     -d '{"to": "0x...", "value": "0.005"}' \
+     http://localhost:18789/send
+```
+
 
 
 ### Agent signs a transaction (XMTP flow)
@@ -147,10 +150,7 @@ Open `walletclaw.html` in any modern browser. No build step, no install, no serv
 ### 2. Generate or import a wallet
 Click **Generate wallet** to create a fresh keypair, or **Import** to paste an existing private key. Set a password when prompted — this encrypts your key in the browser.
 
-### 3. Get testnet AVAX
-Copy your wallet address and visit [faucet.avax.network](https://faucet.avax.network). Request 0.5 AVAX — enough for hundreds of test transactions.
-
-### 4. Connect your OpenClaw instance
+### 3. Connect your OpenClaw instance
 
 **Option A — REST (fastest to set up):**
 ```bash
@@ -165,7 +165,7 @@ Click **Start bridge** in the Conexion tab. OpenClaw connects to `ws://localhost
 **Option C — XMTP:**
 Click **Connect XMTP** in the XMTP tab. Give your wallet address to your OpenClaw instance.
 
-### 5. Configure agent permissions
+### 4. Configure agent permissions
 Set spending limits in the **Agent permissions** panel on the sidebar. Enable auto-approve for fully autonomous operation, or leave it off to manually approve each transaction.
 
 ---
@@ -189,6 +189,18 @@ flowchart TD
     XMTP <--> User[UserApp / DApp]
     Dash -- "Signed UserOp/Tx" --> Chain[(Blockchain)]
 ```
+
+---
+
+## Troubleshooting
+
+### Mixed Content (HTTPS vs WS)
+If you run the UI with `--https` (e.g. `https://localhost:3233`), some browsers might block the connection to `ws://localhost:18789`. 
+
+**Solutions:**
+1. **Prefer `localhost`**: Modern browsers (Chrome, Edge, Brave) allow Mixed Content on `localhost`. 
+2. **Remove `--https`**: For local development on `localhost`, you don't need `--https`. `http://localhost` is already considered a **Secure Context** by browsers, so XMTP and WebCrypto will work perfectly. 
+3. **Use an IP?**: If you visit the UI via an IP (e.g. `https://192.168...`), the browser WILL block the bridge. In this case, use `http` instead or connect via `localhost`.
 
 ---
 
