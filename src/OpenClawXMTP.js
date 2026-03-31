@@ -116,29 +116,48 @@ export class OpenClawXMTP {
     this._isStreaming = true;
     
     try {
-      // IMPORTANTE: Sincronizar antes de escuchar para que el nodo "vea" todas las conversaciones
-      console.info("[OpenClawXMTP] Sincronizando conversaciones...");
-      await this._xmtp.conversations.sync();
-      
-      console.info("[OpenClawXMTP] Escuchando mensajes (V3 Stream All)...");
+      // 1. Identificar al Boss (dueño del agente)
+      let bossInboxId = null;
+      try {
+        bossInboxId = await this._xmtp.getInboxIdByAddress(this._walletClawAddress);
+        if (bossInboxId) {
+          console.info(`[OpenClawXMTP] 🛡️ Filtro activo: Solo escuchando al Boss (${bossInboxId.slice(0,10)}...)`);
+        }
+      } catch (e) {
+        console.warn("[OpenClawXMTP] ⚠️ No se pudo pre-resolver el ID del Boss. Escuchando todo por ahora.");
+      }
+
+      // 2. Sincronización en segundo plano
+      this._xmtp.conversations.sync().then(() => {
+        console.info("[OpenClawXMTP] 🔄 Sincronización de fondo completada.");
+      }).catch(e => { });
+
+      console.info("[OpenClawXMTP] 🟢 Escuchando mensajes (V3 Stream All)...");
       const stream = await this._xmtp.conversations.streamAllMessages();
       for await (const message of stream) {
         if (!message) continue;
         
         const fromId = message.senderInboxId;
-        // Solo ignoramos si el remitente es exactamente nuestro propio InboxID
+        
+        // --- FILTROS DE SEGURIDAD ---
+        // A. Ignorar mis propios mensajes
         if (this._xmtp && fromId === this._xmtp.inboxId) continue;
         
-        console.info(`[OpenClawXMTP] 📩 Mensaje entrante de ${fromId.slice(0,10)}...`);
+        // B. Ignorar si no es el Boss (si tenemos el ID)
+        if (bossInboxId && fromId !== bossInboxId) {
+            // Opcional: Loguear intentos de acceso no autorizados
+            // console.warn(`[OpenClawXMTP] 🔒 Intento de acceso bloqueado de: ${fromId.slice(0,10)}...`);
+            continue;
+        }
+
+        console.info(`[OpenClawXMTP] 📩 Mensaje del Boss recibido (${fromId.slice(0,10)}...)`);
         
         let parsed = message.content;
         try { 
           if (typeof message.content === 'string' && message.content.startsWith('{')) {
             parsed = JSON.parse(message.content); 
           }
-        } catch (e) {
-          // No es JSON, lo tratamos como String
-        }
+        } catch (e) { }
 
         this._onMessage?.({ 
           from: fromId, 
@@ -147,7 +166,7 @@ export class OpenClawXMTP {
         });
       }
     } catch (e) {
-      console.error("[OpenClawXMTP] Error en stream (V3):", e.message || e);
+      console.error("[OpenClawXMTP] ❌ Error fatal en stream:", e.message || e);
       this._isStreaming = false;
     }
   }
