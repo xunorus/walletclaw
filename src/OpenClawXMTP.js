@@ -114,19 +114,29 @@ export class OpenClawXMTP {
     try {
       const stream = await this._xmtp.conversations.streamAllMessages();
       for await (const message of stream) {
-        if (message.senderAddress.toLowerCase() === this.address.toLowerCase()) continue;
+        if (!message) continue;
+        
+        // En V3, el senderAddress puede no estar presente; usamos senderInboxId.
+        // Además, comparamos con this._xmtp.inboxId para ignorar mensajes propios.
+        if (this._xmtp && message.senderInboxId === this._xmtp.inboxId) continue;
+        
+        console.info(`[OpenClawXMTP] Mensaje recibido de ${message.senderInboxId || 'desconocido'}`);
         
         let parsed = message.content;
-        try { parsed = JSON.parse(message.content); } catch (e) {}
+        try { 
+          if (typeof message.content === 'string' && message.content.startsWith('{')) {
+            parsed = JSON.parse(message.content); 
+          }
+        } catch (e) {}
 
         this._onMessage?.({ 
-          from: message.senderAddress, 
+          from: message.senderInboxId, 
           payload: parsed, 
           raw: message 
         });
       }
     } catch (e) {
-      console.error("[OpenClawXMTP] Error en stream:", e.message);
+      console.error("[OpenClawXMTP] Error en stream (V3):", e.message || e);
       this._isStreaming = false;
     }
   }
