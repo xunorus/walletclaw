@@ -114,28 +114,34 @@ export class OpenClawXMTP {
   async _startStream() {
     if (this._isStreaming) return;
     this._isStreaming = true;
-    console.info("[OpenClawXMTP] Escuchando mensajes (Streaming)...");
-
+    
     try {
+      // IMPORTANTE: Sincronizar antes de escuchar para que el nodo "vea" todas las conversaciones
+      console.info("[OpenClawXMTP] Sincronizando conversaciones...");
+      await this._xmtp.conversations.sync();
+      
+      console.info("[OpenClawXMTP] Escuchando mensajes (V3 Stream All)...");
       const stream = await this._xmtp.conversations.streamAllMessages();
       for await (const message of stream) {
         if (!message) continue;
         
-        // En V3, el senderAddress puede no estar presente; usamos senderInboxId.
-        // Además, comparamos con this._xmtp.inboxId para ignorar mensajes propios.
-        if (this._xmtp && message.senderInboxId === this._xmtp.inboxId) continue;
+        const fromId = message.senderInboxId;
+        // Solo ignoramos si el remitente es exactamente nuestro propio InboxID
+        if (this._xmtp && fromId === this._xmtp.inboxId) continue;
         
-        console.info(`[OpenClawXMTP] Mensaje recibido de ${message.senderInboxId || 'desconocido'}`);
+        console.info(`[OpenClawXMTP] 📩 Mensaje entrante de ${fromId.slice(0,10)}...`);
         
         let parsed = message.content;
         try { 
           if (typeof message.content === 'string' && message.content.startsWith('{')) {
             parsed = JSON.parse(message.content); 
           }
-        } catch (e) {}
+        } catch (e) {
+          // No es JSON, lo tratamos como String
+        }
 
         this._onMessage?.({ 
-          from: message.senderInboxId, 
+          from: fromId, 
           payload: parsed, 
           raw: message 
         });

@@ -2296,7 +2296,9 @@
               style="font-size: 8px; padding: 6px; border-radius: 4px; background: rgba(0,0,0,0.4); font-family:var(--mono); margin-bottom: 8px; color: var(--teal); word-break: break-all; border: 1px solid rgba(0,243,255,0.1); user-select: all;">
               No Inbox ID</div>
             <button id="con-xmtp-connect-btn" class="btn-primary" onclick="toggleXmtp()"
-              style="font-size:10px; width:100%;">Toggle XMTP</button>
+              style="font-size:10px; width:100%; margin-bottom: 5px;">Toggle XMTP</button>
+            <button id="con-xmtp-revoke-btn" class="btn-secondary" onclick="revokeAllXmtpInstallations()"
+              style="font-size:9px; width:100%; opacity: 0.7; padding: 4px;">Revoke All Installations</button>
           </div>
         </div>
       </div>
@@ -2352,7 +2354,7 @@
             <div class="terminal" id="log-terminal"
               style="flex: 1; min-height: 140px; font-size: 11px; padding: 10px; line-height: 1.5;"></div>
             <button class="btn-secondary btn-full" style="font-size:10px; padding: 6px; margin-top: 4px;"
-              onclick="showRevokeModal()">Revoke XMTP sessions</button>
+              onclick="revokeAllXmtpInstallations()">Revoke XMTP sessions</button>
           </div>
         </div>
       </div>
@@ -2589,7 +2591,7 @@
     // ─── Crypto persistence (AES-GCM via WebCrypto) ──────────
     const STORAGE_KEY = 'walletclaw_v1';
     const SESSION_PW_KEY = 'walletclaw_session_pw';
-    const APP_VERSION = 'v1.0.1';
+    const APP_VERSION = 'v1.0.2';
 
     // UI Helper: Generic Card Toggle
     window.toggleCard = function (contentId, arrowId, summaryId) {
@@ -3623,7 +3625,16 @@
         // --- Resolving Agent Identity ---
         if (AGENT_ADDR) {
             try {
-                const inboxId = await state.xmtpClient.identity.getInboxIdForAddress(AGENT_ADDR);
+                // Testing multiple V3 resolution aliases
+                let inboxId = null;
+                if (Client.getInboxIdByAddress) {
+                    inboxId = await Client.getInboxIdByAddress(AGENT_ADDR, "dev");
+                } else if (Client.getInboxIdForAddress) {
+                    inboxId = await Client.getInboxIdForAddress(AGENT_ADDR, "dev");
+                } else if (state.xmtpClient.getInboxIdByAddress) {
+                    inboxId = await state.xmtpClient.getInboxIdByAddress(AGENT_ADDR);
+                }
+                
                 if (inboxId) {
                     state.agentInboxId = inboxId;
                     log(`Agent identity resolved: ${AGENT_ADDR} -> ${inboxId.slice(0,10)}...`, 'ok');
@@ -3693,17 +3704,21 @@
     }
 
 
-    // --- Revocation Logic ---
-    window.showRevokeModal = function () {
-      const confirmed = confirm("This will revoke all active XMTP sessions for this wallet. You will need to re-authenticate afterwards. Proceed?");
-      if (confirmed) {
-        revokeXmtpInstallations();
-      }
-    };
+    async function revokeAllXmtpInstallations() {
+      const confirmed = confirm("This will REVOKE ALL active XMTP sessions for this wallet on the network. Use this ONLY if you hit the 10/10 limit. Proceed?");
+      if (!confirmed) return;
 
-    async function revokeXmtpInstallations() {
-      if (!state.wallet) return;
-      log("Starting revocation process...", "wrn");
+      if (!state.wallet) {
+          log("Wallet must be unlocked first.", "wrn");
+          return;
+      }
+
+      log("Starting revocation process on 'dev' environment...", "wrn");
+      const revokeBtn = document.getElementById('con-xmtp-revoke-btn');
+      if (revokeBtn) {
+          revokeBtn.textContent = 'Revoking...';
+          revokeBtn.disabled = true;
+      }
 
       try {
         const wallet = state.wallet;
@@ -3713,33 +3728,38 @@
           signMessage: async (message) => ethers.getBytes(await wallet.signMessage(message)),
         };
 
-        const env = "production";
-        const inboxId = await Client.getInboxIdForAddress(wallet.address, env);
+        const env = "dev"; // IMPORTANT: Match app env
+        const inboxId = await Client.getInboxIdByAddress(wallet.address, env);
 
-        if (!inboxId) throw new Error("Could not find Inbox ID.");
+        if (!inboxId) throw new Error("Could not find Inbox ID for address.");
 
-        log(`Fetching installations for ${inboxId.slice(0, 10)}...`, "inf");
-        const states = await Client.fetchInboxStates([inboxId], env);
-        const inboxState = states && states.length > 0 ? states[0] : null;
+        log(`Fetching installations for Inbox: ${inboxId.slice(0, 10)}...`, "inf");
+        const inboxState = await Client.fetchInboxState(inboxId, env);
 
         if (!inboxState || !inboxState.installations || inboxState.installations.length === 0) {
           log("No active installations found to revoke.", "inf");
+          if (revokeBtn) { revokeBtn.textContent = 'No installations found'; }
           return;
         }
 
-        const toRevoke = inboxState.installations.map(i => i.bytes);
-        log(`Revoking ${toRevoke.length} installations...`, "inf");
+        log(`Found ${inboxState.installations.length} installations. Revoking all...`, "wrn");
+        // We can revoke specifically or use a catch-all if supported, but typically we revoke all but self or all.
+        // For the 10/10 error, we usually want to clear them all.
+        for (const inst of inboxState.installations) {
+            log(`Revoking: ${inst.id.slice(0,8)}...`, 'inf');
+            await Client.revokeInstallation(walletSigner, inst.id, env);
+        }
 
-        await Client.revokeInstallations(walletSigner, inboxId, toRevoke, env);
-
-        log("✅ Installations revoked successfully. Refreshing page...", "ok");
-        setTimeout(() => location.reload(), 2000);
-
+        log("✅ ALL INSTALLATIONS REVOKED. You can now try connecting again.", "ok");
+        if (revokeBtn) revokeBtn.textContent = 'Revoked Successful';
       } catch (e) {
-        log(`Revoke failed: ${e.message}`, "err");
-        console.error("Revocation Error:", e);
+        log(`Revocation FAILED: ${e.message}`, "err");
+        if (revokeBtn) revokeBtn.textContent = 'Revocation Failed';
+      } finally {
+         if (revokeBtn) revokeBtn.disabled = false;
       }
     }
+    window.revokeAllXmtpInstallations = revokeAllXmtpInstallations;
 
     async function clearResidualChats() {
       if (!confirm("Clear local cache and re-sync active conversations?")) return;
@@ -3803,9 +3823,9 @@
       if (!state.xmtpClient || !state.wallet) return;
       log("Syncing wallet config with Agent...", "inf");
       try {
-        const convo = await state.xmtpClient.conversations.createDmWithIdentifier({
+        const convo = await state.xmtpClient.conversations.newDmWithIdentifier({
           identifier: AGENT_ADDR.toLowerCase(),
-          identifierKind: 0
+          identifierKind: "Ethereum"
         });
 
         const config = {
@@ -4075,8 +4095,14 @@
           if (m.senderAddress?.identifier) return m.senderAddress.identifier;
           return m.senderInboxId || '';
         };
-        const isMe = getAddr(msg).toLowerCase() === myAddr;
+
+        const myInboxId = state.xmtpClient ? state.xmtpClient.inboxId : null;
+        const senderId = getAddr(msg);
         
+        // Comparación inteligente: por InboxID (moderno) o por Address (V2/legacy)
+        const isMe = (myInboxId && senderId.toLowerCase() === myInboxId.toLowerCase()) || 
+                     (state.wallet && senderId.toLowerCase() === state.wallet.address.toLowerCase());
+
         // Formato de fecha resiliente para XMTP V3
         let date = new Date();
         if (msg.sentAt) date = msg.sentAt;
@@ -4217,17 +4243,21 @@
       }
 
       // Handle placeholder/init for Agent (Unified with V3 newDm)
-      if (conversation.id === 'hector' || conversation.id === 'placeholder' || !conversation.sendText) {
+      // We also force a fresh resolve if messaging the Agent's known address to be 100% sure
+      const isAgentTarget = (conversation.id === 'hector' || (AGENT_ADDR && (conversation.peerAddress || '').toLowerCase() === AGENT_ADDR.toLowerCase()));
+      
+      if (isAgentTarget || conversation.id === 'placeholder' || !conversation.sendText) {
         if (!state.xmtpClient) {
           log("XMTP not connected. Go to 'Settings' first.", "wrn");
           return;
         }
         try {
-          log(`Ensuring real XMTP DM session...`, 'inf');
-          // Use the proven newDm method from V3
-          conversation = await state.xmtpClient.conversations.newDm(AGENT_ADDR);
+          log(`Ensuring healthy session with Agent...`, 'inf');
+          conversation = await state.xmtpClient.conversations.newDmWithIdentifier({
+              identifier: AGENT_ADDR.toLowerCase(),
+              identifierKind: "Ethereum"
+          });
           state.selectedConversation = conversation;
-          log(`DM Session Established with: ${AGENT_ADDR.slice(0,10)}...`, 'ok');
         } catch (e) {
           log(`Failed to initiate DM: ${e.message}`, 'err');
           return;
@@ -4235,7 +4265,7 @@
       }
 
       try {
-        // Super resilient send logic
+        // Enviar mensaje usando el objeto verificado
         await conversation.sendText(text);
 
         // UX: Show typing indicator if messaging Agent
@@ -4259,7 +4289,10 @@
       }
       log(`Starting chat with ${addr.slice(0, 12)}...`, 'inf');
       try {
-        const convo = await state.xmtpClient.conversations.newDm(addr);
+        const convo = await state.xmtpClient.conversations.newDmWithIdentifier({
+            identifier: addr.toLowerCase(),
+            identifierKind: "Ethereum"
+        });
         state.conversations.unshift(convo);
         renderConversations();
         selectConversation(convo.id);
@@ -4276,7 +4309,10 @@
       }
       log(`Starting chat with ${addr.slice(0, 10)}...`, 'inf');
       try {
-        const convo = await state.xmtpClient.conversations.newDm(addr);
+        const convo = await state.xmtpClient.conversations.newDmWithIdentifier({
+            identifier: addr.toLowerCase(),
+            identifierKind: "Ethereum"
+        });
         state.selectedConversation = convo;
         if (!state.conversations.find(c => c.id === convo.id)) {
           state.conversations.unshift(convo);
