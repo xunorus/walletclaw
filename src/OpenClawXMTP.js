@@ -83,8 +83,15 @@ export class OpenClawXMTP {
     const content = typeof payload === "string" ? payload : JSON.stringify(payload);
 
     try {
-      // En Node SDK V3 usamos newConversation para ambos: address o inboxId
-      let conv = await this._xmtp.conversations.newConversation(toAddress);
+      // En Node SDK V3 (MLS) el método correcto para DMs es newDm
+      let conv;
+      if (typeof this._xmtp.conversations.newDm === 'function') {
+        conv = await this._xmtp.conversations.newDm(toAddress);
+      } else if (typeof this._xmtp.conversations.newConversation === 'function') {
+        conv = await this._xmtp.conversations.newConversation(toAddress);
+      } else {
+        throw new Error("No se encontró el método para crear conversaciones en el SDK.");
+      }
       await conv.send(content);
     } catch (e) {
       console.error(`[OpenClawXMTP] Error enviando a ${toAddress}:`, e.message);
