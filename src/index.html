@@ -2290,8 +2290,10 @@
             <div id="con-xmtp-addr-display"
               style="font-size: 8px; padding: 6px; border-radius: 4px; background: rgba(0,0,0,0.2); font-family:var(--mono); margin-bottom: 2px; color: var(--text3); word-break: break-all;">
               No XMTP Address</div>
+            <label style="font-size: 8px; color: var(--text3); text-transform: uppercase; margin-bottom: 2px;">Your XMTP Inbox ID (V3)</label>
             <div id="con-xmtp-inbox-display"
-              style="font-size: 8px; padding: 6px; border-radius: 4px; background: rgba(0,0,0,0.2); font-family:var(--mono); margin-bottom: 8px; color: var(--teal); word-break: break-all;">
+              title="Click to select all"
+              style="font-size: 8px; padding: 6px; border-radius: 4px; background: rgba(0,0,0,0.4); font-family:var(--mono); margin-bottom: 8px; color: var(--teal); word-break: break-all; border: 1px solid rgba(0,243,255,0.1); user-select: all;">
               No Inbox ID</div>
             <button id="con-xmtp-connect-btn" class="btn-primary" onclick="toggleXmtp()"
               style="font-size:10px; width:100%;">Toggle XMTP</button>
@@ -2587,7 +2589,7 @@
     // ─── Crypto persistence (AES-GCM via WebCrypto) ──────────
     const STORAGE_KEY = 'walletclaw_v1';
     const SESSION_PW_KEY = 'walletclaw_session_pw';
-    const APP_VERSION = 'v1.0.0';
+    const APP_VERSION = 'v1.0.1';
 
     // UI Helper: Generic Card Toggle
     window.toggleCard = function (contentId, arrowId, summaryId) {
@@ -4214,27 +4216,20 @@
         }
       }
 
-      // Handle placeholder/init for Agent
-      if (conversation.id === 'hector' || conversation.id === 'placeholder' || !conversation.send) {
+      // Handle placeholder/init for Agent (Unified with V3 newDm)
+      if (conversation.id === 'hector' || conversation.id === 'placeholder' || !conversation.sendText) {
         if (!state.xmtpClient) {
           log("XMTP not connected. Go to 'Settings' first.", "wrn");
           return;
         }
         try {
           log(`Ensuring real XMTP DM session...`, 'inf');
-          await state.xmtpClient.conversations.sync();
-          conversation = await state.xmtpClient.conversations.createDmWithIdentifier({
-            identifier: AGENT_ADDR.toLowerCase(),
-            identifierKind: 0 // Ethereum
-          });
-          await conversation.sync();
+          // Use the proven newDm method from V3
+          conversation = await state.xmtpClient.conversations.newDm(AGENT_ADDR);
           state.selectedConversation = conversation;
+          log(`DM Session Established with: ${AGENT_ADDR.slice(0,10)}...`, 'ok');
         } catch (e) {
-          if (e.message && e.message.includes("not found")) {
-            log(`The agent address is not registered on XMTP (dev/testnet). Ensure Agent is running with dev env.`, 'wrn');
-          } else {
-            log(`Failed to initiate DM: ${e.message}`, 'err');
-          }
+          log(`Failed to initiate DM: ${e.message}`, 'err');
           return;
         }
       }
@@ -4264,10 +4259,7 @@
       }
       log(`Starting chat with ${addr.slice(0, 12)}...`, 'inf');
       try {
-        const convo = await state.xmtpClient.conversations.createDmWithIdentifier({
-          identifier: addr.toLowerCase(),
-          identifierKind: 0 // Ethereum
-        });
+        const convo = await state.xmtpClient.conversations.newDm(addr);
         state.conversations.unshift(convo);
         renderConversations();
         selectConversation(convo.id);
@@ -4284,12 +4276,7 @@
       }
       log(`Starting chat with ${addr.slice(0, 10)}...`, 'inf');
       try {
-        await state.xmtpClient.conversations.sync();
-        const convo = await state.xmtpClient.conversations.createDmWithIdentifier({
-          identifier: addr.toLowerCase(),
-          identifierKind: 0 // Ethereum
-        });
-        await convo.sync();
+        const convo = await state.xmtpClient.conversations.newDm(addr);
         state.selectedConversation = convo;
         if (!state.conversations.find(c => c.id === convo.id)) {
           state.conversations.unshift(convo);
