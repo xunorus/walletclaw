@@ -6,10 +6,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WalletClaw 🦞</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+  <script src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;800&display=swap');
 
+    * { box-sizing: border-box; }
     :root {
       --bg: #110709;
       --bg2: #180c0d;
@@ -43,7 +45,10 @@
       font-family: var(--mono);
       font-size: 13px;
       line-height: 1.6;
-      min-height: 100vh;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
 
     .msg-content {
@@ -122,18 +127,22 @@
     .sidebar {
       border-right: 1px solid var(--border);
       overflow-y: auto;
-      padding: 20px;
+      scrollbar-width: thin;
+      padding: 16px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 12px;
+      height: 100%;
     }
 
     .main {
-      overflow-y: auto;
-      padding: 20px;
+      flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      position: relative;
+      min-height: 0;
+      overflow: hidden;
+      background: var(--bg);
     }
 
     /* Cards */
@@ -506,15 +515,24 @@
 
     .api-key-display {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
-      gap: 8px;
+      justify-content: space-between;
+      gap: 10px;
       background: var(--bg3);
       border: 1px solid var(--border2);
       border-radius: 8px;
-      padding: 8px 12px;
+      padding: 10px 14px;
       font-size: 12px;
       color: var(--amber);
       word-break: break-all;
+      min-height: 44px;
+    }
+
+    .api-key-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
     }
 
     .section-note {
@@ -709,6 +727,36 @@
       color: var(--red);
     }
 
+    /* ── Mobile Sync Styles ── */
+    #sync-qr-container {
+      background: #fff;
+      padding: 16px;
+      border-radius: 12px;
+      display: flex;
+      justify-content: center;
+      margin: 10px 0;
+    }
+
+    #sync-qr-container canvas {
+      max-width: 100%;
+      height: auto !important;
+    }
+
+    .sync-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: var(--teal-dim);
+      border: 1px solid var(--border2);
+      border-radius: 99px;
+      color: var(--teal);
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+
 
     /* ── Version badge ── */
     .version-badge {
@@ -807,6 +855,13 @@
       margin-top: 4px;
     }
 
+    .card-content { display: none; }
+    .card-content.open { display: flex; flex-direction: column; overflow-y: auto; }
+    .card.open { flex-grow: 1; min-height: 0; display: flex; flex-direction: column; }
+    .card.open .card-content { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+    .arrow-icon { transition: transform 0.3s; }
+    .arrow-icon.open { transform: rotate(180deg); }
+
     .vlog-pill {
       font-size: 9px;
       padding: 1px 6px;
@@ -833,14 +888,20 @@
     /* ── Chat UI ── */
     .chat-container {
       display: flex;
-      height: calc(100vh - 360px);
-      min-height: 450px;
+      flex-direction: column;
+      flex: 1;
       width: 100%;
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: 12px;
+      background: rgba(13, 6, 7, 0.4);
+      border-top: 1px solid var(--border);
+      position: relative;
       overflow: hidden;
-      margin-top: 16px;
+      min-height: 0;
+    }
+
+    .chat-upper-area {
+      display: flex;
+      flex: 1;
+      min-height: 0;
       position: relative;
     }
 
@@ -849,10 +910,11 @@
       display: flex;
       flex-direction: column;
       background: rgba(0, 0, 0, 0.2);
-      transition: width 0.3s ease, min-width 0.3s ease;
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s;
       width: 260px;
       min-width: 260px;
       overflow: hidden;
+      flex-shrink: 0;
     }
 
     .chat-sidebar.collapsed {
@@ -861,16 +923,6 @@
       border-right: none;
     }
 
-    .chat-main {
-      flex: 1;
-      width: 0;
-      /* MASTER FLEX MOVE: Allow it to take whatever remains */
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      overflow: hidden;
-      background: var(--bg);
-    }
 
     .chat-sidebar-header {
       padding: 12px;
@@ -920,24 +972,26 @@
     }
 
     .chat-main {
+      flex: 1;
       display: flex;
       flex-direction: column;
       background: #0d0607;
       position: relative;
       min-height: 0;
+      min-width: 0;
       overflow: hidden;
     }
 
     .chat-header {
-      padding: 12px 16px;
+      padding: 16px 20px;
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: var(--bg2);
-      width: 100%;
-      box-sizing: border-box;
-      flex-shrink: 0;
+      background: rgba(24, 12, 13, 0.8);
+      backdrop-filter: blur(12px);
+      z-index: 50;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
     }
 
     .presence-dot {
@@ -971,28 +1025,29 @@
     }
 
     .msg-bubble {
-      max-width: 80%;
-      padding: 10px 14px;
-      border-radius: 12px;
-      font-size: 12px;
-      line-height: 1.4;
+      max-width: 85%;
+      padding: 12px 16px;
+      border-radius: 16px;
+      font-size: 12.5px;
+      line-height: 1.5;
       position: relative;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
     }
 
     .msg-received {
       align-self: flex-start;
-      background: var(--bg3);
+      background: linear-gradient(135deg, var(--bg3) 0%, #2a1a1a 100%);
       border: 1px solid var(--border);
       color: var(--text);
-      border-bottom-left-radius: 2px;
+      border-bottom-left-radius: 4px;
     }
 
     .msg-sent {
       align-self: flex-end;
-      background: var(--purple-dim);
+      background: linear-gradient(135deg, var(--purple-dim) 0%, rgba(224, 53, 48, 0.25) 100%);
       border: 1px solid var(--border2);
       color: var(--text);
-      border-bottom-right-radius: 2px;
+      border-bottom-right-radius: 4px;
     }
 
     .msg-time {
@@ -1026,15 +1081,14 @@
     }
 
     .chat-input-area {
-      padding: 12px 16px;
+      padding: 16px 24px 24px;
       border-top: 1px solid var(--border);
       display: flex;
-      gap: 10px;
-      background: var(--bg2);
+      gap: 12px;
+      background: rgba(24, 12, 13, 0.9);
+      backdrop-filter: blur(10px);
       flex-shrink: 0;
-      /* Ensure it stays at bottom! */
       width: 100%;
-      box-sizing: border-box;
     }
 
     .chat-input {
@@ -1057,8 +1111,17 @@
       background: var(--purple);
       color: white;
       border-radius: 8px;
-      padding: 0 16px;
+      padding: 0 20px;
       font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-size: 11px;
+      box-shadow: 0 4px 15px var(--purple-glow);
+    }
+
+    .btn-chat-send:hover {
+      background: #f04d48;
+      transform: translateY(-1px);
     }
 
     .xmtp-setup-overlay {
@@ -1143,6 +1206,8 @@
       transform: translateX(20px);
       background-color: var(--teal);
     }
+
+    .entry-overlay { display: none; }
 
     /* ── Toast Notifications ── */
     .toast-container {
@@ -1283,31 +1348,32 @@
       margin-top: 4px;
     }
 
+    #mobile-wallet-bar { display: none; }
+
     /* ── Responsive Adjustments ── */
     @media (max-width: 1200px) {
       .status-pill {
-        padding: 0;
-        width: 26px;
-        height: 26px;
-        justify-content: center;
+        padding: 3px 8px;
         flex-shrink: 0;
         position: relative;
         cursor: help;
+        gap: 5px;
       }
 
       .status-pill .dot {
         margin: 0;
-        width: 8px;
-        height: 8px;
+        width: 7px;
+        height: 7px;
       }
 
       header {
         gap: 10px;
       }
 
-      .status-pill span {
+      /* Show short label from data attribute, hide full status text */
+      .status-pill .pill-label { display: inline; }
+      .status-pill span.status-text {
         display: block;
-        /* Override none if any */
         position: absolute;
         top: calc(100% + 10px);
         right: 0;
@@ -1328,9 +1394,9 @@
         backdrop-filter: blur(8px);
       }
 
-      .status-pill:hover span,
-      .status-pill:focus span,
-      .status-pill:active span {
+      .status-pill:hover span.status-text,
+      .status-pill:focus span.status-text,
+      .status-pill:active span.status-text {
         opacity: 1;
         visibility: visible;
         transform: translateY(0);
@@ -1351,24 +1417,69 @@
       }
     }
 
+    /* On desktop (>1200px) hide the short label, show the full text inline */
+    @media (min-width: 1201px) {
+      .status-pill .pill-label { display: none; }
+    }
+
     @keyframes fadeIn {
-      to {
-        opacity: 1;
-      }
+      to { opacity: 1; }
     }
 
     @media (max-width: 850px) {
+      /* IMPORTANT: Keep 100vh flex for mobile! */
+      html, body { height: 100vh !important; overflow: hidden !important; }
 
-      /* Keep logo text visible on mobile */
-      .version-badge {
-        display: none;
+      /* Visual enhancement: Increase readability */
+      body { font-size: 14px; }
+      .card-title { font-size: 13px; letter-spacing: 1px; }
+      .address-display { font-size: 13px; }
+      button, input, textarea, select { font-size: 15px !important; } /* 15px+ prevents iOS zoom on focus */
+      .chat-message { font-size: 15px; }
+      .tab { font-size: 13px; }
+      .balance-label { font-size: 12px; }
+      .vlog-desc { font-size: 13px; }
+      .vlog-tag { font-size: 10px; }
+      .btn-row button { padding: 12px 16px; }
+
+      /* Hide redundant sync on mobile devices */
+      #sync-card, #sync-status-pill { display: none !important; }
+
+      /* Immersive Prompt for Mobile */
+      #mobile-immersive-prompt {
+        display: flex;
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background: var(--bg);
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+        text-align: center;
+        background-image: radial-gradient(circle at center, var(--bg3) 0%, var(--bg) 100%);
+      }
+
+      .immersive-logo {
+        font-family: var(--display);
+        font-size: 32px;
+        font-weight: 800;
+        margin-bottom: 30px;
+        color: var(--teal);
+        filter: drop-shadow(0 0 15px var(--purple-glow));
+      }
+
+      .immersive-desc {
+        font-size: 14px;
+        color: var(--text2);
+        margin-bottom: 40px;
+        line-height: 1.6;
       }
 
       header {
         padding: 10px 16px;
-        min-height: 50px;
+        min-height: 54px;
         justify-content: flex-start;
-        gap: 0;
       }
 
       .menu-toggle {
@@ -1381,47 +1492,54 @@
         border: 1px solid var(--border2);
         border-radius: 8px;
         color: var(--text);
-        cursor: pointer;
         margin-right: 15px;
-        flex-shrink: 0;
       }
 
-      .layout {
-        display: block;
-        height: calc(100vh - 51px);
-        overflow: hidden;
-        position: relative;
-      }
-
-      .sidebar {
+      .layout { 
+        display: flex;
+        flex-direction: column; 
+        height: calc(100vh - 54px);
+        overflow: hidden; 
         width: 100%;
-        height: 100%;
-        overflow-y: auto;
-        border-right: none;
-        padding: 16px;
-        padding-bottom: 90px;
-        background: var(--bg);
+        max-width: 100vw;
       }
 
-      .main {
+      /* Sidebar as a drawer */
+      .sidebar { 
         position: fixed;
         top: 0;
-        left: -320px;
+        left: 0;
         width: 85%;
         max-width: 320px;
         height: 100vh;
         z-index: 5000;
         background: var(--bg);
         border-right: 1px solid var(--border);
-        box-shadow: 15px 0 40px rgba(0, 0, 0, 0.8);
+        padding: 20px 16px;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        transform: translateX(-100%);
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        padding: 16px;
-        margin: 0;
+        box-shadow: 15px 0 40px rgba(0,0,0,0.8);
       }
-
-      .main.open {
-        transform: translateX(320px);
+      .sidebar.open { transform: translateX(0); }
+      
+      #mobile-wallet-bar {
+        display: block;
+        background: var(--bg2);
+        border-bottom: 1px solid var(--border);
+        padding: 5px 16px 12px;
+        z-index: 50;
       }
+      #mobile-wallet-bar .card {
+        background: transparent;
+        border: none;
+        padding: 0;
+      }
+      
+      #sidebar-wallet-card { display: none !important; }
 
       .drawer-overlay {
         position: fixed;
@@ -1433,58 +1551,127 @@
         opacity: 0;
         transition: opacity 0.3s;
       }
+      .drawer-overlay.open { display: block; opacity: 1; }
 
-      .drawer-overlay.open {
-        display: block;
-        opacity: 1;
-      }
-
-      .quick-chat-bar {
+      .main { 
+        padding: 0; 
+        flex: 1; 
         display: flex;
-        position: fixed;
-        bottom: 12px;
-        left: 12px;
-        right: 12px;
-        padding: 10px;
-        background: var(--bg2);
-        border: 1px solid var(--border2);
-        border-radius: 14px;
-        gap: 8px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
-        z-index: 4000;
-        backdrop-filter: blur(10px);
+        flex-direction: column;
+        min-height: 0; 
+        width: 100%;
+        max-width: 100%;
+        overflow: hidden;
       }
 
-      .quick-chat-bar input {
+      .chat-container { 
+        border: none !important; 
+        border-top: 1px solid var(--border) !important; 
         flex: 1;
-        background: var(--bg3);
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        color: var(--text);
-        padding: 0 14px;
-        height: 42px;
-        font-size: 14px;
+        width: 100%;
+        max-width: 100%;
+        position: relative;
+        overflow: hidden;
       }
 
-      .quick-chat-bar button {
-        width: 42px;
-        height: 42px;
-        padding: 0;
+      /* Chat sidebar as an absolute drawer on mobile */
+      .chat-sidebar {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 100;
+        width: 260px;
+        min-width: 0;
+        transform: translateX(-100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background: var(--bg2);
+        backdrop-filter: blur(20px);
+        box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+      }
+      
+      .chat-sidebar:not(.collapsed) {
+        transform: translateX(0);
+      }
+      
+      .chat-main {
+        width: 100%;
+        max-width: 100%;
+        flex: 1;
+        overflow: hidden;
+      }
+      
+      #sidebar-expand-btn {
+        display: block !important;
+      }
+
+      .card-content { display: none; }
+      .card-content.open { display: flex; flex-direction: column; }
+
+      /* Entry Overlay for Mobile */
+      .entry-overlay {
+        position: fixed;
+        inset: 0;
+        background: var(--bg);
+        z-index: 20000;
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
+        gap: 40px;
+        padding: 40px;
+        text-align: center;
+        transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.6s;
+      }
+      .entry-overlay.hidden {
+        opacity: 0;
+        visibility: hidden;
+      }
+      .entry-content {
+        animation: float 6s ease-in-out infinite;
+      }
+      @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-20px); }
+      }
+      .btn-enter {
         background: var(--purple);
-        border-radius: 10px;
-        border: none;
         color: white;
-        flex-shrink: 0;
+        font-size: 18px;
+        font-weight: 800;
+        padding: 18px 56px;
+        border-radius: 99px;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        box-shadow: 0 0 30px var(--purple-glow);
+        transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        border: 2px solid rgba(255,255,255,0.1);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .btn-enter:hover {
+        transform: scale(1.08);
+        background: #f04d48;
+        box-shadow: 0 0 60px var(--purple-glow);
+      }
+      .entry-tagline {
+        font-family: var(--display);
+        font-size: 11px;
+        letter-spacing: 4px;
+        text-transform: uppercase;
+        color: var(--text3);
+        margin-top: 15px;
       }
     }
 
-    @media (min-width: 851px) {
+    @media (min-width: 1201px) {
+      .entry-overlay { display: none !important; }
+    }
 
+    @media (min-width: 851px) {
       .menu-toggle,
-      .quick-chat-bar,
       .drawer-overlay {
         display: none !important;
       }
@@ -1495,6 +1682,30 @@
 
 <body>
   <div id="toast-container" class="toast-container"></div>
+
+  <!-- ── Fullscreen Entry Overlay (Mobile) ── -->
+  <div id="entry-overlay" class="entry-overlay">
+    <div class="entry-content">
+      <div class="logo" style="font-size: 42px; line-height: 1.1; margin-bottom: 20px; filter: drop-shadow(0 0 25px var(--purple-glow));">
+        Wallet<br><span>Claw</span> 🦞
+      </div>
+      <div class="entry-tagline">Secure Agent Protocol</div>
+    </div>
+    
+    <button class="btn-enter" onclick="enterApp()">
+      Entrar
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 3 21 3 21 9"></polyline>
+        <polyline points="9 21 3 21 3 15"></polyline>
+        <line x1="21" y1="3" x2="14" y2="10"></line>
+        <line x1="3" y1="21" x2="10" y2="14"></line>
+      </svg>
+    </button>
+    
+    <p style="font-size: 11px; color: var(--text3); max-width: 200px; line-height: 1.6; margin-top: 10px;">
+      Optimization for immersive mobile experience active.
+    </p>
+  </div>
 
   <header>
     <button class="menu-toggle" onclick="toggleMainDrawer()">
@@ -1554,32 +1765,88 @@
         <path d="M13 26 Q17 31 21 26" stroke="#c0392b" stroke-width="2" stroke-linecap="round" fill="none" />
         <path d="M14.5 27.5 Q17 30 19.5 27.5" stroke="#e74c3c" stroke-width="1.2" stroke-linecap="round" fill="none" />
       </svg>
-      Wallet <span>Claw</span>
+      <div style="display:flex; flex-direction:column; line-height:1; font-size:16px;">
+        <span>Wallet</span>
+        <span style="color:var(--teal); font-weight:800; margin-top:-2px;">Claw</span>
+      </div>
     </div>
     <div style="display:flex;align-items:center;gap:12px">
       <div class="status-pill" id="wallet-status-pill">
         <div class="dot"></div>
-        <span id="wallet-status-text">Wallet missing</span>
+        <span class="pill-label">Wallet</span>
+        <span class="status-text" id="wallet-status-text">Wallet missing</span>
       </div>
       <div class="status-pill" id="xmtp-status-pill">
         <div class="dot"></div>
-        <span id="xmtp-status-text">XMTP offline</span>
+        <span class="pill-label">XMTP</span>
+        <span class="status-text" id="xmtp-status-text">XMTP</span>
       </div>
       <div class="status-pill" id="bridge-status-pill">
         <div class="dot"></div>
-        <span id="bridge-status-text">Bridge offline</span>
+        <span class="pill-label">Bridge</span>
+        <span class="status-text" id="bridge-status-text">Bridge offline</span>
       </div>
-      <div class="status-pill" id="auto-approve-pill">
-        <div class="dot"></div>
-        <span id="auto-approve-text">Auto-Approve: OFF</span>
+      <!-- ── Mobile Sync Status (Follow-up) ── -->
+      <div class="status-pill" id="sync-status-pill" style="display:none; cursor: pointer;" onclick="openSyncModal()">
+        <div class="dot" style="background: var(--teal);"></div>
+        <span class="pill-label">Sync</span>
+        <span class="status-text" id="sync-status-text">Mobile Linked</span>
       </div>
       <div class="version-badge" id="version-badge">
-        v0.7.9
+        v0.8.6
         <div class="version-dropdown">
           <div class="version-dropdown-title">Changelog</div>
 
           <div class="vlog-entry">
-            <div class="vlog-tag current">v0.8.1</div>
+            <div class="vlog-tag current">v0.8.6</div>
+            <div class="vlog-info">
+              <div class="vlog-desc">Fix Settings/Log visibility on laptop & mobile chain switching</div>
+              <div class="vlog-date">Today</div>
+              <div class="vlog-pills">
+                <span class="vlog-pill feat">unified-ui</span>
+                <span class="vlog-pill feat">collapsible</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="vlog-entry">
+            <div class="vlog-tag">v0.8.4</div>
+            <div class="vlog-info">
+              <div class="vlog-desc">Mobile Layout Scrolling Fix</div>
+              <div class="vlog-date">Today</div>
+              <div class="vlog-pills">
+                <span class="vlog-pill fix">scroll-vis</span>
+                <span class="vlog-pill fix">viewport-h</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="vlog-entry">
+            <div class="vlog-tag">v0.8.3</div>
+            <div class="vlog-info">
+              <div class="vlog-desc">Collapsible Wallet & Reordered Info</div>
+              <div class="vlog-date">Today</div>
+              <div class="vlog-pills">
+                <span class="vlog-pill feat">toggle-ui</span>
+                <span class="vlog-pill fix">mobile-stack</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="vlog-entry">
+            <div class="vlog-tag">v0.8.2</div>
+            <div class="vlog-info">
+              <div class="vlog-desc">Mobile UI Responsiveness Fixes</div>
+              <div class="vlog-date">Today</div>
+              <div class="vlog-pills">
+                <span class="vlog-pill feat">mobile-ux</span>
+                <span class="vlog-pill fix">layout-wrap</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="vlog-entry">
+            <div class="vlog-tag">v0.8.1</div>
             <div class="vlog-info">
               <div class="vlog-desc">Robust API Auth & Bridge Fixes</div>
               <div class="vlog-date">Today</div>
@@ -1737,353 +2004,272 @@
   <div class="drawer-overlay" id="drawer-overlay" onclick="toggleMainDrawer()"></div>
   <div class="layout">
 
-    <!-- SIDEBAR: Wallet -->
-    <aside class="sidebar">
+    <!-- ── Mobile Top Wallet Bar (Barra Natural) ── -->
+    <div id="mobile-wallet-bar">
+      <div class="card">
+        <div class="balance-container" style="flex-direction: row; align-items: center; justify-content: space-between; gap: 10px; margin: 0;">
+          <div>
+            <div class="balance-big" id="wallet-balance-mobile" style="margin-bottom: 0; font-size: 24px;">
+              0.0000 <span style="font-size:14px;color:var(--text2)">AVAX</span>
+            </div>
+            <div class="balance-label" id="wallet-network-mobile" onclick="promptNetworkSwitch(); event.stopPropagation();" style="cursor:pointer; font-size: 11px; opacity: 0.8; margin-top: 2px;">No network ▾</div>
+          </div>
+          <div style="flex: 1; text-align: right;">
+            <div class="address-display" id="wallet-address-mobile" style="font-size: 11.5px; padding: 6px 10px; margin: 0; display: inline-block; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-      <!-- Quick Chat at bottom (only Mobile) -->
-      <div class="quick-chat-bar">
-        <input type="text" id="quick-chat-input" placeholder="Ask your agent..."
-          onkeydown="if(event.key==='Enter')window.sendChatMessage(true)">
-        <button onclick="window.sendChatMessage(true)">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-            stroke-linecap="round" stroke-linejoin="round">
-            <line x1="22" y1="2" x2="11" y2="13"></line>
-            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-          </svg>
-        </button>
+    <!-- SIDEBAR: All Controls (Barra Lateral) -->
+    <aside class="sidebar">
+        <!-- 1. Wallet Card (In Sidebar/Drawer - Hidden on mobile via CSS) -->
+        <div class="card" id="sidebar-wallet-card">
+        <div class="card-title" onclick="toggleCard('wallet-card-content', 'wallet-arrow-icon', 'wallet-summary-min')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+          <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
+            <span>🔑 Wallet</span>
+            <div id="wallet-summary-min" class="mobile-only-summary" style="font-size: 10px; font-weight: 400; color: var(--amber); margin-left: 10px; display: none;">
+              0.0000 AVAX
+            </div>
+          </div>
+          <svg id="wallet-arrow-icon" class="arrow-icon open" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </div>
+
+        <div id="wallet-card-content" class="card-content open">
+          <div class="balance-container" style="flex-direction: column; align-items: flex-start; gap: 2px; margin-bottom: 10px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+              <div class="balance-big" id="wallet-balance" style="margin-bottom: 0; font-size: 18px;">
+                0.0000 <span style="font-size:12px;color:var(--text2)">AVAX</span>
+              </div>
+              <button class="btn-icon" onclick="manualRefreshBalance(); event.stopPropagation();" title="Refresh">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+              </button>
+            </div>
+            <div class="balance-label" id="wallet-network" onclick="promptNetworkSwitch(); event.stopPropagation();" style="cursor:pointer; font-size: 10px; opacity: 0.8;">No network</div>
+          </div>
+          <div class="address-display" id="wallet-address" style="font-size: 10px; padding: 8px;">—</div>
+          <div id="wallet-setup-section" style="margin-top:10px">
+            <div class="btn-row">
+              <button class="btn-primary btn-full" style="font-size:10px; padding: 6px;" onclick="generateWallet()">New</button>
+              <button class="btn-secondary" style="font-size:10px; padding: 6px;" onclick="importWallet()">Import</button>
+            </div>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+            <div id="lock-badge" class="status-pill connected" style="display:none; font-size:9px; padding: 2px 8px;">
+               <div class="dot"></div><span>Encrypted</span>
+            </div>
+            <button id="forget-btn" class="btn-secondary" style="display:none; font-size:9px; padding: 4px 8px; color: var(--purple);" onclick="forgetWallet()">Forget</button>
+          </div>
+          <div id="funding-section" style="display:none; margin-top:8px">
+            <button class="btn-teal btn-full" style="font-size:10px; padding: 6px;" onclick="fundFromExternal()">Fund Wallet</button>
+          </div>
+        </div>
       </div>
 
-      <!-- Wallet Card -->
-      <div class="card">
-        <div class="card-title">🔑 Self-Custody Wallet</div>
+      <!-- 2. Pending Requests -->
+      <div class="card" id="pending-card">
+        <div class="card-title" onclick="toggleCard('pending-txs', 'pending-arrow-icon')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+          <span>⏳ Pending Requests</span>
+          <svg id="pending-arrow-icon" class="arrow-icon open" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </div>
+        <div id="pending-txs" class="card-content open">
+          <div style="font-size:11px;color:var(--text3); padding: 5px 0;">No pending requests.</div>
+        </div>
+      </div>
 
-        <div class="address-display" id="wallet-address">—</div>
-
-        <div class="balance-container">
-          <div class="balance-big" id="wallet-balance">
-            0.0000 <span style="font-size:14px;color:var(--text2)">AVAX</span>
+      <!-- 3. Connection -->
+      <div class="card" id="conexion-card">
+        <div class="card-title" onclick="toggleCard('conexion-content', 'conexion-arrow-icon')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+          <span>🔗 Connectivity</span>
+          <svg id="conexion-arrow-icon" class="arrow-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </div>
+        <div id="conexion-content" class="card-content">
+          <div style="margin-top:10px; background: rgba(224, 53, 48, 0.05); padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+            <label style="font-size: 10px; color: var(--purple); font-weight: 700;">REST API KEY</label>
+            <div class="api-key-display" style="margin-top:5px; gap:5px;">
+              <code id="con-api-key-display" style="font-size: 9px; flex:1; overflow:hidden;">—</code>
+              <button class="btn-secondary" style="font-size:9px; padding:4px 8px;" onclick="copyApiKey(this)">Copy</button>
+            </div>
           </div>
-          <button class="btn-icon" onclick="manualRefreshBalance()" title="Refresh balance">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="M23 4v6h-6"></path>
-              <path d="M1 20v-6h6"></path>
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          <div style="margin-top:8px; background: var(--bg3); padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+              <label style="font-size: 10px; color: var(--teal); font-weight: 700;">BRIDGE</label>
+              <div id="con-ws-status" class="status-pill" style="font-size:8px; padding: 2px 6px;"><div class="dot"></div><span>Off</span></div>
+            </div>
+            <div style="display:flex; gap:5px;">
+              <input type="text" id="bridge-url-input" placeholder="ws://..." style="font-size:10px; flex:1" />
+              <button class="btn-teal" onclick="toggleWsServer(this)" style="font-size:10px; padding: 0 10px;">Conn</button>
+            </div>
+          </div>
+          <div style="margin-top:8px; background: rgba(255, 209, 102, 0.05); padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+              <label style="font-size: 10px; color: var(--amber); font-weight: 700;">XMTP (CHAT)</label>
+              <div id="con-xmtp-status" class="status-pill" style="font-size:8px; padding: 2px 6px;"><div class="dot"></div><span>Off</span></div>
+            </div>
+            <div id="con-xmtp-addr-display" style="font-size: 8px; padding: 6px; border-radius: 4px; background: rgba(0,0,0,0.2); font-family:var(--mono); margin-bottom: 8px; color: var(--text3); word-break: break-all;">No XMTP Address</div>
+            <button id="con-xmtp-connect-btn" class="btn-primary" onclick="toggleXmtp()" style="font-size:10px; width:100%;">Toggle XMTP</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Manual Transaction -->
+      <div class="card" id="manual-tx-panel">
+        <div class="card-title" onclick="toggleCard('manual-tx-content', 'manual-tx-arrow-icon')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+          <span>📤 Send Transaction</span>
+          <svg id="manual-tx-arrow-icon" class="arrow-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </div>
+        <div id="manual-tx-content" class="card-content">
+          <div style="display:flex;flex-direction:column;gap:6px; margin-top:10px;">
+            <input id="tx-to" placeholder="To address" style="font-size:10px" />
+            <input id="tx-amount" type="number" step="0.001" placeholder="Amount" style="font-size:10px" />
+            <button class="btn-primary btn-full" style="font-size:10px" onclick="sendManualTx()">Sign & Send</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. Settings & Log -->
+      <div class="card" id="settings-card">
+        <div class="card-title" onclick="toggleCard('settings-content', 'settings-arrow-icon')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+          <span>⚙️ Settings & Log</span>
+          <svg id="settings-arrow-icon" class="arrow-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </div>
+        <div id="settings-content" class="card-content">
+          <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px; flex: 1; min-height: 0;">
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <label style="font-size:9px;">Agent XMTP Address</label>
+              <div style="display:flex; gap:6px;">
+                <input type="text" id="hector-addr-input" placeholder="0x..." style="flex:1; font-size:10px" onchange="window.updateAgentAddr(this.value)" />
+                <button id="confirm-hector-btn" class="btn-primary" style="padding: 4px 10px; font-size: 10px;" onclick="confirmAgentAddress()">Update</button>
+              </div>
+              <button class="btn-teal btn-full" style="font-size:10px; margin-top:2px;" onclick="startChatWithAgent()">🚀 Start Chat with Agent</button>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; background: var(--bg3); padding: 8px; border-radius: 8px;">
+              <span style="font-size:10px">Auto-Approve</span>
+              <label class="switch tiny"><input type="checkbox" id="auto-approve" onchange="toggleAutoApprove(this.checked)"><span class="slider"></span></label>
+            </div>
+            <div class="terminal" id="log-terminal" style="flex: 1; min-height: 140px; font-size: 11px; padding: 10px; line-height: 1.5;"></div>
+            <button class="btn-secondary btn-full" style="font-size:10px; padding: 6px; margin-top: 4px;" onclick="showRevokeModal()">Revoke XMTP sessions</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. Mobile Sync -->
+      <div class="card" id="sync-card" style="background: linear-gradient(135deg, rgba(224, 53, 48, 0.05), rgba(255, 140, 66, 0.05)); border-color: var(--purple-dim);">
+        <div class="card-title" style="color: var(--purple); display: flex; align-items: center; gap: 6px;">
+          <span>📱 Mobile Sync</span>
+        </div>
+        <div class="card-content" style="display: block;">
+          <p style="font-size: 10px; color: var(--text3); margin-bottom: 12px; line-height: 1.4;">
+            Scan a QR code to transfer this wallet and API settings to your mobile browser instantly.
+          </p>
+          <button class="btn-primary btn-full" onclick="openSyncModal()" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px; font-weight: 700;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+              <line x1="12" y1="18" x2="12" y2="18"></line>
             </svg>
+            Sync to Mobile
           </button>
         </div>
-        <div class="balance-label" id="wallet-network" onclick="promptNetworkSwitch()" style="cursor:pointer; display:inline-block; border-bottom:1px dotted var(--text3)">No network</div>
-
-        <div style="margin:12px 0 10px">
-          <!-- Section to hide when wallet is active -->
-          <div id="wallet-setup-section">
-            <div class="btn-row">
-              <button class="btn-primary btn-full" onclick="generateWallet()">Generate wallet</button>
-              <button class="btn-secondary" onclick="importWallet()">Import</button>
-            </div>
-          </div>
-
-          <!-- Persistent Funding section -->
-          <div id="funding-section" style="display:none; margin-top:10px">
-            <button class="btn-teal btn-full" onclick="fundFromExternal()" title="Top up from MetaMask">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
-                <path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h7"></path>
-                <line x1="16" y1="19" x2="22" y2="19"></line>
-                <line x1="19" y1="16" x2="19" y2="22"></line>
-              </svg>
-              Fund Wallet
-            </button>
-            <p class="section-note" style="text-align:center; font-size:9px">Top up this wallet using MetaMask</p>
-          </div>
-
-          <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between">
-            <span class="lock-badge" id="lock-badge" style="display:none">
-              <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                <rect x="1.5" y="4.5" width="7" height="5" rx="1.5" fill="currentColor" opacity="0.7" />
-                <path d="M3 4.5V3a2 2 0 0 1 4 0v1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"
-                  fill="none" />
-              </svg>
-              Encrypted
-            </span>
-            <button class="forget-btn" id="forget-btn" title="Forget wallet" onclick="forgetWallet()"
-              style="display:none; padding: 4px; line-height: 0;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                <line x1="10" y1="11" x2="10" y2="17"></line>
-                <line x1="14" y1="11" x2="14" y2="17"></line>
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        <div class="divider"></div>
-
-        <div class="grid-2">
-          <div class="stat-mini">
-            <div class="label">Txs signed</div>
-            <div class="value purple" id="tx-count">0</div>
-          </div>
-          <div class="stat-mini">
-            <div class="label">Agents connected</div>
-            <div class="value teal" id="agent-count">0</div>
-          </div>
-          <div class="stat-mini">
-            <div class="label">XMTP msgs</div>
-            <div class="value amber" id="xmtp-count">0</div>
-          </div>
-          <div class="stat-mini">
-            <div class="label">Auto-approve</div>
-            <div class="value purple" id="auto-approve-stat">OFF</div>
-          </div>
-        </div>
       </div>
-
-      <!-- Send Tx manual -->
-      <div class="card">
-        <div class="card-title">📤 Send transaction</div>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <div>
-            <label>To address</label>
-            <input id="tx-to" placeholder="0x..." />
-          </div>
-          <div>
-            <label>Amount (ETH)</label>
-            <input id="tx-amount" type="number" step="0.001" placeholder="0.01" />
-          </div>
-          <div>
-            <label>Data (hex, optional)</label>
-            <input id="tx-data" placeholder="0x" />
-          </div>
-          <button class="btn-primary" onclick="sendManualTx()">Sign &amp; Send</button>
-        </div>
-      </div>
-
-      <!-- Auto-restore on load is handled by script -->
-
     </aside>
 
-    <!-- MAIN: OpenClaw connection -->
+    <!-- MAIN: OpenClaw Chat Window -->
     <main class="main">
-      <!-- 1. Connection methods -->
-      <div class="tabs">
-        <button class="tab" id="tab-conexion" onclick="switchTab('conexion', this)">🔗 CONEXION</button>
-        <button class="tab active" id="tab-chat" onclick="switchTab('chat', this)">💬 CHAT</button>
-        <button class="tab" id="tab-settings" onclick="switchTab('settings', this)">⚙️ SETTINGS</button>
-      </div>
-
-      <!-- Conexion tab (Initial/Setup) -->
-      <div class="tab-panel" id="panel-conexion">
-        <div class="card" style="border:none; background:transparent; padding:0">
-          <div class="card-title">🤖 OpenClaw connection methods</div>
-
-          <!-- 1. REST method -->
-          <div
-            style="margin-top:15px; background: rgba(224, 53, 48, 0.05); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
-            <label
-              style="font-size: 11px; font-weight: 700; color: var(--purple); letter-spacing: 0.5px; margin-bottom: 8px; display: block; text-transform: uppercase;">REST
-              API Configuration</label>
-            <div style="margin-top:10px">
-              <label>Your API Key (add to OpenClaw env)</label>
-              <div class="api-key-display">
-                <code id="con-api-key-display">— generate wallet first —</code>
-                <button class="btn-secondary" style="font-size:10px;padding:4px 8px;white-space:nowrap"
-                  onclick="copyApiKey(this)">Copy</button>
-                <button class="btn-secondary"
-                  style="font-size:10px;padding:4px 8px;white-space:nowrap; border-left: 1px solid rgba(255,255,255,0.1)"
-                  onclick="generateApiKey(true)">Rotate</button>
-                <button class="btn-secondary"
-                  style="font-size:10px;padding:4px 8px;white-space:nowrap; border-left: 1px solid rgba(255,255,255,0.1)"
-                  onclick="generateApiKey('manual')">Set Manual</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- 2. Configuration Module for the Local Bridge -->
-          <div
-            style="margin-top:15px; background: rgba(255,140,66,0.05); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-              <label
-                style="font-size: 11px; font-weight: 700; color: var(--teal); letter-spacing: 0.5px; margin:0; text-transform: uppercase;">Bridge
-                Configuration</label>
-              <div class="status-pill" id="con-ws-status" style="font-size:9px; padding: 2px 8px;">
-                <div class="dot"></div><span>Stopped</span>
-              </div>
-            </div>
-            <div style="display:flex; gap:8px;">
-              <input type="text" id="bridge-url-input" placeholder="ws://localhost:18789/ws-ui"
-                style="flex:1; border: 1px solid var(--border); background: var(--bg3); font-family: var(--mono); font-size: 11px; padding: 8px 12px; border-radius: 8px;" />
-              <button class="btn-teal" id="con-ws-bridge-toggle" onclick="toggleWsServer(this)"
-                style="font-size:11px; white-space:nowrap; padding: 0 20px; min-width: 100px;">Connect</button>
-            </div>
-          </div>
-
-          <!-- 3. XMTP method -->
-          <div
-            style="margin-top:15px; background: rgba(184, 159, 255, 0.05); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-              <label
-                style="font-size: 11px; font-weight: 700; color: #b89fff; letter-spacing: 0.5px; margin:0; text-transform: uppercase;">XMTP
-                Configuration</label>
-              <div class="status-pill" id="xmtp-status-pill-sub" style="font-size:9px; padding: 2px 8px;">
-                <div class="dot"></div><span>XMTP offline</span>
-              </div>
-            </div>
-            <div style="display:flex; gap:8px;">
-              <div id="con-xmtp-addr-display"
-                style="flex:1; border: 1px solid var(--border); background: var(--bg3); font-family: var(--mono); font-size: 11px; padding: 8px 12px; border-radius: 8px; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                — generate wallet first —</div>
-              <button id="con-xmtp-connect-btn" class="btn-primary" onclick="toggleXmtp()"
-                style="font-size:11px; white-space:nowrap; padding: 0 20px; min-width: 100px;">Connect</button>
-              <button class="btn-secondary" onclick="copyWalletForXmtp(this)"
-                style="font-size:11px; padding: 0 12px;">Copy</button>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      <!-- Chat tab (DEFAULT) -->
-      <div class="tab-panel active" id="panel-chat">
+      <div id="panel-chat" class="active" style="display: flex !important; flex-direction: column; flex: 1; min-height: 0; width: 100%;">
         <div class="chat-container">
-          <div class="chat-sidebar" id="chat-sidebar">
-            <div class="chat-sidebar-header" style="display:flex; justify-content:space-between; align-items:center;">
-              <span>Conversations</span>
-              <button onclick="toggleChatSidebar()"
-                style="background:none; border:none; color:var(--text3); cursor:pointer; font-weight:bold;">[ <<
-                  ]</button>
-            </div>
-            <div class="contact-list" id="chat-contact-list"></div>
-          </div>
-          <div class="chat-main">
-            <div class="chat-header">
-              <div style="display:flex; align-items:center; gap:8px">
-                <button id="sidebar-expand-btn" onclick="toggleChatSidebar()"
-                  style="display:none; background:var(--purple); border:1px solid var(--border2); color:white; padding:4px 10px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:11px; box-shadow: 0 0 10px var(--purple-glow);">[
-                  >> ] List</button>
-                <span id="active-contact-addr" style="font-size:11px; font-weight:700;">OpenClaw Agent</span>
-                <span id="active-contact-status-dot" class="presence-dot" style="margin-left: 0;"></span>
+          <div class="chat-upper-area">
+            <div class="chat-sidebar collapsed" id="chat-sidebar">
+              <div style="min-width: 260px;">
+                <div class="chat-sidebar-header" style="display:flex; justify-content:space-between; align-items:center; padding: 10px 12px;">
+                  <span style="font-size: 10px;">Conversations</span>
+                  <div style="display:flex; gap: 8px;">
+                    <button class="btn-icon" onclick="startNewChat()" title="New Chat" style="color:var(--text); opacity:0.8; height:20px; width:20px; display:flex; align-items:center; justify-content:center; border:1px solid var(--border); border-radius:4px; font-size:12px;">+</button>
+                    <button onclick="toggleChatSidebar()" style="background:none; border:none; color:var(--text3); cursor:pointer; font-weight:bold; font-size: 14px;">«</button>
+                  </div>
+                </div>
+                <div class="contact-list" id="chat-contact-list"></div>
               </div>
-              <button onclick="clearResidualChats()"
-                style="background:none; border:none; color:var(--text3); font-size:9px; text-decoration:underline; cursor:pointer;">Clear
-                Chats</button>
             </div>
-            <div class="chat-messages" id="chat-messages"></div>
-            <div id="agent-typing" class="typing-indicator">🦞 Agent is typing...</div>
-            <div class="chat-input-area">
-              <input type="text" id="chat-input" class="chat-input" placeholder="Type a message..."
-                oninput="handleTyping()" onkeydown="if(event.key==='Enter')sendChatMessage()">
-              <button class="btn-chat-send" onclick="sendChatMessage()">Send</button>
+            <div class="chat-main" style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
+              <div class="chat-header">
+                <div style="display:flex; align-items:center; gap:8px">
+                  <button id="sidebar-expand-btn" onclick="toggleChatSidebar()"
+                    style="display:none; background:var(--purple); border:1px solid var(--border2); color:white; padding:4px 10px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:11px; box-shadow: 0 0 10px var(--purple-glow);">[ >> ] List</button>
+                  <span id="active-contact-addr" style="font-size:11px; font-weight:700;">OpenClaw Agent</span>
+                  <span id="active-contact-status-dot" class="presence-dot" style="margin-left: 0;"></span>
+                </div>
+                <button onclick="clearResidualChats()"
+                  style="background:none; border:none; color:var(--text3); font-size:9px; text-decoration:underline; cursor:pointer;">Clear Chats</button>
+              </div>
+              <div class="chat-messages" id="chat-messages" style="flex: 1; min-height: 0;"></div>
+              <div id="agent-typing" class="typing-indicator">🦞 Agent is typing...</div>
             </div>
+          </div>
+          <div class="chat-input-area">
+            <input type="text" id="chat-input" class="chat-input" placeholder="Type a message..."
+               onkeydown="if(event.key==='Enter')sendChatMessage()">
+            <button class="btn-chat-send" onclick="sendChatMessage()">Send</button>
           </div>
         </div>
       </div>
-
-      <!-- Unified Settings tab -->
-      <div class="tab-panel" id="panel-settings">
-        <div style="display:flex; flex-direction:column; gap:20px; padding: 10px 0;">
-
-          <div>
-            <div class="card-title">👤 User Preferences</div>
-            <p class="section-note" style="font-size: 13px;">General application settings and profile.</p>
-
-            <div style="margin-top:12px">
-              <label style="font-size: 13px; font-weight: 600; color: var(--text);">Agent's XMTP Address (Primary AI
-                Target)</label>
-              <div style="display:flex; flex-direction:column; gap:4px">
-                <input type="text" id="hector-addr-input" class="chat-input" placeholder="0x..."
-                  onchange="updateAgentAddr(this.value)" />
-                <button id="confirm-hector-btn" class="btn-secondary btn-full" onclick="confirmAgentAddress()">Confirm
-                  Agent</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="divider"></div>
-
-          <div>
-            <div class="card-title">🔐 Session Security</div>
-            <p class="section-note" style="font-size: 13px;">Control how your password is cached during this session.
-            </p>
-            <div
-              style="display:flex; align-items:center; justify-content:space-between; margin-top:14px; padding: 4px 0;">
-              <span style="font-size:14px; font-weight: 600;">Remember password in session</span>
-              <label class="switch">
-                <input type="checkbox" id="remember-session-toggle" onchange="setRememberSession(this.checked)">
-                <span class="slider"></span>
-              </label>
-            </div>
-            <p class="section-note" style="color:var(--text3); font-size:11px; margin-top:8px; line-height: 1.4;">
-              ⚠️ If enabled, your password will stay in browser memory (sessionStorage) until the tab is closed. This
-              prevents re-typing but is less secure.
-            </p>
-          </div>
-
-          <!-- Agent permissions moved from sidebar -->
-          <div>
-            <div class="card-title">⚙️ Agent Permissions & Auto-Approve</div>
-            <p class="section-note" style="font-size: 13px; margin-bottom: 12px;">Configure self-execution limits for known agents.</p>
-            
-            <div style="display:flex;flex-direction:column;gap:12px; background: var(--bg3); padding: 16px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px;">
-              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 8px;">
-                <span style="font-size:14px; font-weight: 600;">Enable Auto-Approve</span>
-                <label class="switch">
-                  <input type="checkbox" id="auto-approve" onchange="toggleAutoApprove(this.checked)">
-                  <span class="slider"></span>
-                </label>
-              </div>
-              
-              <div class="grid-2">
-                <div>
-                  <label>Max ETH per tx</label>
-                  <input id="max-eth" type="number" step="0.001" value="0.01" />
-                </div>
-                <div>
-                  <label>Daily limit (ETH)</label>
-                  <input id="daily-limit" type="number" step="0.01" value="0.1" />
-                </div>
-              </div>
-              
-              <div>
-                <label>Allowed agent addresses (one per line)</label>
-                <textarea id="allowed-agents" placeholder="0x..." style="min-height: 80px;"></textarea>
-              </div>
-              
-              <button class="btn-primary btn-full" onclick="savePermissions()">Save Permissions</button>
-            </div>
-          </div>
-
-          <div>
-            <div class="card-title">🛠 Maintenance</div>
-            <button class="btn-danger btn-full" onclick="showRevokeModal()">Revoke All XMTP Sessions</button>
-            <p class="section-note" style="color:var(--text3); font-size:10px; margin-top:5px;">Useful if you reached
-              the 10 installation limit on XMTP.</p>
-          </div>
-
-        </div>
-      </div>
+    </main>
   </div>
 
-  <!-- 2. Pending approvals -->
-  <div class="card">
-    <div class="card-title">⏳ Pending sign requests</div>
-    <div id="pending-txs">
-      <div style="font-size:11px;color:var(--text3)">No pending requests.</div>
-    </div>
-  </div>
+  <!-- ── Core UI functions (always available, no module dependency) ── -->
+  <script>
+    // UI Helper: Generic Card Toggle
+    window.toggleCard = function(contentId, arrowId, summaryId) {
+      var content = document.getElementById(contentId);
+      var arrow = document.getElementById(arrowId);
+      var summary = summaryId ? document.getElementById(summaryId) : null;
+      if (!content) return;
 
-  <!-- 3. Activity log -->
-  <div class="card">
-    <div class="card-title">📟 Activity log</div>
-    <div class="terminal" id="log-terminal">
-      <div class="log-line"><span class="ts">[init]</span> <span class="inf"> WalletClaw started · Avalanche Fuji
-          Testnet.</span></div>
-    </div>
-  </div>
-  </main>
-  </div>
+      var isOpen = content.classList.contains('open');
+      var card = content.closest('.card');
+      if (isOpen) {
+        content.classList.remove('open');
+        if (card) card.classList.remove('open');
+        if (arrow) arrow.style.transform = 'rotate(0deg)';
+        if (summary && window.innerWidth <= 850) summary.style.display = 'block';
+      } else {
+        content.classList.add('open');
+        if (card) card.classList.add('open');
+        if (arrow) arrow.style.transform = 'rotate(180deg)';
+        if (summary) summary.style.display = 'none';
+      }
+    };
+
+    // UI Helper: Mobile Drawer Toggle
+    window.toggleMainDrawer = function() {
+      var sidebar = document.querySelector('.sidebar');
+      var overlay = document.getElementById('drawer-overlay');
+      if (!sidebar || !overlay) return;
+
+      var isOpen = sidebar.classList.contains('open');
+      if (isOpen) {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('open');
+      } else {
+        sidebar.classList.add('open');
+        overlay.classList.add('open');
+      }
+    };
+
+    // UI Helper: Enter App (mobile entry overlay)
+    window.enterApp = function() {
+      var docEl = document.documentElement;
+      try {
+        if (docEl.requestFullscreen) docEl.requestFullscreen().catch(function(){});
+        else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen();
+      } catch (e) {}
+
+      var overlay = document.getElementById('entry-overlay');
+      if (overlay) {
+        overlay.classList.add('hidden');
+        setTimeout(function() { overlay.style.display = 'none'; }, 700);
+      }
+    };
+  </script>
 
   <script type="module">
     import { Client, IdentifierKind } from "@xmtp/browser-sdk";
@@ -2102,7 +2288,7 @@
       }
     };
 
-    window.confirmAgentAddress = function () {
+    function confirmAgentAddress() {
       const input = document.getElementById('hector-addr-input');
       if (input) {
         window.updateAgentAddr(input.value);
@@ -2190,7 +2376,41 @@
     // ─── Crypto persistence (AES-GCM via WebCrypto) ──────────
     const STORAGE_KEY = 'walletclaw_v1';
     const SESSION_PW_KEY = 'walletclaw_session_pw';
-    const APP_VERSION = 'v0.8.1';
+    const APP_VERSION = 'v0.8.6';
+
+    // UI Helper: Generic Card Toggle
+    window.toggleCard = function(contentId, arrowId, summaryId) {
+      const content = document.getElementById(contentId);
+      const arrow = document.getElementById(arrowId);
+      const summary = summaryId ? document.getElementById(summaryId) : null;
+      
+      const isOpen = content.classList.contains('open');
+      if (isOpen) {
+        content.classList.remove('open');
+        if (arrow) arrow.style.transform = 'rotate(0deg)';
+        if (summary && window.innerWidth <= 850) summary.style.display = 'block';
+      } else {
+        content.classList.add('open');
+        if (arrow) arrow.style.transform = 'rotate(180deg)';
+        if (summary) summary.style.display = 'none';
+      }
+    }
+
+    // UI Helper: Mobile Drawer Toggle (Sidebar Drawer style)
+    function toggleMainDrawer() {
+      const sidebar = document.querySelector('.sidebar');
+      const overlay = document.getElementById('drawer-overlay');
+      if (!sidebar || !overlay) return;
+      
+      const isOpen = sidebar.classList.contains('open');
+      if (isOpen) {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('open');
+      } else {
+        sidebar.classList.add('open');
+        overlay.classList.add('open');
+      }
+    }
 
     function renderVersion() {
       const badge = document.getElementById('version-badge');
@@ -2396,7 +2616,7 @@
     }
 
     // ─── Auto-restore on load ─────────────────────────────────
-    window.addEventListener('DOMContentLoaded', () => {
+    window.bootstrap = async function() {
       renderVersion();
 
       // UI Init: Toggle Session Preference
@@ -2407,18 +2627,9 @@
 
       const bridgeUrlInput = document.getElementById('bridge-url-input');
       if (bridgeUrlInput) bridgeUrlInput.value = state.bridgeUrl;
-
-      const lastTab = localStorage.getItem('last_tab');
-      const targetTab = lastTab || (hasSavedWallet() ? 'chat' : 'conexion');
-
-      // Restore Main-tab state
-      const tabBtn = document.getElementById('tab-' + targetTab);
-      if (tabBtn) {
-        window.switchTab(targetTab, tabBtn);
-      } else {
-        const defaultTab = hasSavedWallet() ? 'chat' : 'conexion';
-        window.switchTab(defaultTab, document.getElementById('tab-' + defaultTab));
-      }
+      
+      const agentInput = document.getElementById('hector-addr-input');
+      if (agentInput) agentInput.value = AGENT_ADDR;
 
       // 2. Wallet Restoration / Bootup
       if (hasSavedWallet()) {
@@ -2430,13 +2641,16 @@
             const privateKey = await decryptPrivateKey(stored, pw);
             const wallet = new ethers.Wallet(privateKey);
             state.wallet = wallet;
+            state.walletEncrypted = stored; // Ensure this is set
             updateWalletUI(wallet.address);
             if (!state.apiKey) window.generateApiKey();
             else if (window.syncUIWithApiKey) window.syncUIWithApiKey();
 
             log(`Wallet auto-unlocked via session storage.`, 'ok');
-            document.getElementById('lock-badge').style.display = 'inline-flex';
-            document.getElementById('forget-btn').style.display = 'inline';
+            const lockBad = document.getElementById('lock-badge');
+            if (lockBad) lockBad.style.display = 'inline-flex';
+            const forgetB = document.getElementById('forget-btn');
+            if (forgetB) forgetB.style.display = 'inline';
             tryConnectProvider(wallet);
             connectXmtp();
             return true;
@@ -2458,11 +2672,12 @@
           promptManualUnlock();
         }
 
-        function promptManualUnlock() {
+        async function promptManualUnlock() {
           log('Encrypted wallet found. Enter password to unlock.', 'inf');
           openUnlockModal(async (privateKey) => {
             const wallet = new ethers.Wallet(privateKey);
             state.wallet = wallet;
+            state.walletEncrypted = localStorage.getItem(STORAGE_KEY);
             updateWalletUI(wallet.address);
             if (!state.apiKey) window.generateApiKey();
             else if (window.syncUIWithApiKey) window.syncUIWithApiKey();
@@ -2474,12 +2689,11 @@
         }
       } else {
         log('No wallet configured. Please generate or import a wallet to begin.', 'wrn');
-        // If no wallet, ensure we are on conexion tab
-        if (targetTab !== 'conexion') {
-          const tabBtnCon = document.getElementById('tab-conexion');
-          if (tabBtnCon) window.switchTab('conexion', tabBtnCon);
-        }
       }
+    };
+
+    window.addEventListener('DOMContentLoaded', () => {
+      bootstrap();
     });
 
     // ─── Logging ─────────────────────────────────────────────
@@ -2664,7 +2878,21 @@
       } catch (e) {
         log('No RPC connection (wallet works offline)', 'wrn');
         document.getElementById('wallet-network').textContent = 'No RPC (offline mode)';
+        const netMobOff = document.getElementById('wallet-network-mobile');
+        if (netMobOff) netMobOff.textContent = 'No RPC (offline) ▾';
       }
+    }
+
+    function updateWalletSummary() {
+      const balEl = document.getElementById('wallet-balance');
+      const netEl = document.getElementById('wallet-network');
+      const sumEl = document.getElementById('wallet-summary-min');
+      if (!balEl || !netEl || !sumEl) return;
+      
+      // Extract numeric balance + symbol + chainId from HTML
+      const balText = balEl.innerText.split('\n')[0].trim();
+      const netText = netEl.innerText.trim();
+      sumEl.textContent = `${balText} | ${netText}`;
     }
 
     async function updateBalance(address, provider) {
@@ -2674,8 +2902,27 @@
         const net = state.provider ? await state.provider.getNetwork().catch(() => null) : null;
         const symbol = CURRENT_NETWORK.symbol || 'AVAX';
         const chainId = (net && net.chainId) ? Number(net.chainId) : CURRENT_NETWORK.chainId;
-        document.getElementById('wallet-balance').innerHTML = `${avax} <span style="font-size:14px;color:var(--text2)">${symbol}</span> <span style="font-size:10px;color:var(--text3);opacity:0.6">(${chainId})</span>`;
-      } catch (e) { }
+
+        const balEl = document.getElementById('wallet-balance');
+        if (balEl) {
+          balEl.innerHTML = `${avax} <span style="font-size:14px;color:var(--text2)">${symbol}</span> <span style="font-size:10px;color:var(--text3);opacity:0.6">(${chainId})</span>`;
+        }
+
+        const balMobEl = document.getElementById('wallet-balance-mobile');
+        if (balMobEl) {
+          balMobEl.innerHTML = `${avax} <span style="font-size:12px;color:var(--text2)">${symbol}</span>`;
+        }
+
+        const addrEl = document.getElementById('wallet-address');
+        if (addrEl) addrEl.textContent = address;
+
+        const addrMobEl = document.getElementById('wallet-address-mobile');
+        if (addrMobEl) addrMobEl.textContent = address;
+
+        updateWalletSummary();
+      } catch (e) {
+        console.error("Balance update failed:", e);
+      }
     }
 
     async function updateNetworkInfo(provider) {
@@ -2688,7 +2935,11 @@
           11155111n: 'Sepolia Testnet',
           137n: 'Polygon'
         };
-        document.getElementById('wallet-network').textContent = names[net.chainId] || `Chain ${net.chainId}`;
+        const networkName = names[net.chainId] || `Chain ${net.chainId}`;
+        document.getElementById('wallet-network').textContent = networkName;
+        const netMobEl = document.getElementById('wallet-network-mobile');
+        if (netMobEl) netMobEl.textContent = networkName + ' ▾';
+        updateWalletSummary();
       } catch (e) { }
     }
 
@@ -2757,7 +3008,7 @@
       if (fundingSection) fundingSection.style.display = 'block';
 
       const forgetBtn = document.getElementById('forget-btn');
-      if (forgetBtn) forgetBtn.style.display = 'block';
+      if (forgetBtn && hasSavedWallet()) forgetBtn.style.display = 'block';
 
       if (bridgeSocket && bridgeSocket.readyState === 1) { // WebSocket.OPEN
         bridgeSocket.send(JSON.stringify({ type: 'SYNC_WALLET_ADDRESS', address: address }));
@@ -2765,7 +3016,7 @@
     }
 
     // ─── API Key ─────────────────────────────────────────────
-    window.generateApiKey = function (forceNew = false) {
+    function generateApiKey(forceNew = false) {
       if (forceNew === 'manual') {
         const manual = prompt('Set manual API Key (arbitrary string)', state.apiKey || '');
         if (!manual || manual.trim() === '') return;
@@ -2806,7 +3057,7 @@
       }
     }
 
-    window.copyApiKey = function (btn) {
+    function copyApiKey(btn) {
       if (!state.apiKey) { log('Generate wallet first', 'wrn'); return; }
       navigator.clipboard.writeText(state.apiKey).then(() => {
         log('API key copied', 'ok');
@@ -2818,7 +3069,7 @@
       });
     }
 
-    window.copyWalletForXmtp = function (btn) {
+    function copyWalletForXmtp(btn) {
       if (!state.wallet) { log('No wallet connected', 'wrn'); return; }
       const addr = state.wallet.address || (state.wallet._address);
       navigator.clipboard.writeText(addr).then(() => {
@@ -2832,7 +3083,7 @@
     }
 
     // ─── Tabs ─────────────────────────────────────────────────
-    window.switchTab = function (id, btn) {
+    function switchTab(id, btn) {
       // 1. Reset ONLY top-level main tabs (children of .main > .tabs)
       const mainContainer = document.querySelector('.main > .tabs');
       if (mainContainer) {
@@ -2876,7 +3127,7 @@
     // ─── WebSocket Bridge Connection (Real) ────────────────────────
     let bridgeSocket = null;
 
-    window.toggleWsServer = function (btnElement) {
+    function toggleWsServer(btnElement) {
       if (!bridgeSocket) {
         // Auto-save/apply current input value before connecting
         window.updateBridgeUrl();
@@ -3100,7 +3351,12 @@
         const walletSigner = {
           type: "EOA",
           getIdentifier: () => ({ identifier: wallet.address, identifierKind: 0 }),
-          signMessage: async (message) => ethers.getBytes(await wallet.signMessage(message)),
+          signMessage: async (message) => {
+            log("XMTP signature requested...", "inf");
+            const sig = await wallet.signMessage(message);
+            log("XMTP signature generated ✓", "ok");
+            return ethers.getBytes(sig);
+          },
         };
 
         state.xmtpClient = await Client.create(walletSigner, {
@@ -3111,15 +3367,15 @@
 
         state.xmtpConnected = true;
 
-        const statusPills = ['xmtp-status-pill', 'xmtp-status-pill-sub'];
+        const statusPills = ['xmtp-status-pill', 'xmtp-status-pill-sub', 'con-xmtp-status'];
         statusPills.forEach(id => {
           const pill = document.getElementById(id);
           if (pill) {
             pill.classList.add('connected');
-            const txt = pill.querySelector('span');
-            if (txt) txt.textContent = 'XMTP online';
           }
         });
+        const conAddr = document.getElementById('con-xmtp-addr-display');
+        if (conAddr) conAddr.textContent = wallet.address;
         if (overlay) overlay.style.display = 'none';
 
         const btns = ['xmtp-connect-btn', 'con-xmtp-connect-btn'];
@@ -3161,21 +3417,22 @@
       }
     }
 
-    window.toggleXmtp = async function () {
+    async function toggleXmtp() {
       if (state.xmtpConnected) {
         log('Disconnecting XMTP...', 'wrn');
         state.xmtpConnected = false;
         state.xmtpClient = null;
 
-        const statusPills = ['xmtp-status-pill', 'xmtp-status-pill-sub'];
+        const statusPills = ['xmtp-status-pill', 'xmtp-status-pill-sub', 'con-xmtp-status'];
         statusPills.forEach(id => {
           const pill = document.getElementById(id);
           if (pill) {
             pill.classList.remove('connected');
-            const txt = pill.querySelector('span');
-            if (txt) txt.textContent = 'XMTP offline';
           }
         });
+
+        const conAddr = document.getElementById('con-xmtp-addr-display');
+        if (conAddr) conAddr.textContent = 'No XMTP Address';
 
         const btns = ['xmtp-connect-btn', 'con-xmtp-connect-btn'];
         btns.forEach(id => {
@@ -3421,7 +3678,7 @@
       }
     }
 
-    window.selectAgent = function () {
+    function selectAgent() {
       // Find existing conversation with Agent or create a placeholder for UI
       const existing = state.conversations.find(c => (c.peerAddress || '').toLowerCase() === (AGENT_ADDR || '').toLowerCase());
       if (existing) {
@@ -3439,7 +3696,7 @@
       }
     }
 
-    window.selectLocalAgent = function () {
+    function selectLocalAgent() {
       state.selectedConversation = { id: 'local', type: 'local', peerAddress: 'Local Agent' };
       const hb = document.getElementById('active-contact-addr');
       const sd = document.getElementById('active-contact-status-dot');
@@ -3479,7 +3736,7 @@
       const convId = state.selectedConversation ? (state.selectedConversation.id || state.selectedConversation.topic) : null;
       const msgList = document.getElementById('chat-messages');
       if (!convId || !state.messages[convId]) {
-        msgList.innerHTML = policy.createHTML('<div style="flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text3); font-size: 11px; opacity: 0.5;">Select a conversation to start messaging</div>');
+        msgList.innerHTML = policy.createHTML('<div style="flex:1; display:flex; align-items:center; justify-content:center; color:var(--text3); font-size:11px; opacity:0.5; text-align:center; padding:20px; line-height:1.5;">Select a conversation to start messaging</div>');
         return;
       }
 
@@ -3667,7 +3924,7 @@
       }
     }
 
-    window.startNewChat = async function () {
+    async function startNewChat() {
       const addr = prompt("Enter the wallet address to message:");
       if (!addr || !ethers.isAddress(addr)) {
         if (addr) log("Invalid address", "wrn");
@@ -3675,7 +3932,10 @@
       }
       log(`Starting chat with ${addr.slice(0, 12)}...`, 'inf');
       try {
-        const convo = await state.xmtpClient.conversations.newConversation(addr);
+        const convo = await state.xmtpClient.conversations.createDmWithIdentifier({
+          identifier: addr.toLowerCase(),
+          identifierKind: 0 // Ethereum
+        });
         state.conversations.unshift(convo);
         renderConversations();
         selectConversation(convo.id);
@@ -3841,6 +4101,24 @@
               // Move to the conversation if not selected
               if (!state.selectedConversation || state.selectedConversation.peerAddress.toLowerCase() !== agentAddr.toLowerCase()) {
                 log(`Agent is starting communication...`, 'inf');
+              }
+            }
+            
+            // --- NEW: Mobile Sync Confirmation Follow-up ---
+            if (parsed.type === 'claw:sync_confirmation') {
+              const pill = document.getElementById('sync-status-pill');
+              if (pill) {
+                pill.style.display = 'flex';
+                pill.classList.add('connected');
+                document.getElementById('sync-status-text').textContent = 'Mobile Linked';
+                log("📱 Mobile device linked successfully via XMTP handshake.", "ok");
+                
+                // Visual feedback: pulse the pill
+                pill.animate([
+                  { opacity: 0.5, transform: 'scale(1)' },
+                  { opacity: 1, transform: 'scale(1.1)' },
+                  { opacity: 1, transform: 'scale(1)' }
+                ], { duration: 1000, iterations: 2 });
               }
             }
 
@@ -4195,17 +4473,11 @@
     }
 
     // ─── Permissions ─────────────────────────────────────────
-    window.toggleAutoApprove = function (on) {
+    function toggleAutoApprove(on) {
       state.autoApprove = on;
-      document.getElementById('auto-approve-stat').textContent = on ? 'ON' : 'OFF';
+      const statEl = document.getElementById('auto-approve-stat');
+      if (statEl) statEl.textContent = on ? 'ON' : 'OFF';
       log(`Auto-approve ${on ? 'ENABLED' : 'DISABLED'}`, on ? 'wrn' : 'ok');
-
-      const autoPill = document.getElementById('auto-approve-pill');
-      const autoText = document.getElementById('auto-approve-text');
-      if (autoPill && autoText) {
-        autoPill.className = 'status-pill' + (on ? ' connected' : '');
-        autoText.textContent = `Auto-Approve: ${on ? 'ON' : 'OFF'}`;
-      }
     }
 
     function savePermissions() {
@@ -4216,80 +4488,197 @@
 
     // ─── Unified window exposure ───────────────────
     Object.assign(window, {
-      generateWallet,
-      importWallet,
-      connectMetaMask,
-      generateApiKey,
-      copyApiKey,
-      copyWalletForXmtp,
-      switchTab,
-      toggleWsServer,
-      connectXmtp,
-      startNewChat,
-      selectConversation,
+      confirmPassword,
+      toggleMainDrawer,
       sendChatMessage,
+      openSetPasswordModal,
+      openUnlockModal,
+      closePasswordModal,
+      selectConversation,
+      startChatWithAgent,
+      startNewChat,
+      checkPwStrength,
       copyActiveAddr,
       approveAgentTx,
       rejectAgentTx,
-      simulateRestRequest,
+      toggleWsServer,
+      confirmAgentAddress,
+      selectAgent,
+      selectLocalAgent,
+      generateApiKey,
+      generateWallet,
+      importWallet,
+      connectMetaMask,
+      forgetWallet,
       sendManualTx,
       toggleAutoApprove,
       savePermissions,
-      confirmPassword,
-      closePasswordModal,
-      checkPwStrength,
-      forgetWallet,
-      startChatWithAgent,
-      selectAgent,
       clearResidualChats,
-      openSetPasswordModal,
-      openUnlockModal,
-      handleTyping,
       toggleChatSidebar,
-      deleteConversation
+      deleteConversation,
+      connectXmtp,
+      toggleXmtp,
+      fundFromExternal,
+      copyApiKey,
+      copyWalletForXmtp,
+      switchTab,
+      openSyncModal,
+      closeSyncModal,
+      startChat: startNewChat,
+      toggleWS: toggleWsServer,
+      enterApp
     });
-    // ─── Attach functions to window for HTML access ──────────
-    // ─── Attach functions to window for HTML access ──────────
-    window.confirmPassword = confirmPassword;
-    window.toggleMainDrawer = function () {
-      const main = document.querySelector('.main');
-      const overlay = document.getElementById('drawer-overlay');
-      if (main) main.classList.toggle('open');
-      if (overlay) overlay.classList.toggle('open');
+
+    function enterApp() {
+      const docEl = document.documentElement;
+      
+      // Fullscreen request
+      try {
+        if (docEl.requestFullscreen) {
+          docEl.requestFullscreen().catch(() => {});
+        } else if (docEl.webkitRequestFullscreen) {
+          docEl.webkitRequestFullscreen();
+        } else if (docEl.mozRequestFullScreen) {
+          docEl.mozRequestFullScreen();
+        } else if (docEl.msRequestFullscreen) {
+          docEl.msRequestFullscreen();
+        }
+      } catch (e) {
+        console.warn("Fullscreen API not supported or blocked:", e);
+      }
+
+      // Play start sound
+      try {
+        if (typeof playTouchdown === 'function') {
+          playTouchdown();
+        }
+      } catch (e) {}
+
+      // Hide overlay
+      const overlay = document.getElementById('entry-overlay');
+      if (overlay) {
+        overlay.classList.add('hidden');
+        setTimeout(() => {
+          overlay.style.display = 'none';
+        }, 600);
+      }
+      
+      log("WalletClaw Immersive Mode enabled.", "ok");
+    };
+
+    // ─── Mobile Sync Logic ────────────────────────────────────
+    let qrCode = null;
+
+    function openSyncModal() {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (!stored) {
+        log("No wallet created/imported yet. Generate a wallet first.", "wrn");
+        return;
+      }
+
+      const syncData = {
+        v: 1,
+        w: stored,
+        a: state.apiKey || localStorage.getItem('api_key'),
+        g: AGENT_ADDR || localStorage.getItem('agent_addr'),
+        n: CURRENT_NETWORK ? CURRENT_NETWORK.id : 'avalanche-fuji',
+        t: Date.now()
+      };
+
+      try {
+        const base64Data = btoa(JSON.stringify(syncData));
+        const syncUrl = `${location.origin}${location.pathname}#wc-sync=${base64Data}`;
+        
+        document.getElementById('sync-modal').classList.add('open');
+        const container = document.getElementById('sync-qr-container');
+        container.innerHTML = ""; // Clear previous
+
+        qrCode = new QRCodeStyling({
+          width: 280,
+          height: 280,
+          type: "canvas",
+          data: syncUrl,
+          dotsOptions: {
+            color: "#e03530",
+            type: "rounded"
+          },
+          backgroundOptions: {
+            color: "#ffffff",
+          },
+          cornersSquareOptions: {
+            color: "#180c0d",
+            type: "extra-rounded"
+          },
+          cornersDotOptions: {
+             color: "#e03530",
+             type: "dot"
+          },
+          qrOptions: {
+            errorCorrectionLevel: "M"
+          },
+          imageOptions: {
+            crossOrigin: "anonymous",
+            margin: 0
+          }
+        });
+
+        qrCode.append(container);
+        log("Premium Sync QR generated successfully.", "ok");
+      } catch (e) {
+        log("Error generating sync data: " + e.message, "err");
+      }
+    };
+
+    function closeSyncModal() {
+      document.getElementById('sync-modal').classList.remove('open');
+    };
+
+    async function checkSyncHash() {
+      const hash = location.hash;
+      if (hash && hash.includes('wc-sync=')) {
+        try {
+          const base64Data = hash.split('wc-sync=')[1];
+          const syncData = JSON.parse(atob(base64Data));
+          
+          if (confirm("Import wallet and settings from another device? This will overwrite your current configuration.")) {
+            if (syncData.w) localStorage.setItem(STORAGE_KEY, syncData.w);
+            if (syncData.a) localStorage.setItem('api_key', syncData.a);
+            if (syncData.g) localStorage.setItem('agent_addr', syncData.g);
+            
+            log("Session imported from sync URL! Please unlock the wallet.", "ok");
+            
+            // Clean hash
+            history.replaceState(null, null, location.origin + location.pathname);
+            
+            // Re-bootstrap
+            bootstrap();
+
+            // FOLLOW-UP: Send confirmation to desktop once XMTP is ready
+            const confirmSync = async () => {
+              if (state.xmtpClient && state.xmtpConnected) {
+                try {
+                  const selfConvo = await state.xmtpClient.conversations.newConversation(state.address);
+                  const msg = JSON.stringify({ type: 'claw:sync_confirmation', timestamp: Date.now() });
+                  await selfConvo.sendText(msg);
+                  log("Sync confirmation sent to other devices.", "ok");
+                } catch (e) { console.error("Sync follow-up failed:", e); }
+              } else {
+                setTimeout(confirmSync, 2000); // Polling until connected
+              }
+            };
+            setTimeout(confirmSync, 3000);
+          } else {
+            history.replaceState(null, null, location.origin + location.pathname);
+          }
+        } catch (e) {
+          console.error("Sync error:", e);
+          log("Invalid sync data in URL.", "err");
+        }
+      }
     }
 
-    window.sendChatMessage = sendChatMessage;
-    window.openSetPasswordModal = openSetPasswordModal;
-    window.closePasswordModal = closePasswordModal;
-    window.selectConversation = selectConversation;
-    window.startChatWithAgent = startChatWithAgent;
-    window.startChat = startNewChat;
-    window.checkPwStrength = checkPwStrength;
-    window.copyActiveAddr = copyActiveAddr;
-    window.approveAgentTx = approveAgentTx;
-    window.rejectAgentTx = rejectAgentTx;
-    window.toggleWS = toggleWsServer;
-
-    // Additional UI functions
-    window.confirmAgentAddress = confirmAgentAddress;
-    window.selectAgent = selectAgent;
-    window.selectLocalAgent = selectLocalAgent;
-    window.switchTab = switchTab;
-    window.toggleWsServer = toggleWsServer;
-    window.generateApiKey = generateApiKey;
-    window.generateWallet = generateWallet;
-    window.importWallet = importWallet;
-    window.connectMetaMask = connectMetaMask;
-    window.forgetWallet = forgetWallet;
-    window.sendManualTx = sendManualTx;
-    window.toggleAutoApprove = toggleAutoApprove;
-    window.savePermissions = savePermissions;
-    window.clearResidualChats = clearResidualChats;
-    window.toggleChatSidebar = toggleChatSidebar;
-    window.deleteConversation = deleteConversation;
-    window.connectXmtp = connectXmtp;
-    window.toggleXmtp = toggleXmtp;
-    window.fundFromExternal = fundFromExternal;
+    window.addEventListener('load', checkSyncHash);
+    window.addEventListener('hashchange', checkSyncHash);
 
   </script>
 
@@ -4333,6 +4722,35 @@
         save</button>
       <button class="btn-secondary btn-full" id="pw-skip-btn" onclick="closePasswordModal(false)"
         style="font-size:11px">Skip (wallet won't persist)</button>
+    </div>
+  </div>
+
+  <!-- ── Mobile Sync Modal ── -->
+  <div class="modal-backdrop" id="sync-modal">
+    <div class="modal-box" style="width: 360px;">
+      <div class="modal-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2">
+          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+          <line x1="12" y1="18" x2="12" y2="18"></line>
+        </svg>
+        <span>Mobile Sync</span>
+      </div>
+      <p class="modal-sub">Scan this code with your phone to clone this session. <b>Important:</b> Your password will NOT be synced. You will need to enter the same password on your phone to unlock the wallet.</p>
+      
+      <div id="sync-qr-container">
+        <!-- Rendered by qr-code-styling.js -->
+      </div>
+
+      <div class="sync-badge">
+        <span class="dot" style="background: var(--teal); width: 6px; height: 6px; border-radius: 50%;"></span>
+        Ephemeral Sync Token Active
+      </div>
+
+      <div class="section-note" style="text-align: center; margin-bottom: 10px;">
+        This QR encodes your <b>Encrypted Private Key</b> and <b>API Configuration</b>. Keep it private.
+      </div>
+      
+      <button class="btn-secondary btn-full" onclick="closeSyncModal()">Close</button>
     </div>
   </div>
 

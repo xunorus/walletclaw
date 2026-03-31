@@ -8,6 +8,8 @@
 import { Client } from "@xmtp/node-sdk";
 import { ClawKeyStore } from "./ClawKeyStore.js";
 import { ethers } from "ethers";
+import path from "path";
+import fs from "fs";
 
 export class OpenClawXMTP {
   /**
@@ -22,7 +24,8 @@ export class OpenClawXMTP {
     this._store = new ClawKeyStore({ walletClawAddress, chainId });
     this._env = env;
     this._onMessage = onMessage;
-    this._dbPath = `${storeFolder}/agent_${walletClawAddress.toLowerCase()}.db`;
+    this._storeFolder = storeFolder;
+    this._dbPath = null; // Se calculará después de obtener la dirección del agente
     this._xmtp = null;
     this._identity = null;
     this._isStreaming = false;
@@ -33,10 +36,19 @@ export class OpenClawXMTP {
 
     // 1. Cargar o crear identidad EOA
     this._identity = await this._store.loadOrCreate();
+    const addr = this._identity.address.toLowerCase();
+    
+    // 2. Preparar Directorio de DB (Ruta absoluta para evitar Pool errors en node)
+    const absoluteFolder = path.resolve(this._storeFolder);
+    if (!fs.existsSync(absoluteFolder)) {
+      fs.mkdirSync(absoluteFolder, { recursive: true });
+    }
+    this._dbPath = path.join(absoluteFolder, `agent_v3_${addr}.db`);
+    
     console.info(`[OpenClawXMTP] Identidad V3: ${this._identity.address}`);
+    console.info(`[OpenClawXMTP] DB Path: ${this._dbPath}`);
 
-    // 2. Crear Cliente V3
-    // Adaptamos el signer al formato que espera node-sdk
+    // 3. Crear Cliente V3
     const walletSigner = {
       type: "EOA",
       getIdentifier: () => ({ identifier: this._identity.address, identifierKind: 0 }),

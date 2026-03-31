@@ -9,7 +9,7 @@ import { exec, execSync } from 'child_process';
  * ───────────────────────────────────────────────────────────────────
  */
 
-const BRIDGE_VERSION = 'v0.7.9';
+const BRIDGE_VERSION = 'v0.8.5';
 
 const app = express();
 app.use(cors());
