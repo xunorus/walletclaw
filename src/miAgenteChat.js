@@ -13,7 +13,7 @@ const config = {
 };
 
 console.log("\n╔════════════════════════════════════════╗");
-console.log("║    🤖 OpenClaw Chat Agent — v0.97      ║");
+console.log("║    🤖 OpenClaw Chat Agent — v1.00      ║");
 console.log("╚════════════════════════════════════════╝\n");
 
 // 2. Inicializar agente
@@ -22,15 +22,18 @@ const agent = new OpenClawXMTP({
   chainId: config.chainId,
   env: config.env,
   onMessage: async ({ from, payload }) => {
-    // Si recibimos un mensaje, respondemos como un bot
     const text = typeof payload === 'string' ? payload : JSON.stringify(payload);
     console.log(`[MSG] De: ${from.slice(0, 10)}... Contenido: ${text}`);
 
-    // Solo respondemos si no es nuestro propio mensaje
-    if (from.toLowerCase() !== agent.address.toLowerCase()) {
-      const responseText = `🤖 Recibido: "${text}". ¿En qué más puedo ayudarte? 🦾🦞`;
+    // No responder a eventos automáticos (sincronizaciones)
+    if (typeof payload === 'object' && payload.event) return;
+
+    try {
+      const responseText = `🤖 Héctor dice: "${text}". ¿En qué más puedo ayudarte? 🦾🦞`;
       await agent.send(from, responseText);
-      console.log(`[RES] Respuesta enviada a ${from.slice(0, 10)}...`);
+      console.log(`[RES] Respuesta eco enviada a ${from.slice(0, 10)}...`);
+    } catch (e) {
+      console.error(`[SYS] Error al responder: ${e.message}`);
     }
   }
 });

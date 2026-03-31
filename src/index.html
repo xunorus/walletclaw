@@ -1784,24 +1784,29 @@
 
     @media (min-width: 1024px) {
       .chat-sidebar {
-        position: relative !important;
-        transform: translateX(0) !important;
-        width: 260px !important;
-        min-width: 260px !important;
-        opacity: 1 !important;
-        visibility: visible !important;
-        box-shadow: none !important;
-        z-index: 1 !important;
+        position: relative;
+        transform: translateX(0);
+        width: 260px;
+        min-width: 260px;
+        opacity: 1;
+        visibility: visible;
+        box-shadow: none;
+        z-index: 1;
         border-right: 1px solid var(--border);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .chat-sidebar.collapsed {
+        margin-left: -260px;
+        width: 0;
+        min-width: 0;
+        opacity: 0;
+        visibility: hidden;
       }
 
       .chat-main {
         flex: 1;
         width: auto !important;
-      }
-
-      #sidebar-expand-btn {
-        display: none !important;
       }
     }
 
@@ -2283,8 +2288,11 @@
               </div>
             </div>
             <div id="con-xmtp-addr-display"
-              style="font-size: 8px; padding: 6px; border-radius: 4px; background: rgba(0,0,0,0.2); font-family:var(--mono); margin-bottom: 8px; color: var(--text3); word-break: break-all;">
+              style="font-size: 8px; padding: 6px; border-radius: 4px; background: rgba(0,0,0,0.2); font-family:var(--mono); margin-bottom: 2px; color: var(--text3); word-break: break-all;">
               No XMTP Address</div>
+            <div id="con-xmtp-inbox-display"
+              style="font-size: 8px; padding: 6px; border-radius: 4px; background: rgba(0,0,0,0.2); font-family:var(--mono); margin-bottom: 8px; color: var(--teal); word-break: break-all;">
+              No Inbox ID</div>
             <button id="con-xmtp-connect-btn" class="btn-primary" onclick="toggleXmtp()"
               style="font-size:10px; width:100%;">Toggle XMTP</button>
           </div>
@@ -2395,8 +2403,8 @@
               <div class="chat-header">
                 <div style="display:flex; align-items:center; gap:8px">
                   <button id="sidebar-expand-btn" onclick="toggleChatSidebar()"
-                    style="display:none; background:var(--purple); border:1px solid var(--border2); color:white; padding:4px 10px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:11px; box-shadow: 0 0 10px var(--purple-glow);">[
-                    >> ] List</button>
+                    title="Show Conversations"
+                    style="display:none; background:rgba(255,255,255,0.05); border:1px solid var(--border); color:var(--text3); padding:4px 8px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:12px;">»</button>
                   <span id="active-contact-addr" style="font-size:11px; font-weight:700;">OpenClaw Agent</span>
                   <span id="active-contact-status-dot" class="presence-dot" style="margin-left: 0;"></span>
                 </div>
@@ -2579,7 +2587,7 @@
     // ─── Crypto persistence (AES-GCM via WebCrypto) ──────────
     const STORAGE_KEY = 'walletclaw_v1';
     const SESSION_PW_KEY = 'walletclaw_session_pw';
-    const APP_VERSION = 'v0.9.7';
+    const APP_VERSION = 'v1.0.0';
 
     // UI Helper: Generic Card Toggle
     window.toggleCard = function (contentId, arrowId, summaryId) {
@@ -2856,6 +2864,9 @@
             if (forgetB) forgetB.style.display = 'inline';
             tryConnectProvider(wallet);
             connectXmtp();
+            if (localStorage.getItem('bridge_preferred') === 'true') {
+              setTimeout(() => { if (typeof toggleWsServer === 'function') toggleWsServer(); }, 500);
+            }
             return true;
           } catch (e) {
             sessionStorage.removeItem(SESSION_PW_KEY);
@@ -2888,6 +2899,9 @@
             log(`Wallet restored: ${wallet.address.slice(0, 12)}...`, 'ok');
             tryConnectProvider(wallet);
             connectXmtp();
+            if (localStorage.getItem('bridge_preferred') === 'true') {
+              setTimeout(() => { if (typeof toggleWsServer === 'function') toggleWsServer(); }, 500);
+            }
           });
         }
       } else {
@@ -3193,7 +3207,9 @@
 
       // Update Conexion tab elements
       const conXmtpAddrDisp = document.getElementById('con-xmtp-addr-display');
+      const conXmtpInboxDisp = document.getElementById('con-xmtp-inbox-display');
       if (conXmtpAddrDisp) conXmtpAddrDisp.textContent = address;
+      if (conXmtpInboxDisp && state.xmtpClient) conXmtpInboxDisp.textContent = `Inbox: ${state.xmtpClient.inboxId}`;
 
       const conXmtpText = document.getElementById('con-xmtp-addr-text');
       if (conXmtpText) conXmtpText.textContent = address;
@@ -3373,6 +3389,7 @@
       };
 
       if (bridgeSocket) {
+        localStorage.setItem('bridge_preferred', 'false');
         bridgeSocket.close();
         bridgeSocket = null;
         state.wsStatus = 'Stopped';
@@ -3420,6 +3437,7 @@
 
             // Handshake Logic
             if (msg.type === 'BRIDGE_WELCOME') {
+              localStorage.setItem('bridge_preferred', 'true');
               log('✅ Connected to Local Bridge', 'ok');
               state.wsStatus = 'Connected';
               updateUI('Connected', 'Disconnect', true);
@@ -3578,7 +3596,9 @@
           }
         });
         const conAddr = document.getElementById('con-xmtp-addr-display');
+        const conInbox = document.getElementById('con-xmtp-inbox-display');
         if (conAddr) conAddr.textContent = wallet.address;
+        if (conInbox) conInbox.textContent = `Inbox: ${state.xmtpClient.inboxId || "N/A"}`;
         if (overlay) overlay.style.display = 'none';
 
         const btns = ['xmtp-connect-btn', 'con-xmtp-connect-btn'];
@@ -3597,6 +3617,20 @@
         // Sync and Initial load
         log('Syncing conversations...', 'inf');
         await state.xmtpClient.conversations.syncAll();
+        
+        // --- Resolving Agent Identity ---
+        if (AGENT_ADDR) {
+            try {
+                const inboxId = await state.xmtpClient.identity.getInboxIdForAddress(AGENT_ADDR);
+                if (inboxId) {
+                    state.agentInboxId = inboxId;
+                    log(`Agent identity resolved: ${AGENT_ADDR} -> ${inboxId.slice(0,10)}...`, 'ok');
+                }
+            } catch (e) {
+                console.warn("Could not pre-resolve Agent Inbox ID:", e.message);
+            }
+        }
+
         await loadConversations();
 
         // ── [Standardized Handshake] ──
@@ -3635,7 +3669,9 @@
         });
 
         const conAddr = document.getElementById('con-xmtp-addr-display');
+        const conInbox = document.getElementById('con-xmtp-inbox-display');
         if (conAddr) conAddr.textContent = 'No XMTP Address';
+        if (conInbox) conInbox.textContent = 'No Inbox ID';
 
         const btns = ['xmtp-connect-btn', 'con-xmtp-connect-btn'];
         btns.forEach(id => {
@@ -3793,9 +3829,28 @@
 
     async function loadConversations() {
       if (!state.xmtpClient) return;
+      
+      // Intentar recuperar ID persistente de Hector
+      if (!state.agentInboxId) {
+        state.agentInboxId = localStorage.getItem('agent_inbox_id');
+      }
+
       try {
         const convos = await state.xmtpClient.conversations.list();
         state.conversations = convos;
+
+        // Intentar resolver de nuevo si no tenemos el ID del agente
+        if (AGENT_ADDR && !state.agentInboxId) {
+           try {
+             const aid = await state.xmtpClient.identity.getInboxIdForAddress(AGENT_ADDR);
+             if (aid) {
+               state.agentInboxId = aid;
+               localStorage.setItem('agent_inbox_id', aid);
+               log(`Agent ID resolved from list: ${aid.slice(0,10)}...`, 'ok');
+             }
+           } catch (e) { /* ignore */ }
+        }
+
         renderConversations();
       } catch (e) {
         console.error("Failed to list conversations:", e);
@@ -3849,7 +3904,12 @@
       // 3. XMTP: Other conversations (excluding Agent and Ignored ones)
       const others = state.conversations.filter(c => {
         const addr = (c.peerAddress || '').toLowerCase();
-        return addr !== hectorPeer && !ignoredConversations.includes(c.id);
+        const inboxId = (c.inboxId || c.id || '').toLowerCase();
+        const aInboxId = (state.agentInboxId || '').toLowerCase();
+        
+        // Si el address o id coincide con Hector, lo filtramos de la lista de "Otros"
+        const isAgent = (hectorPeer && addr === hectorPeer) || (aInboxId && inboxId === aInboxId);
+        return !isAgent && !ignoredConversations.includes(c.id);
       });
       if (others.length > 0) {
         html += others.map(convo => {
@@ -3882,23 +3942,26 @@
       }
     }
 
-    function selectAgent() {
-      // Find existing conversation with Agent or create a placeholder for UI
-      const existing = state.conversations.find(c => (c.peerAddress || '').toLowerCase() === (AGENT_ADDR || '').toLowerCase());
-      if (existing) {
-        selectConversation(existing.id);
-      } else {
-        state.selectedConversation = { id: 'hector', type: 'xmtp', peerAddress: AGENT_ADDR };
-        const hb = document.getElementById('active-contact-addr');
-        const sd = document.getElementById('active-contact-status-dot');
-        if (hb) hb.textContent = '🦞 Agent (OpenClaw)';
-        if (sd) {
-          sd.className = `presence-dot ${state.xmtpConnected ? 'online' : ''}`;
-        }
-        renderConversations();
-        renderMessages();
-      }
-    }
+     function selectAgent() {
+       const hectorPeer = (AGENT_ADDR || '').toLowerCase();
+       const aInboxId = (state.agentInboxId || '').toLowerCase();
+       
+       // Buscar si hay una conversación REAL que coincida
+       const existing = state.conversations.find(c => {
+         const addr = (c.peerAddress || '').toLowerCase();
+         const inboxId = (c.inboxId || c.id || '').toLowerCase();
+         return (hectorPeer && addr === hectorPeer) || (aInboxId && (inboxId === aInboxId || c.topic.includes(aInboxId)));
+       });
+
+       if (existing) {
+         selectConversation(existing.id);
+       } else {
+         state.selectedConversation = { id: 'hector', type: 'xmtp', peerAddress: AGENT_ADDR };
+         log("No real XMTP convo yet with Agent, showing placeholder.", "inf");
+         renderConversations(); // Re-render to update 'active' class
+         renderMessages();
+       }
+     }
 
     function selectLocalAgent() {
       state.selectedConversation = { id: 'local', type: 'local', peerAddress: 'Local Agent' };
@@ -3917,8 +3980,55 @@
       if (!convo) return;
 
       state.selectedConversation = convo;
-      const addr = convo.peerAddress || convo.inboxId || convo.id || convo.topic || "Unknown";
-      document.getElementById('active-contact-addr').textContent = addr.length > 20 ? addr.slice(0, 12) + '...' + addr.slice(-8) : addr;
+      let addr = convo.peerAddress;
+      const inboxId = convo.inboxId || convo.id || "N/A";
+
+      // Intentar deducir la dirección si falta
+      if (!addr && state.xmtpClient) {
+        // Opción 1: ¿Es nuestro Agente (Hector)?
+        // (Podemos comparar inboxId si tuviéramos el mapping, pero por ahora usamos el address directamente si lo tenemos)
+        if (AGENT_ADDR) addr = AGENT_ADDR + " (Deduced from Agent Config)";
+      }
+
+      // 1. Detección inmediata de Hector
+      const cleanHector = (AGENT_ADDR || '').toLowerCase();
+      // Limpiamos 'addr' para la comparación por si tiene el texto "(Deduced...)"
+      const cleanAddr = (addr || '').toLowerCase().split(' ')[0]; 
+      
+      if (cleanHector && (cleanAddr === cleanHector || inboxId === state.agentInboxId)) {
+        if (!state.agentInboxId || state.agentInboxId !== inboxId) {
+            state.agentInboxId = inboxId;
+            localStorage.setItem('agent_inbox_id', inboxId); // Persistencia!
+            log(`Direct Mapping: This conversation IS Hector (${inboxId.slice(0,10)}...). Unifying...`, 'ok');
+            setTimeout(() => renderConversations(), 100);
+        }
+      }
+
+      // 2. Mostrar en log
+      const logAddr = addr || (AGENT_ADDR ? AGENT_ADDR + " (Deduced)" : 'Resolving...');
+      log(`Selected Chat: ${logAddr} (Inbox: ${inboxId})`, 'inf');
+
+      // 3. Resolución complementaria
+      if ((!convo.peerAddress || convo.peerAddress === 'Unknown') && state.xmtpConnected) {
+        try {
+          const details = await state.xmtpClient.getInboxIdDetails(inboxId);
+          const rawResolvedAddr = (details && details.accountAddress) ? details.accountAddress.toLowerCase() : null;
+          
+          if (rawResolvedAddr) {
+            addr = details.accountAddress;
+            log(`Network resolution: ${addr}`, 'ok');
+            
+            if (rawResolvedAddr === cleanHector) {
+                state.agentInboxId = inboxId;
+                localStorage.setItem('agent_inbox_id', inboxId); // Persistencia!
+                log(`Identity verified by network! Unifying...`, 'ok');
+                setTimeout(() => renderConversations(), 100); 
+            }
+          }
+        } catch (e) { /* ignore */ }
+      }
+
+      document.getElementById('active-contact-addr').textContent = addr ? (addr.length > 20 ? addr.slice(0, 12) + '...' + addr.slice(-8) : addr) : "Unknown Peer";
       const sd = document.getElementById('active-contact-status-dot');
       if (sd) {
         sd.className = `presence-dot ${state.xmtpConnected ? 'online' : ''}`;
@@ -3926,9 +4036,20 @@
       renderConversations();
 
       const key = convo.id || convo.topic;
-      if (!state.messages[key]) {
+      
+      // Sincronización prioritaria al seleccionar
+      try {
+        if (convo.sync) {
+           await convo.sync();
+        }
         state.messages[key] = await convo.messages();
+      } catch (e) {
+        console.warn("Sync failed for conversation:", e);
+        if (!state.messages[key]) {
+           state.messages[key] = await convo.messages();
+        }
       }
+      
       renderMessages(key);
 
       // Scroll to bottom
@@ -3953,7 +4074,14 @@
           return m.senderInboxId || '';
         };
         const isMe = getAddr(msg).toLowerCase() === myAddr;
-        const time = new Date(msg.sent).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        // Formato de fecha resiliente para XMTP V3
+        let date = new Date();
+        if (msg.sentAt) date = msg.sentAt;
+        else if (msg.sent) date = new Date(msg.sent);
+        else if (msg.sentNs) date = new Date(Number(msg.sentNs / 1000000n));
+
+        const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
         // Check for JSON content (potential sign requests)
         let content = msg.content;
