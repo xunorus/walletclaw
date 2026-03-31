@@ -83,10 +83,8 @@ export class OpenClawXMTP {
     const content = typeof payload === "string" ? payload : JSON.stringify(payload);
 
     try {
-      let conv = await this._xmtp.conversations.createDmWithIdentifier({
-        identifier: toAddress.toLowerCase(),
-        identifierKind: 0
-      });
+      // En Node SDK V3 usamos newConversation para ambos: address o inboxId
+      let conv = await this._xmtp.conversations.newConversation(toAddress);
       await conv.send(content);
     } catch (e) {
       console.error(`[OpenClawXMTP] Error enviando a ${toAddress}:`, e.message);
