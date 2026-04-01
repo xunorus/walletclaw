@@ -3823,8 +3823,8 @@
       if (!state.xmtpClient || !state.wallet) return;
       log("Syncing wallet config with Agent...", "inf");
       try {
-        // Ruta oficial de los Docs: Resolver ID -> Create DM
-        const inboxId = await Client.getInboxIdByAddress(AGENT_ADDR, "dev");
+        // Ruta Resiliente: Buscamos el ID con el nuevo helper
+        const inboxId = await resolveInboxId(AGENT_ADDR, "dev");
         if (!inboxId) throw new Error("Could not resolve Agent Inbox ID");
         const convo = await state.xmtpClient.conversations.createDm(inboxId);
 
@@ -4255,15 +4255,11 @@
           console.group("🚀 XMTP Message Debug");
           log(`1. Target Address: ${AGENT_ADDR}`, 'inf');
           
-          // Debugging Client object
-          console.log("Client SDK:", Client);
-          
-          log(`2. Resolving Agent Inbox ID...`, 'inf');
-          const inboxId = await Client.getInboxIdByAddress(AGENT_ADDR, "dev");
+          log(`2. Resolving Agent Inbox ID (Resilient Mode)...`, 'inf');
+          const inboxId = await resolveInboxId(AGENT_ADDR, "dev");
           log(`3. Inbox ID: ${inboxId || 'FAILED'}`, inboxId ? 'ok' : 'err');
-          console.log("Resolved ID:", inboxId);
           
-          if (!inboxId) throw new Error("Agent identity unreachable");
+          if (!inboxId) throw new Error("Agent identity unreachable (ID resolution failed)");
           
           console.log("4. Creating/Finding DM...");
           conversation = await state.xmtpClient.conversations.createDm(inboxId);
@@ -4323,7 +4319,7 @@
       }
       log(`Starting chat with ${addr.slice(0, 10)}...`, 'inf');
       try {
-        const inboxId = await Client.getInboxIdByAddress(addr, "dev");
+        const inboxId = await resolveInboxId(addr, "dev");
         if (!inboxId) throw new Error("Could not resolve Inbox ID");
         const convo = await state.xmtpClient.conversations.createDm(inboxId);
         state.selectedConversation = convo;
@@ -4335,6 +4331,26 @@
       } catch (e) {
         log(`Failed to start chat: ${e.message}`, 'err');
       }
+    }
+
+    // --- RESILIENT IDENTITY RESOLUTION (V3) ---
+    async function resolveInboxId(address, env = "dev") {
+      if (!address) return null;
+      try {
+        if (typeof Client.getInboxIdByAddress === 'function') {
+          return await Client.getInboxIdByAddress(address, env);
+        } else if (typeof Client.getInboxIdForAddress === 'function') {
+          return await Client.getInboxIdForAddress(address, env);
+        } else {
+          // Fallback: search in client instance if available
+          if (state.xmtpClient && typeof state.xmtpClient.getInboxIdByAddress === 'function') {
+            return await state.xmtpClient.getInboxIdByAddress(address);
+          }
+        }
+      } catch (e) {
+        console.warn(`[XMTP Identity] Resolution failed for ${address}:`, e.message);
+      }
+      return null;
     }
 
     async function getAddressFromInboxId(inboxId) {

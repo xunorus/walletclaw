@@ -61,6 +61,7 @@ export class OpenClawXMTP {
         dbPath: this._dbPath
       });
       console.info("[OpenClawXMTP] Cliente V3 online.");
+      console.info(`[OpenClawXMTP] 🔑 Mi Inbox ID: ${this._xmtp.inboxId}`);
       
       // Sincronizar conversaciones previas
       await this._xmtp.conversations.syncAll();
