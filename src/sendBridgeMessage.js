@@ -9,15 +9,17 @@ import { OpenClawWS } from './OpenClawWS.js';
  */
 
 const message = process.argv[2];
+const cliUrl  = process.argv[3];
+const cliKey  = process.argv[4];
 
 if (!message) {
-    console.error("❌ Falta el mensaje. Uso: npx tsx src/sendBridgeMessage.js \"Hola\"");
+    console.error("❌ Falta el mensaje. Uso: npx tsx src/sendBridgeMessage.js \"Hola\" [BRIDGE_URL] [API_KEY]");
     process.exit(1);
 }
 
 const config = {
-    bridgeUrl: process.env.BRIDGE_URL || 'ws://192.168.1.33:18789/ws-agent',
-    apiKey: process.argv[3] || process.env.API_KEY || 'CLAW_BRIDGE_SECRET'
+    bridgeUrl: cliUrl  || process.env.BRIDGE_URL || 'ws://localhost:18789/ws-agent',
+    apiKey:    cliKey  || process.env.API_KEY    || 'CLAW_BRIDGE_SECRET'
 };
 
 const agent = new OpenClawWS({
