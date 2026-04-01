@@ -17,8 +17,18 @@ if (!message) {
     process.exit(1);
 }
 
+let finalUrl = cliUrl || process.env.BRIDGE_URL || 'ws://localhost:18789/ws-agent';
+
+// Auto-fix: Asegurar que conectamos al canal de AGENTES, no de UI
+if (finalUrl.endsWith('/ws-ui')) {
+    finalUrl = finalUrl.replace('/ws-ui', '/ws-agent');
+} else if (!finalUrl.includes('/ws-agent') && !finalUrl.includes('/ws-ui')) {
+    // Si no tiene path, lo añadimos
+    finalUrl = finalUrl.endsWith('/') ? finalUrl + 'ws-agent' : finalUrl + '/ws-agent';
+}
+
 const config = {
-    bridgeUrl: cliUrl  || process.env.BRIDGE_URL || 'ws://localhost:18789/ws-agent',
+    bridgeUrl: finalUrl,
     apiKey:    cliKey  || process.env.API_KEY    || 'CLAW_BRIDGE_SECRET'
 };
 
@@ -37,11 +47,11 @@ async function run() {
 
         console.log("✅ Mensaje disparado con éxito.");
 
-        // Pequeño delay para asegurar que el buffer del socket se limpie
+        // Esperar un poco para asegurar que el Bridge propague el mensaje
         setTimeout(() => {
             agent.disconnect();
             process.exit(0);
-        }, 100);
+        }, 500);
 
     } catch (e) {
         console.error("❌ Error en Bridge CLI:", e.message);
