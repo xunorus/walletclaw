@@ -10,7 +10,31 @@ import { exec, execSync } from 'child_process';
  */
 
 const BRIDGE_VERSION = 'v1.1.3';
-let activeApiKey = 'CLAW_BRIDGE_SECRET'; // Standardized default for 1.1.4+
+const STATE_FILE = './.bridge_state.json';
+
+let activeApiKey = 'CLAW_BRIDGE_SECRET';
+
+// --- PERSISTENCIA DEL ESTADO ---
+function saveState() {
+    try {
+        fs.writeFileSync(STATE_FILE, JSON.stringify({ activeApiKey }, null, 2));
+    } catch (e) { console.error("[BRIDGE_STATE] Error saving:", e.message); }
+}
+
+function loadState() {
+    try {
+        if (fs.existsSync(STATE_FILE)) {
+            const data = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
+            if (data.activeApiKey) {
+                activeApiKey = data.activeApiKey;
+                console.log(`[BRIDGE_STATE] 🏛️ Clave persistente recuperada: ${activeApiKey.slice(0, 10)}...`);
+            }
+        }
+    } catch (e) { console.error("[BRIDGE_STATE] Error loading:", e.message); }
+}
+
+loadState(); // Cargar al iniciar
+
 
 const app = express();
 app.use(cors());
@@ -216,9 +240,10 @@ uiWss.on('connection', (ws) => {
             const msg = JSON.parse(data);
             
             // 1. Sincronización de API Key y Dirección desde el Navegador
-            if (msg.type === 'SYNC_API_KEY') {
-                activeApiKey = msg.key;
-                console.log(`[UI]    🦾 API Key sincronizada y ACTIVA.`);
+            if (msg.type === 'CONNECT') {
+                activeApiKey = msg.apiKey || msg.key;
+                saveState(); // Persistir
+                console.log(`[UI]    🔑 API Key activada: ${activeApiKey ? '***' : 'NONE'}`);
             }
 
             if (msg.type === 'SYNC_WALLET_ADDRESS') {
