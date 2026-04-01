@@ -79,26 +79,48 @@ export class OpenClawXMTP {
     return this._identity?.address;
   }
 
-  /** Envía mensaje a un address XMTP */
-  async send(toAddress, payload) {
-    if (!this._xmtp) throw new Error("No inicializado.");
+  /** Envía mensaje a un address o InboxID XMTP */
+  async send(toIdentifier, payload) {
+    if (!this._xmtp) throw new Error("Héctor no está inicializado.");
     const content = typeof payload === "string" ? payload : JSON.stringify(payload);
 
     try {
-      // En Node SDK V3 (MLS) el método correcto para DMs es newDm
-      let conv;
-      if (typeof this._xmtp.conversations.newDm === 'function') {
-        conv = await this._xmtp.conversations.newDm(toAddress);
-      } else if (typeof this._xmtp.conversations.newConversation === 'function') {
-        conv = await this._xmtp.conversations.newConversation(toAddress);
-      } else {
-        throw new Error("No se encontró el método para crear conversaciones en el SDK.");
+      let conv = null;
+      console.info(`[OpenClawXMTP] 📤 Intentando responder a: ${toIdentifier.slice(0, 10)}...`);
+
+      // 1. Intentamos crear DM con el identificador (puede ser Address o InboxID)
+      try {
+          if (typeof this._xmtp.conversations.newDm === 'function') {
+            conv = await this._xmtp.conversations.newDm(toIdentifier);
+          } else if (typeof this._xmtp.conversations.newConversation === 'function') {
+            conv = await this._xmtp.conversations.newConversation(toIdentifier);
+          }
+      } catch (e) {
+          console.warn("[OpenClawXMTP] ⚠️ Fallo al crear DM directo. Intentando vía resolución...");
+          // Fallback: tratar de resolver si es un address
+          const resolvedId = await this.resolveInboxId(toIdentifier);
+          if (resolvedId) {
+             conv = await this._xmtp.conversations.newDm(resolvedId);
+          }
       }
+
+      if (!conv) throw new Error(`No se pudo establecer conversación con ${toIdentifier}`);
+      
       await conv.send(content);
+      console.info("[OpenClawXMTP] ✅ Respuesta enviada con éxito.");
     } catch (e) {
-      console.error(`[OpenClawXMTP] Error enviando a ${toAddress}:`, e.message);
-      throw e;
+      console.error(`[OpenClawXMTP] ❌ Error enviando respuesta:`, e.message);
+      // No lanzamos el error para no matar el bucle de escucha
     }
+  }
+
+  /** Helper para resolver identidades (igual que en el navegador) */
+  async resolveInboxId(address) {
+     try {
+        if (typeof this._xmtp.getInboxIdByAddress === 'function') return await this._xmtp.getInboxIdByAddress(address);
+        if (typeof this._xmtp.getInboxIdForAddress === 'function') return await this._xmtp.getInboxIdForAddress(address);
+     } catch (e) { }
+     return null;
   }
 
   /** Handshake firmado */
