@@ -36,6 +36,36 @@ const playSound = (sound = 'Glass.aiff') => {
 
 // Endpoint para solicitar firma de transacción o mensaje.
 // Soporta múltiples alias para compatibilidad con distintos agentes.
+app.post('/chat', (req, res) => {
+    const receivedKey = req.headers['x-api-key'] || 
+                       (req.headers['authorization'] ? req.headers['authorization'].replace('Bearer ', '') : null) || 
+                       req.query.apiKey || req.query.key || (req.body ? req.body.apiKey : null);
+
+    if (!activeApiKey || receivedKey !== activeApiKey) {
+        console.log(`[REST_CHAT] 🔴 RECHAZADO!`);
+        console.log(` > Recibido: "${receivedKey}" (Esperado: "${activeApiKey}")`);
+        console.log(` > Headers IDs: ${Object.keys(req.headers).join(', ')}`);
+        console.log(` > Body Keys: ${req.body ? Object.keys(req.body).join(', ') : 'No Body'}`);
+        return res.status(401).json({ error: 'API Key inválida' });
+    }
+
+    const { content, agentId } = req.body;
+    if (!content) return res.status(400).json({ error: 'Falta el contenido' });
+
+    console.log(`[REST_CHAT] 🎙️ Mensaje de ${agentId || 'Agente'}: ${content.substring(0, 30)}...`);
+
+    if (uiSocket && uiSocket.readyState === WebSocket.OPEN) {
+        uiSocket.send(JSON.stringify({
+            type: 'CHAT_MESSAGE',
+            from: agentId || 'Agente',
+            content: content
+        }));
+        res.json({ success: true });
+    } else {
+        res.status(503).json({ error: 'WalletClaw (UI) no está conectada al Bridge' });
+    }
+});
+
 app.post(['/sign', '/sign_tx', '/send', '/api/wallet/send'], (req, res) => {
     const receivedKey = req.headers['x-api-key'] || 
                        (req.headers['authorization'] ? req.headers['authorization'].replace('Bearer ', '') : null) || 

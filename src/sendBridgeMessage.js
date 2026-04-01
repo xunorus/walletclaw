@@ -17,7 +17,7 @@ if (!message) {
 
 const config = {
     bridgeUrl: process.env.BRIDGE_URL || 'ws://localhost:18789/ws-agent',
-    apiKey: process.env.API_KEY || 'CLAW_BRIDGE_SECRET'
+    apiKey: process.argv[3] || process.env.API_KEY || 'CLAW_BRIDGE_SECRET'
 };
 
 const agent = new OpenClawWS({

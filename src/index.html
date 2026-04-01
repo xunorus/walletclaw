@@ -2258,11 +2258,19 @@
         <div id="conexion-content" class="card-content">
           <div
             style="margin-top:10px; background: rgba(224, 53, 48, 0.05); padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
-            <label style="font-size: 10px; color: var(--purple); font-weight: 700;">REST API KEY</label>
-            <div class="api-key-display" style="margin-top:5px; gap:5px;">
-              <code id="con-api-key-display" style="font-size: 9px; flex:1; overflow:hidden;">—</code>
-              <button class="btn-secondary" style="font-size:9px; padding:4px 8px;"
-                onclick="copyApiKey(this)">Copy</button>
+            <label style="font-size: 10px; color: var(--purple); font-weight: 700;">REST API CONFIGURATION</label>
+            <div style="margin-top:5px;">
+              <input type="text" id="api-key-manual-input" placeholder="wc_..." 
+                style="font-size: 9px; width:100%; height: 24px; background: rgba(0,0,0,0.2) !important; border: 1px solid var(--border); margin-bottom: 6px;"
+                onchange="window.updateApiKeyManual(this.value)" />
+              <div style="display:flex; gap:4px;">
+                <button class="btn-secondary" style="flex:1; font-size:8px; padding:4px;" onclick="copyApiKey(this)">Copy</button>
+                <button class="btn-secondary" style="flex:1; font-size:8px; padding:4px;" onclick="generateApiKey(true)">Rotate</button>
+                <button class="btn-secondary" style="flex:1; font-size:8px; padding:4px;" onclick="generateApiKey('manual')">Set Manual</button>
+              </div>
+            </div>
+            <div style="margin-top:6px; font-size: 8px; opacity: 0.4; font-family: var(--mono); text-align: center;" id="con-api-key-display">
+              —
             </div>
           </div>
           <div
@@ -3260,6 +3268,14 @@
     }
 
     // ─── API Key ─────────────────────────────────────────────
+    window.updateApiKeyManual = function(val) {
+      if(!val) return;
+      state.apiKey = val.trim();
+      localStorage.setItem('walletclaw_api_key', state.apiKey);
+      window.syncUIWithApiKey();
+      log(`API key applied manually: ${state.apiKey.slice(0, 10)}...`, 'ok');
+    }
+
     function generateApiKey(forceNew = false) {
       if (forceNew === 'manual') {
         const manual = prompt('Set manual API Key (arbitrary string)', state.apiKey || '');
@@ -3289,6 +3305,9 @@
       const key = state.apiKey;
       const display = document.getElementById('api-key-display');
       if (display) display.textContent = key;
+
+      const input = document.getElementById('api-key-manual-input');
+      if (input) input.value = key;
 
       const displayCon = document.getElementById('con-api-key-display');
       if (displayCon) displayCon.textContent = key;
