@@ -3542,6 +3542,19 @@
               return;
             }
 
+            // --- 4. Eventos de Handsake/Auto-Pairing ---
+            if (msg.type === 'event' && msg.event === 'agent.handshake') {
+              const agent = msg.payload;
+              const isAlreadyLinked = agent.address?.toLowerCase() === AGENT_ADDR?.toLowerCase();
+              if (isAlreadyLinked) {
+                log(`Agent ${agent.name} already linked and recognized.`, 'ok');
+              } else {
+                // Notificar al usuario que un nuevo agente quiere conectarse
+                notifyAutoPairing(agent);
+              }
+              return;
+            }
+
             if (msg.type === 'SIGN_REQUEST') {
               const p = msg.payload || {};
               log(`Received sign request from local agent`, 'inf');
@@ -3581,6 +3594,35 @@
       } catch (err) {
         log(`Connection failed: ${err.message}`, 'err');
         updateUI('Error', 'Connect', false, true);
+      }
+    };
+
+    // --- AUTO-PAIRING UI HANDLERS ---
+    window.notifyAutoPairing = function(agent) {
+      const toastHtml = `
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; background: rgba(0,0,0,0.4); padding: 8px; border-radius: 8px; border: 1px solid var(--teal); margin-top: 5px;">
+          <div style="font-size:11px;">
+            <b style="color:var(--teal);">${agent.name}</b> detected.<br/>
+            <span style="font-size:9px; opacity:0.8;">Link with this wallet?</span>
+          </div>
+          <button class="btn-primary" onclick="confirmAutoPairing('${agent.address}', '${agent.inboxId || ''}')" style="padding:4px 8px; font-size:10px; height: auto;">Link Now</button>
+        </div>
+      `;
+      log(toastHtml, 'inf', true); // El tercer parámetro indica que es HTML
+    };
+
+    window.confirmAutoPairing = function(address, inboxId) {
+      if (address) {
+        window.updateAgentAddr(address);
+        log(`🎉 Agent Link Success: ${address.slice(0,10)}...`, 'ok');
+        
+        // Handshake response back to agent
+        if (bridgeSocket && bridgeSocket.readyState === WebSocket.OPEN) {
+          bridgeSocket.send(JSON.stringify({
+            type: 'CHAT_MESSAGE',
+            content: "🤝 Handshake Accepted! Hello Héctor. You are now linked to my WalletClaw instance."
+          }));
+        }
       }
     };
 

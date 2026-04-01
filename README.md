@@ -60,10 +60,17 @@ Es donde reside tu llave privada y donde autorizas las operaciones.
 Es donde vive la IA (Hector, OpenClaw) y donde se procesan las decisiones.
 
 1.  **Levantar el Chat Relayer (Héctor):**
+    Puedes configurarlo pasando argumentos o dejar que use la **Autodetect (Auto-Pairing):**
     ```bash
-    npx tsx src/miAgenteChat.js
+    # Modo Manual (con argumentos):
+    npx tsx src/miAgenteChat.js 0x111... ws://192.168.1.33:18789/ws-agent wc_your_key
+    
+    # Modo Auto-Pairing (v1.2.4+):
+    npx tsx src/miAgenteChat.js "" ws://localhost:18789/ws-agent
     ```
-    *   **Configuración:** Asegúrate de que el archivo `src/miAgenteChat.js` en esta máquina apunte a la IP de la **Machine A** (ej: `ws://192.168.1.33:18789/ws-agent`).
+    
+    > [!TIP]
+    > **Auto-Pairing Mode:** Si Héctor se conecta al Bridge y tu Dashboard está abierto, aparecerá una notificación flotante: **"🤖 Héctor detected. Link Now?"**. Al pulsar "Link", el navegador configurará automáticamente su dirección y abrirá una sesión de chat segura.
 
 -----
 
