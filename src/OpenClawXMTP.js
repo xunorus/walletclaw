@@ -119,13 +119,15 @@ export class OpenClawXMTP {
       // 1. Identificar al Boss (dueño del agente)
       let bossInboxId = null;
       try {
-        console.info(`[OpenClawXMTP] Resolviendo identidad del Boss: ${this._walletClawAddress}...`);
+        console.info(`[OpenClawXMTP] 🔍 Buscando identidad del Boss (${this._walletClawAddress})...`);
         bossInboxId = await this._xmtp.getInboxIdByAddress(this._walletClawAddress);
         if (bossInboxId) {
           console.info(`[OpenClawXMTP] 🛡️ Boss ID resuelto: ${bossInboxId}`);
+        } else {
+          console.warn("[OpenClawXMTP] ⚠️ El Boss no tiene Inbox ID aún. ¿Ya se registró en XMTP dev?");
         }
       } catch (e) {
-        console.warn("[OpenClawXMTP] ⚠️ Error resolviendo Boss ID:", e.message);
+        console.warn("[OpenClawXMTP] ⚠️ Error en resolución de Boss:", e.message);
       }
 
       // 2. Sincronización en segundo plano
@@ -137,30 +139,39 @@ export class OpenClawXMTP {
         if (!message) continue;
         
         const fromId = message.senderInboxId;
-        
-        // --- FILTROS DE SEGURIDAD ---
         if (this._xmtp && fromId === this._xmtp.inboxId) continue;
         
         // --- LOG DE DEBUG DE IDENTIDAD ---
         const isBoss = bossInboxId && fromId.toLowerCase() === bossInboxId.toLowerCase();
-        
         if (!isBoss) {
-            console.warn(`[OpenClawXMTP] 🔒 Mensaje de origen desconocido: ${fromId}`);
-            console.warn(`[OpenClawXMTP] 🔒 Comparando con Boss ID: ${bossInboxId}`);
-            // Por ahora dejamos pasar para debugear, pero avisamos.
-            console.info("[DEBUG] Dejando pasar para diagnóstico...");
+            console.warn(`[OpenClawXMTP] 🔒 Mensaje de: ${fromId.slice(0,12)}... (No coincide con Boss ID: ${bossInboxId?.slice(0,12) || 'null'})`);
         } else {
             console.info(`[OpenClawXMTP] ✅ Mensaje del Boss confirmado.`);
         }
 
-        let parsed = message.content;
+        // --- EXTRACCIÓN RESILIENTE DE CONTENIDO ---
+        let payload = message.content;
+        
+        // Si el contenido viene vacío (común en algunos SDKs de V3), intentamos fallback o crudo
+        if (payload === undefined || payload === null) {
+            payload = message.fallback || message.textBody || "[Mensaje sin texto legible]";
+            console.warn(`[OpenClawXMTP] ⚠️ Contenido indefinido detectado. Usando fallback: "${payload}"`);
+        }
+
+        // Intentar parsear JSON si parece serlo
+        let parsed = payload;
         try { 
-          if (typeof message.content === 'string' && message.content.startsWith('{')) {
-            parsed = JSON.parse(message.content); 
+          if (typeof payload === 'string' && payload.startsWith('{')) {
+            parsed = JSON.parse(payload); 
           }
         } catch (e) { }
 
-        this._onMessage?.({ from: fromId, payload: parsed, raw: message });
+        this._onMessage?.({ 
+          from: fromId, 
+          payload: parsed, 
+          raw: message,
+          isBoss: isBoss
+        });
       }
     } catch (e) {
       console.error("[OpenClawXMTP] ❌ Error fatal en stream:", e.message || e);

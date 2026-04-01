@@ -2591,7 +2591,7 @@
     // ─── Crypto persistence (AES-GCM via WebCrypto) ──────────
     const STORAGE_KEY = 'walletclaw_v1';
     const SESSION_PW_KEY = 'walletclaw_session_pw';
-    const APP_VERSION = 'v1.0.3';
+    const APP_VERSION = 'v1.0.4';
 
     // UI Helper: Generic Card Toggle
     window.toggleCard = function (contentId, arrowId, summaryId) {
@@ -3823,10 +3823,10 @@
       if (!state.xmtpClient || !state.wallet) return;
       log("Syncing wallet config with Agent...", "inf");
       try {
-        const convo = await state.xmtpClient.conversations.newDmWithIdentifier({
-          identifier: AGENT_ADDR.toLowerCase(),
-          identifierKind: "Ethereum"
-        });
+        // Ruta oficial de los Docs: Resolver ID -> Create DM
+        const inboxId = await Client.getInboxIdByAddress(AGENT_ADDR, "dev");
+        if (!inboxId) throw new Error("Could not resolve Agent Inbox ID");
+        const convo = await state.xmtpClient.conversations.createDm(inboxId);
 
         const config = {
           event: "wallet_config_update",
@@ -4252,21 +4252,38 @@
           return;
         }
         try {
-          log(`Ensuring healthy session with Agent...`, 'inf');
-          conversation = await state.xmtpClient.conversations.newDmWithIdentifier({
-              identifier: AGENT_ADDR.toLowerCase(),
-              identifierKind: "Ethereum"
-          });
+          console.group("🚀 XMTP Message Debug");
+          log(`1. Target Address: ${AGENT_ADDR}`, 'inf');
+          
+          // Debugging Client object
+          console.log("Client SDK:", Client);
+          
+          log(`2. Resolving Agent Inbox ID...`, 'inf');
+          const inboxId = await Client.getInboxIdByAddress(AGENT_ADDR, "dev");
+          log(`3. Inbox ID: ${inboxId || 'FAILED'}`, inboxId ? 'ok' : 'err');
+          console.log("Resolved ID:", inboxId);
+          
+          if (!inboxId) throw new Error("Agent identity unreachable");
+          
+          console.log("4. Creating/Finding DM...");
+          conversation = await state.xmtpClient.conversations.createDm(inboxId);
+          console.log("5. Conversation Object:", conversation);
+          log(`DM Session Established. ID: ${(conversation.id || 'N/A').slice(0,8)}...`, 'ok');
+          
           state.selectedConversation = conversation;
+          console.groupEnd();
         } catch (e) {
+          console.error("❌ XMTP Error Step:", e);
           log(`Failed to initiate DM: ${e.message}`, 'err');
+          console.groupEnd();
           return;
         }
       }
 
       try {
-        // Enviar mensaje usando el objeto verificado
+        console.log("📤 Sending Text:", text);
         await conversation.sendText(text);
+        log("Message delivered to network.", "ok");
 
         // UX: Show typing indicator if messaging Agent
         if (conversation.peerAddress === AGENT_ADDR) {
@@ -4289,10 +4306,7 @@
       }
       log(`Starting chat with ${addr.slice(0, 12)}...`, 'inf');
       try {
-        const convo = await state.xmtpClient.conversations.newDmWithIdentifier({
-            identifier: addr.toLowerCase(),
-            identifierKind: "Ethereum"
-        });
+        const convo = await state.xmtpClient.conversations.newDm(addr);
         state.conversations.unshift(convo);
         renderConversations();
         selectConversation(convo.id);
@@ -4309,10 +4323,9 @@
       }
       log(`Starting chat with ${addr.slice(0, 10)}...`, 'inf');
       try {
-        const convo = await state.xmtpClient.conversations.newDmWithIdentifier({
-            identifier: addr.toLowerCase(),
-            identifierKind: "Ethereum"
-        });
+        const inboxId = await Client.getInboxIdByAddress(addr, "dev");
+        if (!inboxId) throw new Error("Could not resolve Inbox ID");
+        const convo = await state.xmtpClient.conversations.createDm(inboxId);
         state.selectedConversation = convo;
         if (!state.conversations.find(c => c.id === convo.id)) {
           state.conversations.unshift(convo);
