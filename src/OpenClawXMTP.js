@@ -21,6 +21,7 @@ export class OpenClawXMTP {
    * @param {function} [opts.onMessage]       - Callback mensajes
    */
   constructor({ walletClawAddress, chainId, env = "dev", storeFolder = "./.xmtp", onMessage }) {
+    this._walletClawAddress = walletClawAddress?.toLowerCase();
     this._store = new ClawKeyStore({ walletClawAddress, chainId });
     this._env = env;
     this._onMessage = onMessage;
@@ -130,19 +131,23 @@ export class OpenClawXMTP {
         console.warn("╚════════════════════════════════════════════╝\n");
       } else {
         try {
-          console.info(`[OpenClawXMTP] 🔍 Buscando identidad del Boss (${this._walletClawAddress})...`);
+          console.info(`[OpenClawXMTP] 🔍 Resolving Boss Inbox ID (${this._walletClawAddress})...`);
           
           if (typeof this._xmtp.getInboxIdByAddress === 'function') {
             bossInboxId = await this._xmtp.getInboxIdByAddress(this._walletClawAddress);
-          } else if (typeof this._xmtp.getInboxIdForAddress === 'function') {
+          }
+          
+          if (!bossInboxId && typeof this._xmtp.getInboxIdForAddress === 'function') {
             bossInboxId = await this._xmtp.getInboxIdForAddress(this._walletClawAddress);
           }
 
           if (bossInboxId) {
-            console.info(`[OpenClawXMTP] 🛡️ Boss ID resuelto: ${bossInboxId}`);
+            console.info(`[OpenClawXMTP] 🛡️ Boss recognized: ${bossInboxId}`);
+          } else {
+             console.warn(`[OpenClawXMTP] ⚠️ Boss address ${this._walletClawAddress} not found on XMTP network.`);
           }
         } catch (e) {
-          console.warn("[OpenClawXMTP] ⚠️ Error en resolución de Boss:", e.message);
+          console.warn("[OpenClawXMTP] ⚠️ Identity resolution error:", e.message);
         }
       }
 
