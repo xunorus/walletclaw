@@ -2,7 +2,7 @@
 
 > **WalletClaw no es una wallet para guardar tus ahorros de toda la vida; es un escudo de ejecución diseñado para que la IA no pueda vaciar tus fondos si el entorno es comprometido.**
 
-[![Version](https://img.shields.io/badge/version-v0.8.5-e03530?style=flat-square)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v1.2.4-e03530?style=flat-square)](./CHANGELOG.md)
 [![Network](https://img.shields.io/badge/network-Avalanche%20|%20Custom-e84142?style=flat-square&logo=avalanche)](https://snowtrace.io)
 [![License](https://img.shields.io/badge/license-MIT-ff8c42?style=flat-square)](#license)
 
@@ -41,33 +41,37 @@ El método recomendado para agentes remotos. OpenClaw envía una solicitud de fi
 
 -----
 
-## 🚀 Quickstart (Dev Mode)
+## 🚀 Quickstart & Distributed Setup
 
-### 1. Clonar e Instalar
+WalletClaw está diseñado para correr en una arquitectura distribuida (dos máquinas o una red local):
 
-```bash
-git clone https://github.com/xunorus/walletclaw.git
-cd walletclaw
-yarn install
-```
+### 🏠 Machine A: The Dashboard (User Laptop)
+Es donde reside tu llave privada y donde autorizas las operaciones.
 
-### 2. Levantar el Ecosistema
+1.  **Levantar Interfaz:** `yarn dev` (Puerto 3233).
+2.  **Levantar el Bridge (Relay Server):** 
+    ```bash
+    node src/bridge.js
+    ```
+    *   **Puerto:** 18789.
+    *   **Función:** Actúa como el **Punto de Encuentro** central entre la AI y el Humano.
 
-Necesitarás dos terminales para correr la experiencia completa:
+### 🤖 Machine B: The Agent (OpenClaw Server)
+Es donde vive la IA (Hector, OpenClaw) y donde se procesan las decisiones.
 
-**Terminal 1: El Dashboard (Interfaz)**
+1.  **Levantar el Chat Relayer (Héctor):**
+    ```bash
+    npx tsx src/miAgenteChat.js
+    ```
+    *   **Configuración:** Asegúrate de que el archivo `src/miAgenteChat.js` en esta máquina apunte a la IP de la **Machine A** (ej: `ws://192.168.1.33:18789/ws-agent`).
 
-```bash
-# Lanza la UI para gestionar tus llaves y autorizar firmas
-yarn dev
-```
+-----
 
-**Terminal 2: El Bridge (Motor de comunicación)**
+## 🎙️ Communication: The Chat Relayer
 
-```bash
-# Activa el puente para que los agentes hablen con el Dashboard
-yarn bridge
-```
+El **Chat Relayer** (`miAgenteChat.js`) es el puente de comunicación de Héctor. Permite:
+- **Recibir Órdenes:** Escucha mensajes de la UI o XMTP y los guarda en el "Cerebro" de historial (`openclaw_brain.json`).
+- **Responder via Bridge:** Héctor puede usar el comando CLI `npx tsx src/sendBridgeMessage.js` para mandarte mensajes instantáneos que aparecerán en tu Dashboard.
 
 -----
 
@@ -128,6 +132,6 @@ print(f"Status: {response.json().get('status')}") # "sent_to_wallet"
 -----
 
 <div align="center">
-Built with 🦞 at <b>Aleph Hackathon 2026</b><br>
+Built with 🦞 at <b>Aleph Hackathon 2026</b> & <b>PL_Genesis: Frontiers of Collaboration</b><br>
 <sub>Sovereignty · Privacy · Automation</sub>
 </div>
