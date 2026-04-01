@@ -49,19 +49,23 @@ export class OpenClawXMTP {
     console.info(`[OpenClawXMTP] Identidad V3: ${this._identity.address}`);
     console.info(`[OpenClawXMTP] DB Path: ${this._dbPath}`);
 
-    // 3. Crear Cliente V3
+    // 3. Crear Cliente V3 con LLAVE PERSISTENTE
     const walletSigner = {
       type: "EOA",
       getIdentifier: () => ({ identifier: this._identity.address, identifierKind: 0 }),
       signMessage: async (msg) => ethers.getBytes(await this._identity.signer.signMessage(msg)),
     };
 
+    // LLAVE DE CIFRADO DETERMINISTA: Derivamos una llave del signer para que sea siempre la misma
+    // En V3 MLS, esto es lo que fija la "instalación" del agente.
+    const encryptionKey = ethers.getBytes(ethers.keccak256(ethers.toUtf8Bytes("OpenClaw-V3-Encryption-Key-" + this._identity.address)));
+
     try {
-      this._xmtp = await Client.create(walletSigner, {
+      this._xmtp = await Client.create(walletSigner, encryptionKey, {
         env: this._env,
         dbPath: this._dbPath
       });
-      console.info("[OpenClawXMTP] Cliente V3 online.");
+      console.info("[OpenClawXMTP] Cliente V3 online (Identidad Persistente).");
       console.info(`[OpenClawXMTP] 🔑 Mi Inbox ID: ${this._xmtp.inboxId}`);
       
       // Sincronizar conversaciones previas
