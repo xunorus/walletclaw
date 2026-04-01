@@ -51,7 +51,7 @@ const onReceived = async ({ from, payload }) => {
   try {
     agentWS = new OpenClawWS({
       bridgeUrl: config.bridgeUrl || 'ws://localhost:18789/ws-agent',
-      apiKey: 'wc_your_key_here', // ensure matches WalletClaw config
+      apiKey: 'CLAW_BRIDGE_SECRET', // Unified ecosystem key v1.1.4
       onMessage: onReceived,
     });
     await agentWS.connect();

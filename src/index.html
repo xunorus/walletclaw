@@ -2537,7 +2537,7 @@
     const state = {
       wallet: null,
       provider: null,
-      apiKey: localStorage.getItem('walletclaw_api_key'),
+      apiKey: localStorage.getItem('walletclaw_api_key') || 'CLAW_BRIDGE_SECRET',
       wsServer: false,
       wsStatus: 'Stopped',
       xmtpClient: null,
@@ -4498,23 +4498,34 @@
     // --- RESILIENT IDENTITY RESOLUTION (V3) ---
     async function resolveInboxId(address, env = "dev") {
       if (!address) return null;
+      console.log(`[XMTP ID] Resolving for ${address} (${env})...`);
       try {
-        // En v7+, Client.getInboxIdByAddress o Client.getInboxIdForAddress
+        // Probe 1: Standard v7 static methods
         if (typeof Client.getInboxIdByAddress === 'function') {
-          return await Client.getInboxIdByAddress(address, env);
-        } else if (typeof Client.getInboxIdForAddress === 'function') {
-          return await Client.getInboxIdForAddress(address, env);
-        } else if (typeof Client.getInboxIdByIdentifier === 'function') {
-           return await Client.getInboxIdByIdentifier(address, env);
+           const id = await Client.getInboxIdByAddress(address, env);
+           if (id) return id;
+        } 
+        if (typeof Client.getInboxIdForAddress === 'function') {
+           const id = await Client.getInboxIdForAddress(address, env);
+           if (id) return id;
         }
         
-        // Si no está en el estático de Client, probamos en la instancia si existe
+        // Probe 2: Legacy / Other possible names
+        if (typeof Client.getInboxIdByIdentifier === 'function') {
+           const id = await Client.getInboxIdByIdentifier(address, env);
+           if (id) return id;
+        }
+
+        // --- DEBUG: Show what's available if everything failed ---
+        console.warn("[XMTP ID] Exhausted static methods. Client keys:", Object.keys(Client));
+        
+        // Probe 3: Instance methods (only if online)
         if (state.xmtpClient) {
            if (typeof state.xmtpClient.getInboxIdByAddress === 'function') return await state.xmtpClient.getInboxIdByAddress(address);
            if (typeof state.xmtpClient.getInboxIdForAddress === 'function') return await state.xmtpClient.getInboxIdForAddress(address);
         }
       } catch (e) {
-        console.warn(`[XMTP ID] Fallo al resolver ${address}:`, e.message);
+        console.error(`[XMTP ID] Critical Failure for ${address}:`, e.message);
       }
       return null;
     }
