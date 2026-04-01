@@ -8,7 +8,7 @@ import { OpenClawWS } from './OpenClawWS.js';
 
 // 1. Configuración (ajusta estos valores si es necesario)
 const config = {
-  walletClawAddress: '0x0000000000000000000000000000000000000000', // Pon aquí tu address de WalletClaw
+  walletClawAddress: '0x111352e0242847478AB9232981BB517bC2c22aD8', // TU ADDRESS REAL
   chainId: 43113,      // Avalanche Fuji Testnet (dev env)
   env: 'dev'           // 'dev' para que coincida con WalletClaw dev mode
 };
@@ -47,7 +47,7 @@ const onReceived = async ({ from, payload }) => {
 
 // 3. Start connections
 (async () => {
-  // Connect WS (bridge) first
+  /* Commented out to focus on XMTP and avoid 'Conexión cerrada' crash
   try {
     agentWS = new OpenClawWS({
       bridgeUrl: 'ws://localhost:18789/ws-agent', // adjust if needed
@@ -59,6 +59,7 @@ const onReceived = async ({ from, payload }) => {
   } catch (e) {
     console.warn('⚠️ No se pudo conectar al Bridge Local:', e.message);
   }
+  */
 
   // Initialize XMTP agent
   agentXMTP = new OpenClawXMTP({
