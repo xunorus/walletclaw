@@ -210,6 +210,8 @@ export class OpenClawXMTP {
           payload: parsed, 
           raw: message,
           isBoss: isBoss
+        }).catch(err => {
+          console.error(`[OpenClawXMTP] ⚠️ Error en onMessage handler:`, err.message);
         });
       }
     } catch (e) {

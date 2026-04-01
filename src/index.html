@@ -4508,18 +4508,22 @@
     async function resolveInboxId(address, env = "dev") {
       if (!address) return null;
       try {
+        // En v7+, Client.getInboxIdByAddress o Client.getInboxIdForAddress
         if (typeof Client.getInboxIdByAddress === 'function') {
           return await Client.getInboxIdByAddress(address, env);
         } else if (typeof Client.getInboxIdForAddress === 'function') {
           return await Client.getInboxIdForAddress(address, env);
-        } else {
-          // Fallback: search in client instance if available
-          if (state.xmtpClient && typeof state.xmtpClient.getInboxIdByAddress === 'function') {
-            return await state.xmtpClient.getInboxIdByAddress(address);
-          }
+        } else if (typeof Client.getInboxIdByIdentifier === 'function') {
+           return await Client.getInboxIdByIdentifier(address, env);
+        }
+        
+        // Si no está en el estático de Client, probamos en la instancia si existe
+        if (state.xmtpClient) {
+           if (typeof state.xmtpClient.getInboxIdByAddress === 'function') return await state.xmtpClient.getInboxIdByAddress(address);
+           if (typeof state.xmtpClient.getInboxIdForAddress === 'function') return await state.xmtpClient.getInboxIdForAddress(address);
         }
       } catch (e) {
-        console.warn(`[XMTP Identity] Resolution failed for ${address}:`, e.message);
+        console.warn(`[XMTP ID] Fallo al resolver ${address}:`, e.message);
       }
       return null;
     }
