@@ -1,3 +1,4 @@
+import { OpenClawHistory } from './OpenClawHistory.js';
 import { OpenClawXMTP } from './OpenClawXMTP.js';
 import { OpenClawWS } from './OpenClawWS.js';
 
