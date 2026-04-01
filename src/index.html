@@ -1452,10 +1452,10 @@
       }
     }
 
-    /* On desktop (>1200px) hide the short label, show the full text inline */
+    /* On desktop (>1200px) ensure the labels are visible and identifiable */
     @media (min-width: 1201px) {
       .status-pill .pill-label {
-        display: none;
+        display: inline-block;
       }
     }
 
@@ -1797,11 +1797,11 @@
       }
 
       .chat-sidebar.collapsed {
-        margin-left: -260px;
         width: 0;
         min-width: 0;
         opacity: 0;
         visibility: hidden;
+        border-right: none;
       }
 
       .chat-main {
@@ -1936,7 +1936,7 @@
         <span class="status-text" id="sync-status-text">Mobile Linked</span>
       </div>
       <div class="version-badge" id="version-badge">
-        v0.8.6
+        v1.2.4
         <div class="version-dropdown">
           <div class="version-dropdown-title">Changelog</div>
 
@@ -2158,7 +2158,7 @@
             </div>
             <div class="balance-label" id="wallet-network-mobile"
               onclick="promptNetworkSwitch(); event.stopPropagation();"
-              style="cursor:pointer; font-size: 11px; opacity: 0.8; margin-top: 2px;">No network ▾</div>
+              style="cursor:pointer; font-size: 11px; opacity: 0.8; margin-top: 2px;">Avalanche Fuji Testnet ▾</div>
           </div>
           <div style="flex: 1; text-align: right;">
             <div class="address-display" id="wallet-address-mobile"
@@ -2171,235 +2171,232 @@
 
     <!-- SIDEBAR: All Controls (Barra Lateral) -->
     <aside class="sidebar">
-      <!-- 1. Wallet Card (In Sidebar/Drawer - Hidden on mobile via CSS) -->
-      <div class="card" id="sidebar-wallet-card">
-        <div class="card-title" onclick="toggleCard('wallet-card-content', 'wallet-arrow-icon', 'wallet-summary-min')"
-          style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
-          <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
-            <span>🔑 Wallet</span>
-            <div id="wallet-summary-min" class="mobile-only-summary"
-              style="font-size: 10px; font-weight: 400; color: var(--amber); margin-left: 10px; display: none;">
-              0.0000 AVAX
-            </div>
-          </div>
-          <svg id="wallet-arrow-icon" class="arrow-icon open" width="12" height="12" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="6 9 12 15 18 9"></polyline>
-          </svg>
-        </div>
+      
+      <!-- ── Sidebar Tabs (Navigation) ── -->
+      <div class="sidebar-nav" style="display: flex; gap: 4px; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+        <button id="btn-tab-dashboard" class="btn-secondary active" style="flex: 1; font-size: 9px; padding: 6px 0;" onclick="switchTab('dashboard', this)">🔑 DASH</button>
+        <button id="btn-tab-xmtp" class="btn-secondary" style="flex: 1; font-size: 9px; padding: 6px 0;" onclick="switchTab('xmtp', this)">📡 XMTP</button>
+        <button id="btn-tab-settings" class="btn-secondary" style="flex: 1; font-size: 9px; padding: 6px 0;" onclick="switchTab('settings', this)">⚙️ SETS</button>
+      </div>
 
-        <div id="wallet-card-content" class="card-content open">
-          <div class="balance-container"
-            style="flex-direction: column; align-items: flex-start; gap: 2px; margin-bottom: 10px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-              <div class="balance-big" id="wallet-balance" style="margin-bottom: 0; font-size: 18px;">
-                0.0000 <span style="font-size:12px;color:var(--text2)">AVAX</span>
+      <!-- ── DASHBOARD PANEL ── -->
+      <div id="panel-dashboard" class="tab-panel active" style="display: flex; flex-direction: column; gap: 12px;">
+        <!-- 1. Wallet Card -->
+        <div class="card" id="sidebar-wallet-card">
+          <div class="card-title" onclick="toggleCard('wallet-card-content', 'wallet-arrow-icon', 'wallet-summary-min')"
+            style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+            <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
+              <span>🔑 Wallet</span>
+              <div id="lock-badge" class="lock-badge" style="display:none;" title="Encrypted & Saved">🔒</div>
+              <div id="wallet-summary-min" class="mobile-only-summary"
+                style="font-size: 10px; font-weight: 400; color: var(--amber); margin-left: 10px; display: none;">
+                0.0000 AVAX
               </div>
-              <button class="btn-icon" onclick="manualRefreshBalance(); event.stopPropagation();" title="Refresh">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path d="M23 4v6h-6"></path>
-                  <path d="M1 20v-6h6"></path>
-                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </div>
+            <svg id="wallet-arrow-icon" class="arrow-icon open" width="12" height="12" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </div>
+
+          <div id="wallet-card-content" class="card-content open">
+            <div class="balance-container"
+              style="flex-direction: column; align-items: flex-start; gap: 2px; margin-bottom: 10px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                <div class="balance-big" id="wallet-balance" style="margin-bottom: 0; font-size: 18px;">
+                  0.0000 <span style="font-size:12px;color:var(--text2)">AVAX</span>
+                </div>
+                <button class="btn-icon" onclick="manualRefreshBalance(); event.stopPropagation();" title="Refresh">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M23 4v6h-6"></path>
+                    <path d="M1 20v-6h6"></path>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                  </svg>
+                </button>
+              </div>
+              <div class="balance-label" id="wallet-network" onclick="promptNetworkSwitch(); event.stopPropagation();"
+                style="cursor:pointer; font-size: 10px; opacity: 0.8;">Avalanche Fuji Testnet</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div class="address-display" id="wallet-address" style="font-size: 10px; padding: 8px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">—</div>
+              <button id="forget-btn" class="btn-icon" onclick="forgetWallet(); event.stopPropagation();" style="display:none; color: var(--text3); padding: 4px;" title="Forget/Logout">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                  <polyline points="16 17 21 12 16 7"></polyline>
+                  <line x1="21" y1="12" x2="9" y2="12"></line>
                 </svg>
               </button>
             </div>
-            <div class="balance-label" id="wallet-network" onclick="promptNetworkSwitch(); event.stopPropagation();"
-              style="cursor:pointer; font-size: 10px; opacity: 0.8;">No network</div>
-          </div>
-          <div class="address-display" id="wallet-address" style="font-size: 10px; padding: 8px;">—</div>
-          <div id="wallet-setup-section" style="margin-top:10px">
-            <div class="btn-row">
-              <button class="btn-primary btn-full" style="font-size:10px; padding: 6px;"
-                onclick="generateWallet()">New</button>
-              <button class="btn-secondary" style="font-size:10px; padding: 6px;"
-                onclick="importWallet()">Import</button>
+            <div id="wallet-setup-section" style="margin-top:10px">
+              <div class="btn-row">
+                <button class="btn-primary btn-full" style="font-size:10px; padding: 6px;"
+                  onclick="generateWallet()">New</button>
+                <button class="btn-secondary" style="font-size:10px; padding: 6px;"
+                  onclick="importWallet()">Import</button>
+              </div>
             </div>
           </div>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
-            <div id="lock-badge" class="status-pill connected" style="display:none; font-size:9px; padding: 2px 8px;">
-              <div class="dot"></div><span>Encrypted</span>
-            </div>
-            <button id="forget-btn" class="btn-secondary"
-              style="display:none; font-size:9px; padding: 4px 8px; color: var(--purple);"
-              onclick="forgetWallet()">Forget</button>
+        </div>
+
+        <!-- 2. Pending Requests -->
+        <div class="card" id="pending-card">
+          <div class="card-title" onclick="toggleCard('pending-txs', 'pending-arrow-icon')"
+            style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+            <span>⏳ Pending Requests</span>
+            <svg id="pending-arrow-icon" class="arrow-icon open" width="12" height="12" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
           </div>
-          <div id="funding-section" style="display:none; margin-top:8px">
-            <button class="btn-teal btn-full" style="font-size:10px; padding: 6px;" onclick="fundFromExternal()">Fund
-              Wallet</button>
+          <div id="pending-txs" class="card-content open">
+            <div style="font-size:11px;color:var(--text3); padding: 5px 0;">No pending requests.</div>
+          </div>
+        </div>
+
+        <!-- 3. Manual Transaction -->
+        <div class="card" id="manual-tx-panel">
+          <div class="card-title" onclick="toggleCard('manual-tx-content', 'manual-tx-arrow-icon')"
+            style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+            <span>📤 Send Transaction</span>
+            <svg id="manual-tx-arrow-icon" class="arrow-icon" width="12" height="12" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </div>
+          <div id="manual-tx-content" class="card-content">
+            <div style="display:flex;flex-direction:column;gap:6px; margin-top:10px;">
+              <input id="tx-to" placeholder="To address" style="font-size:10px" />
+              <input id="tx-amount" type="number" step="0.001" placeholder="Amount" style="font-size:10px" />
+              <button class="btn-primary btn-full" style="font-size:10px" onclick="sendManualTx()">Sign & Send</button>
+            </div>
+          </div>
+        </div>
+      </div> <!-- End dashboard panel -->
+
+      <!-- ── XMTP BOKER PANEL ── -->
+      <div id="panel-xmtp" class="tab-panel" style="display: none; flex-direction: column; gap: 12px;">
+        <div class="card" id="xmtp-management-card">
+          <div class="card-title">📡 XMTP (Web3 Communication)</div>
+          <div class="card-content" style="display:block">
+            <div style="background: rgba(255, 209, 102, 0.05); padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                <label style="font-size: 10px; color: var(--amber); font-weight: 700;">XMTP (CHAT)</label>
+                <div id="con-xmtp-status-side" class="status-pill" style="font-size:8px; padding: 2px 6px;">
+                  <div class="dot"></div><span>Off</span>
+                </div>
+              </div>
+              
+              <label style="font-size: 8px; color: var(--text3); text-transform: uppercase;">Your Public Address</label>
+              <div id="con-xmtp-addr-display-side"
+                style="font-size: 8px; padding: 6px; border-radius: 4px; background: rgba(0,0,0,0.2); font-family:var(--mono); margin-bottom: 8px; color: var(--text3); word-break: break-all;">
+                No XMTP Address</div>
+
+              <label style="font-size: 8px; color: var(--text3); text-transform: uppercase;">Your Inbox ID (V3)</label>
+              <div id="con-xmtp-inbox-display-side"
+                style="font-size: 8px; padding: 6px; border-radius: 4px; background: rgba(0,0,0,0.4); font-family:var(--mono); margin-bottom: 8px; color: var(--teal); word-break: break-all; border: 1px solid rgba(0,243,255,0.1); user-select: all;">
+                No Inbox ID</div>
+
+              <button id="con-xmtp-connect-btn-side" class="btn-primary" onclick="toggleXmtp()"
+                style="font-size:10px; width:100%; margin-bottom: 5px;">Toggle XMTP</button>
+            </div>
+
+            <!-- Agent Config inside XMTP -->
+            <div style="margin-top:10px; display:flex; flex-direction:column; gap:6px;">
+                <label style="font-size:9px; color: var(--teal); font-weight: 700;">TARGET AGENT ADDRESS</label>
+                <div style="display:flex; gap:6px;">
+                  <input type="text" id="hector-addr-input-side" placeholder="0x..." style="flex:1; font-size:10px"
+                    onchange="window.updateAgentAddr(this.value)" />
+                  <button id="confirm-hector-btn-side" class="btn-primary" style="padding: 4px 10px; font-size: 10px;"
+                    onclick="confirmAgentAddress()">Update</button>
+                </div>
+                <button class="btn-teal btn-full" style="font-size:10px; margin-top:2px;"
+                  onclick="startChatWithAgent()">🚀 Start Chat with Agent</button>
+            </div>
+
+            <div id="con-xmtp-installations-panel-side" style="margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px; display: none;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                  <label style="font-size: 9px; color: var(--text3); font-weight: 700;">INSTALLATIONS</label>
+                  <button onclick="refreshInstallations()" style="background:none; border:none; color:var(--teal); font-size:8px; cursor:pointer; text-decoration:underline;">REFRESH</button>
+                </div>
+                <div id="xmtp-ins-list-side" style="display:flex; flex-direction:column; gap:4px; max-height: 120px; overflow-y: auto;">
+                   <div style="font-size:8px; opacity:0.5; font-family:var(--mono);">Syncing...</div>
+                </div>
+                <button id="con-xmtp-revoke-btn-side" class="btn-secondary btn-full" style="font-size:9px; opacity: 0.7; padding: 4px; margin-top: 8px;" onclick="revokeAllXmtpInstallations()">Revoke XMTP sessions</button>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- 2. Pending Requests -->
-      <div class="card" id="pending-card">
-        <div class="card-title" onclick="toggleCard('pending-txs', 'pending-arrow-icon')"
-          style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
-          <span>⏳ Pending Requests</span>
-          <svg id="pending-arrow-icon" class="arrow-icon open" width="12" height="12" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="6 9 12 15 18 9"></polyline>
-          </svg>
-        </div>
-        <div id="pending-txs" class="card-content open">
-          <div style="font-size:11px;color:var(--text3); padding: 5px 0;">No pending requests.</div>
-        </div>
-      </div>
-
-      <!-- 3. Connection -->
-      <div class="card" id="conexion-card">
-        <div class="card-title" onclick="toggleCard('conexion-content', 'conexion-arrow-icon')"
-          style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
-          <span>🔗 Connectivity</span>
-          <svg id="conexion-arrow-icon" class="arrow-icon" width="12" height="12" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="6 9 12 15 18 9"></polyline>
-          </svg>
-        </div>
-        <div id="conexion-content" class="card-content">
-          <div
-            style="margin-top:10px; background: rgba(224, 53, 48, 0.05); padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
-            <label style="font-size: 10px; color: var(--purple); font-weight: 700;">REST API CONFIGURATION</label>
-            <div style="margin-top:5px;">
-              <input type="text" id="api-key-manual-input" placeholder="wc_..." 
-                style="font-size: 9px; width:100%; height: 24px; background: rgba(0,0,0,0.2) !important; border: 1px solid var(--border); margin-bottom: 6px;"
+      <!-- ── SETTINGS PANEL ── -->
+      <div id="panel-settings" class="tab-panel" style="display: none; flex-direction: column; gap: 12px;">
+        <!-- REST API / Bridge -->
+        <div class="card" id="conexion-card">
+          <div class="card-title">🔗 Connection & Bridge</div>
+          <div class="card-content" style="display:block">
+            <div style="background: rgba(224, 53, 48, 0.05); padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+              <label style="font-size: 10px; color: var(--purple); font-weight: 700;">API KEY</label>
+              <input type="text" id="api-key-manual-input-side" placeholder="wc_..." 
+                style="font-size: 9px; width:100%; height: 24px; background: rgba(0,0,0,0.2) !important; border: 1px solid var(--border); margin: 5px 0;"
                 onchange="window.updateApiKeyManual(this.value)" />
               <div style="display:flex; gap:4px;">
                 <button class="btn-secondary" style="flex:1; font-size:8px; padding:4px;" onclick="copyApiKey(this)">Copy</button>
                 <button class="btn-secondary" style="flex:1; font-size:8px; padding:4px;" onclick="generateApiKey(true)">Rotate</button>
-                <button class="btn-secondary" style="flex:1; font-size:8px; padding:4px;" onclick="generateApiKey('manual')">Set Manual</button>
               </div>
             </div>
-            <div style="margin-top:6px; font-size: 8px; opacity: 0.4; font-family: var(--mono); text-align: center;" id="con-api-key-display">
-              —
-            </div>
-          </div>
-          <div
-            style="margin-top:8px; background: var(--bg3); padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-              <label style="font-size: 10px; color: var(--teal); font-weight: 700;">BRIDGE</label>
-              <div id="con-ws-status" class="status-pill" style="font-size:8px; padding: 2px 6px;">
-                <div class="dot"></div><span>Off</span>
-              </div>
-            </div>
-            <div style="display:flex; gap:5px;">
-              <input type="text" id="bridge-url-input" placeholder="ws://..." style="font-size:10px; flex:1" />
-              <button class="btn-teal" onclick="toggleWsServer(this)"
-                style="font-size:10px; padding: 0 10px;">Conn</button>
-            </div>
-          </div>
-          <div
-            style="margin-top:8px; background: rgba(255, 209, 102, 0.05); padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-              <label style="font-size: 10px; color: var(--amber); font-weight: 700;">XMTP (CHAT)</label>
-              <div id="con-xmtp-status" class="status-pill" style="font-size:8px; padding: 2px 6px;">
-                <div class="dot"></div><span>Off</span>
-              </div>
-            </div>
-            <div id="con-xmtp-addr-display"
-              style="font-size: 8px; padding: 6px; border-radius: 4px; background: rgba(0,0,0,0.2); font-family:var(--mono); margin-bottom: 2px; color: var(--text3); word-break: break-all;">
-              No XMTP Address</div>
-            <label style="font-size: 8px; color: var(--text3); text-transform: uppercase; margin-bottom: 2px;">Your XMTP
-              Inbox ID (V3)</label>
-            <div id="con-xmtp-inbox-display" title="Click to select all"
-              style="font-size: 8px; padding: 6px; border-radius: 4px; background: rgba(0,0,0,0.4); font-family:var(--mono); margin-bottom: 8px; color: var(--teal); word-break: break-all; border: 1px solid rgba(0,243,255,0.1); user-select: all;">
-              No Inbox ID</div>
-            <button id="con-xmtp-connect-btn" class="btn-primary" onclick="toggleXmtp()"
-              style="font-size:10px; width:100%; margin-bottom: 5px;">Toggle XMTP</button>
-            <button id="con-xmtp-revoke-btn" class="btn-secondary" onclick="revokeAllXmtpInstallations()"
-              style="font-size:9px; width:100%; opacity: 0.7; padding: 4px; margin-bottom: 8px;">Revoke All Installations</button>
-              
-            <!-- Active Installations List -->
-            <div id="con-xmtp-installations-panel" style="margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px; display: none;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                  <label style="font-size: 9px; color: var(--text3); font-weight: 700; display:flex; align-items:center; gap:4px;">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
-                    INSTALLATIONS
-                  </label>
-                  <button onclick="refreshInstallations()" style="background:none; border:none; color:var(--teal); font-size:8px; cursor:pointer; text-decoration:underline; font-family:var(--mono);">REFRESH</button>
+
+            <div style="margin-top:8px; background: var(--bg3); padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                <label style="font-size: 10px; color: var(--teal); font-weight: 700;">BRIDGE</label>
+                <div id="con-ws-status-side" class="status-pill" style="font-size:8px; padding: 2px 6px;">
+                  <div class="dot"></div><span>Off</span>
                 </div>
-                <div id="xmtp-ins-list" style="display:flex; flex-direction:column; gap:4px; max-height: 120px; overflow-y: auto;">
-                   <div style="font-size:8px; opacity:0.5; font-family:var(--mono);">Syncing...</div>
-                </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 4. Manual Transaction -->
-      <div class="card" id="manual-tx-panel">
-        <div class="card-title" onclick="toggleCard('manual-tx-content', 'manual-tx-arrow-icon')"
-          style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
-          <span>📤 Send Transaction</span>
-          <svg id="manual-tx-arrow-icon" class="arrow-icon" width="12" height="12" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="6 9 12 15 18 9"></polyline>
-          </svg>
-        </div>
-        <div id="manual-tx-content" class="card-content">
-          <div style="display:flex;flex-direction:column;gap:6px; margin-top:10px;">
-            <input id="tx-to" placeholder="To address" style="font-size:10px" />
-            <input id="tx-amount" type="number" step="0.001" placeholder="Amount" style="font-size:10px" />
-            <button class="btn-primary btn-full" style="font-size:10px" onclick="sendManualTx()">Sign & Send</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- 5. Settings & Log -->
-      <div class="card" id="settings-card">
-        <div class="card-title" onclick="toggleCard('settings-content', 'settings-arrow-icon')"
-          style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
-          <span>⚙️ Settings & Log</span>
-          <svg id="settings-arrow-icon" class="arrow-icon" width="12" height="12" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="6 9 12 15 18 9"></polyline>
-          </svg>
-        </div>
-        <div id="settings-content" class="card-content">
-          <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px; flex: 1; min-height: 0;">
-            <div style="display:flex; flex-direction:column; gap:6px;">
-              <label style="font-size:9px;">Agent XMTP Address</label>
-              <div style="display:flex; gap:6px;">
-                <input type="text" id="hector-addr-input" placeholder="0x..." style="flex:1; font-size:10px"
-                  onchange="window.updateAgentAddr(this.value)" />
-                <button id="confirm-hector-btn" class="btn-primary" style="padding: 4px 10px; font-size: 10px;"
-                  onclick="confirmAgentAddress()">Update</button>
               </div>
-              <button class="btn-teal btn-full" style="font-size:10px; margin-top:2px;"
-                onclick="startChatWithAgent()">🚀 Start Chat with Agent</button>
+              <div style="display:flex; flex-direction: column; gap:6px;">
+                <input type="text" id="bridge-url-input-side" placeholder="ws://..." style="font-size:10px; width: 100%;" />
+                <button class="btn-teal btn-full" onclick="toggleWsServer(this)" style="font-size:10px; padding: 6px 10px;">Connect Bridge</button>
+              </div>
             </div>
-            <div
-              style="display:flex; align-items:center; justify-content:space-between; background: var(--bg3); padding: 8px; border-radius: 8px;">
-              <span style="font-size:10px">Auto-Approve</span>
-              <label class="switch tiny"><input type="checkbox" id="auto-approve"
-                  onchange="toggleAutoApprove(this.checked)"><span class="slider"></span></label>
+            
+            <div style="margin-top:8px; display:flex; align-items:center; justify-content:space-between; background: var(--bg3); padding: 8px; border-radius: 8px;">
+              <span style="font-size:10px">Remember Password (Session)</span>
+              <label class="switch tiny"><input type="checkbox" id="remember-session-toggle-side" onchange="window.setRememberSession(this.checked)"><span class="slider"></span></label>
             </div>
-            <div class="terminal" id="log-terminal"
-              style="flex: 1; min-height: 140px; font-size: 11px; padding: 10px; line-height: 1.5;"></div>
-            <button class="btn-secondary btn-full" style="font-size:10px; padding: 6px; margin-top: 4px;"
-              onclick="revokeAllXmtpInstallations()">Revoke XMTP sessions</button>
+            
+            <div style="margin-top:8px; display:flex; align-items:center; justify-content:space-between; background: var(--bg3); padding: 8px; border-radius: 8px;">
+              <span style="font-size:10px">Auto-Approve Requests</span>
+              <label class="switch tiny"><input type="checkbox" id="auto-approve" onchange="toggleAutoApprove(this.checked)"><span class="slider"></span></label>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- 6. Mobile Sync -->
-      <div class="card" id="sync-card"
-        style="background: linear-gradient(135deg, rgba(224, 53, 48, 0.05), rgba(255, 140, 66, 0.05)); border-color: var(--purple-dim);">
-        <div class="card-title" style="color: var(--purple); display: flex; align-items: center; gap: 6px;">
-          <span>📱 Mobile Sync</span>
+        <!-- Terminal Log -->
+        <div class="card" id="terminal-card" style="flex: 1; display: flex; flex-direction: column;">
+          <div class="card-title">📟 System Terminal</div>
+          <div class="card-content" style="display: block; flex: 1; min-height: 200px; display: flex; flex-direction: column;">
+            <div class="terminal" id="log-terminal" style="flex: 1; font-size: 11px; padding: 10px; line-height: 1.5; min-height: 180px;"></div>
+          </div>
         </div>
-        <div class="card-content" style="display: block;">
-          <p style="font-size: 10px; color: var(--text3); margin-bottom: 12px; line-height: 1.4;">
-            Scan a QR code to transfer this wallet and API settings to your mobile browser instantly.
-          </p>
-          <button class="btn-primary btn-full" onclick="openSyncModal()"
-            style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px; font-weight: 700;">
+
+        <!-- Mobile Sync -->
+        <div class="card" id="sync-card"
+          style="background: linear-gradient(135deg, rgba(224, 53, 48, 0.05), rgba(255, 140, 66, 0.05)); border-color: var(--purple-dim);">
+          <div class="card-title" style="color: var(--purple); display: flex; align-items: center; gap: 6px;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-              stroke-linecap="round" stroke-linejoin="round">
-              <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
-              <line x1="12" y1="18" x2="12" y2="18"></line>
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                <line x1="12" y1="18" x2="12" y2="18"></line>
             </svg>
-            Sync to Mobile
-          </button>
+            <span>Mobile Sync</span>
+          </div>
+          <div class="card-content" style="display: block;">
+            <p style="font-size: 10px; color: var(--text3); margin-bottom: 12px; line-height: 1.4;">
+              Transfer this wallet and API settings to your mobile browser instantly.
+            </p>
+            <button class="btn-primary btn-full" onclick="openSyncModal()"
+              style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px; font-weight: 700;">
+              Sync to Mobile
+            </button>
+          </div>
         </div>
       </div>
     </aside>
@@ -2518,17 +2515,17 @@
         AGENT_ADDR = val;
         localStorage.setItem('agent_addr', val);
         log(`Agent's address updated to ${val.slice(0, 10)}...`, 'inf');
-        const input = document.getElementById('hector-addr-input');
+        const input = document.getElementById('hector-addr-input-side');
         if (input) input.value = val;
         renderConversations();
       }
     };
 
     function confirmAgentAddress() {
-      const input = document.getElementById('hector-addr-input');
+      const input = document.getElementById('hector-addr-input-side');
       if (input) {
         window.updateAgentAddr(input.value);
-        const btn = document.getElementById('confirm-hector-btn');
+        const btn = document.getElementById('confirm-hector-btn-side');
         if (btn) {
           const oldTxt = btn.textContent;
           btn.textContent = 'Updated ✓';
@@ -2545,7 +2542,7 @@
     const state = {
       wallet: null,
       provider: null,
-      apiKey: localStorage.getItem('walletclaw_api_key') || 'CLAW_BRIDGE_SECRET',
+      apiKey: localStorage.getItem('walletclaw_api_key') || '',
       wsServer: false,
       wsStatus: 'Stopped',
       xmtpClient: null,
@@ -2575,7 +2572,7 @@
         sessionStorage.removeItem(SESSION_PW_KEY);
       }
       // Keep all toggles in sync
-      const toggles = ['remember-session-toggle', 'pw-remember-session'];
+      const toggles = ['pw-remember-session', 'remember-session-toggle-side'];
       toggles.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.checked = enabled;
@@ -2584,7 +2581,7 @@
     };
 
     window.updateBridgeUrl = function (val) {
-      const input = document.getElementById('bridge-url-input');
+      const input = document.getElementById('bridge-url-input-side');
       const newVal = val || (input ? input.value.trim() : null);
       if (newVal) {
         // Enforce protocol
@@ -2606,7 +2603,7 @@
 
     // ─── TrustedHTML Policy ─────────────────────────────────
     /* ── APP VERSION ── */
-    const APP_VERSION = 'v1.1.3';  // Stabilized XMTP V3 Architecture
+    const APP_VERSION = 'v1.2.4';  // Stabilized XMTP V3 Architecture
     
     // Changelog history (Internal use for renderVersion)
     const CHANGELOG = [
@@ -2863,22 +2860,44 @@
     window.bootstrap = async function () {
       renderVersion();
 
+      // UX Improvement: Collapse chat sidebar by default on mobile for a cleaner start
+      if (window.innerWidth <= 850) {
+        const sidebar = document.getElementById('chat-sidebar');
+        if (sidebar && !sidebar.classList.contains('collapsed')) {
+          toggleChatSidebar();
+        }
+      }
+
+      // Initial Network UI sync
+      document.getElementById('wallet-network').textContent = CURRENT_NETWORK.name;
+      const nMob = document.getElementById('wallet-network-mobile');
+      if (nMob) nMob.textContent = CURRENT_NETWORK.name + (nMob.textContent.includes('▾') ? ' ▾' : '');
+      
+      // Initialize provider immediately
+      tryConnectProvider(null);
+
+      if (!state.apiKey) {
+        generateApiKey(true);
+      } else {
+        window.syncUIWithApiKey();
+      }
+
       // UI Init: Toggle Session Preference
-      ['remember-session-toggle', 'pw-remember-session'].forEach(id => {
+      ['pw-remember-session', 'remember-session-toggle-side'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.checked = state.rememberSession;
       });
 
-      const bridgeUrlInput = document.getElementById('bridge-url-input');
+      const bridgeUrlInput = document.getElementById('bridge-url-input-side');
       if (bridgeUrlInput) bridgeUrlInput.value = state.bridgeUrl;
 
-      const agentInput = document.getElementById('hector-addr-input');
+      const agentInput = document.getElementById('hector-addr-input-side');
       if (agentInput) agentInput.value = AGENT_ADDR;
 
       // 2. Wallet Restoration / Bootup
       if (hasSavedWallet()) {
         const sessionPw = sessionStorage.getItem(SESSION_PW_KEY);
-
+        
         const tryAutoUnlock = async (pw) => {
           try {
             const stored = localStorage.getItem(STORAGE_KEY);
@@ -2909,12 +2928,11 @@
 
         if (state.rememberSession && sessionPw) {
           log('Attempting session auto-unlock...', 'inf');
-          tryAutoUnlock(sessionPw).then(success => {
-            if (!success) {
-              log('Session password invalid or expired.', 'wrn');
-              promptManualUnlock();
-            }
-          });
+          const success = await tryAutoUnlock(sessionPw);
+          if (!success) {
+            log('Session password invalid or expired.', 'wrn');
+            promptManualUnlock();
+          }
         } else {
           promptManualUnlock();
         }
@@ -2940,6 +2958,15 @@
       } else {
         log('No wallet configured. Please generate or import a wallet to begin.', 'wrn');
       }
+
+      // Step 3. Finalize UI (Switch to Dashboard on start)
+      const dashBtn = document.getElementById('btn-tab-dashboard');
+      if (typeof switchTab === 'function') {
+        switchTab('dashboard', dashBtn);
+      }
+      
+      // Ensure chat area shows the correct initial state
+      renderMessages();
     };
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -3116,12 +3143,14 @@
           chainId: CURRENT_NETWORK.chainId,
           name: CURRENT_NETWORK.name
         });
-        const connected = wallet.connect(provider);
         state.provider = provider;
-        state.wallet = connected;
-        await updateBalance(wallet.address, provider);
+        if (wallet) {
+          const connected = wallet.connect(provider);
+          state.wallet = connected;
+          await updateBalance(wallet.address, provider);
+        }
         await updateNetworkInfo(provider);
-        log(`Connected to ${CURRENT_NETWORK.name}`, 'ok');
+        log(`Connected to network: ${CURRENT_NETWORK.name}`, 'ok');
         if (CURRENT_NETWORK.faucet) {
           log(`Get testnet AVAX → ${CURRENT_NETWORK.faucet}`, 'inf');
         }
@@ -3231,25 +3260,21 @@
     };
 
     function updateWalletUI(address) {
-      document.getElementById('wallet-address').textContent = address;
-      document.getElementById('wallet-status-pill').classList.add('connected');
-      document.getElementById('wallet-status-text').textContent = 'Wallet OK';
+      const ids = ['wallet-address', 'wallet-address-mobile', 'xmtp-addr-display', 'con-xmtp-addr-display-side', 'con-xmtp-addr-text'];
+      ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = address;
+      });
 
-      const xmtpDisp = document.getElementById('xmtp-addr-display');
-      if (xmtpDisp) xmtpDisp.textContent = address;
+      const pill = document.getElementById('wallet-status-pill');
+      if (pill) pill.classList.add('connected');
+      const text = document.getElementById('wallet-status-text');
+      if (text) text.textContent = 'Wallet OK';
 
-      // Update Conexion tab elements
-      const conXmtpAddrDisp = document.getElementById('con-xmtp-addr-display');
-      const conXmtpInboxDisp = document.getElementById('con-xmtp-inbox-display');
-      if (conXmtpAddrDisp) conXmtpAddrDisp.textContent = address;
+      const conXmtpInboxDisp = document.getElementById('con-xmtp-inbox-display-side');
       if (conXmtpInboxDisp && state.xmtpClient) conXmtpInboxDisp.textContent = `Inbox: ${state.xmtpClient.inboxId}`;
 
-      const conXmtpText = document.getElementById('con-xmtp-addr-text');
-      if (conXmtpText) conXmtpText.textContent = address;
-
-
-
-      const hectorInput = document.getElementById('hector-addr-input');
+      const hectorInput = document.getElementById('hector-addr-input-side');
       if (hectorInput) hectorInput.value = AGENT_ADDR;
 
       // Hide generation buttons when wallet is active
@@ -3265,6 +3290,8 @@
       if (bridgeSocket && bridgeSocket.readyState === 1) { // WebSocket.OPEN
         bridgeSocket.send(JSON.stringify({ type: 'SYNC_WALLET_ADDRESS', address: address }));
       }
+
+      renderMessages();
     }
 
     // ─── API Key ─────────────────────────────────────────────
@@ -3306,14 +3333,11 @@
       const display = document.getElementById('api-key-display');
       if (display) display.textContent = key;
 
-      const input = document.getElementById('api-key-manual-input');
+      const input = document.getElementById('api-key-manual-input-side');
       if (input) input.value = key;
 
-      const displayCon = document.getElementById('con-api-key-display');
+      const displayCon = document.getElementById('con-api-key-display-side');
       if (displayCon) displayCon.textContent = key;
-
-      const envCon = document.getElementById('con-api-key-env');
-      if (envCon) envCon.textContent = key;
 
       if (bridgeSocket && bridgeSocket.readyState === 1) { // WebSocket.OPEN
         bridgeSocket.send(JSON.stringify({ type: 'SYNC_API_KEY', key: key }));
@@ -3347,22 +3371,28 @@
 
     // ─── Tabs ─────────────────────────────────────────────────
     function switchTab(id, btn) {
-      // 1. Reset ONLY top-level main tabs (children of .main > .tabs)
+      // 1. If clicked from sidebar-nav, reset siblings
+      if (btn && btn.parentElement.classList.contains('sidebar-nav')) {
+        btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      }
+
+      // 2. Reset ONLY top-level main tabs (children of .main > .tabs)
       const mainContainer = document.querySelector('.main > .tabs');
       if (mainContainer) {
         mainContainer.querySelectorAll(':scope > .tab').forEach(t => t.classList.remove('active'));
       }
 
-      // 2. Reset ONLY top-level main panels (direct children of main)
-      const mainContent = document.querySelector('.main');
-      if (mainContent) {
-        const mainPanels = mainContent.querySelectorAll(':scope > .tab-panel');
-        mainPanels.forEach(p => p.classList.remove('active'));
-      }
+      // 3. Reset ALL tab-panels (including sidebar ones)
+      // Since panels are usually outside our context, we just hide all then show target
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
 
       if (btn) btn.classList.add('active');
       const panel = document.getElementById('panel-' + id);
-      if (panel) panel.classList.add('active');
+      if (panel) {
+        panel.classList.add('active');
+        panel.style.display = 'flex';
+      }
       localStorage.setItem('last_tab', id);
     }
 
@@ -3471,8 +3501,20 @@
         bridgeSocket = new WebSocket(bridgeUrl);
 
         bridgeSocket.onopen = () => {
-          log('📡 Bridge WebSocket opened (Handshaking...)', 'inf');
-          updateUI('Handshaking...', 'Stop', false);
+          state.wsStatus = 'Connected';
+          updateStatus();
+          log('Connected to Local Bridge via WS', 'ok');
+
+          // --- HANDSHAKE DE SEGURIDAD (SINCRONIZACIÓN DE LLAVE) ---
+          bridgeSocket.send(JSON.stringify({ 
+              type: 'CONNECT', 
+              apiKey: state.apiKey,
+              key: state.apiKey // Redundancia para versiones viejas
+          }));
+
+          if (state.wallet) {
+            bridgeSocket.send(JSON.stringify({ type: 'SYNC_WALLET_ADDRESS', address: state.wallet.address }));
+          }
         };
 
         bridgeSocket.onmessage = (event) => {
@@ -3633,26 +3675,26 @@
         log(`XMTP connected: ${wallet.address.slice(0, 12)}...`, 'ok');
         
         // Show installations panel
-        const insPanel = document.getElementById('con-xmtp-installations-panel');
+        const insPanel = document.getElementById('con-xmtp-installations-panel-side');
         if (insPanel) insPanel.style.display = 'block';
         refreshInstallations();
 
         state.xmtpConnected = true;
 
-        const statusPills = ['xmtp-status-pill', 'xmtp-status-pill-sub', 'con-xmtp-status'];
+        const statusPills = ['xmtp-status-pill', 'xmtp-status-pill-sub', 'con-xmtp-status-side'];
         statusPills.forEach(id => {
           const pill = document.getElementById(id);
           if (pill) {
             pill.classList.add('connected');
           }
         });
-        const conAddr = document.getElementById('con-xmtp-addr-display');
-        const conInbox = document.getElementById('con-xmtp-inbox-display');
+        const conAddr = document.getElementById('con-xmtp-addr-display-side');
+        const conInbox = document.getElementById('con-xmtp-inbox-display-side');
         if (conAddr) conAddr.textContent = wallet.address;
         if (conInbox) conInbox.textContent = `Inbox: ${state.xmtpClient.inboxId || "N/A"}`;
         if (overlay) overlay.style.display = 'none';
 
-        const btns = ['xmtp-connect-btn', 'con-xmtp-connect-btn'];
+        const btns = ['xmtp-connect-btn', 'con-xmtp-connect-btn-side'];
         btns.forEach(id => {
           const btn = document.getElementById(id);
           if (btn) {
@@ -3714,7 +3756,7 @@
         state.xmtpConnected = false;
         state.xmtpClient = null;
 
-        const statusPills = ['xmtp-status-pill', 'xmtp-status-pill-sub', 'con-xmtp-status'];
+        const statusPills = ['xmtp-status-pill', 'xmtp-status-pill-sub', 'con-xmtp-status-side'];
         statusPills.forEach(id => {
           const pill = document.getElementById(id);
           if (pill) {
@@ -3722,15 +3764,15 @@
           }
         });
 
-        const insPanel = document.getElementById('con-xmtp-installations-panel');
+        const insPanel = document.getElementById('con-xmtp-installations-panel-side');
         if (insPanel) insPanel.style.display = 'none';
 
-        const conAddr = document.getElementById('con-xmtp-addr-display');
-        const conInbox = document.getElementById('con-xmtp-inbox-display');
+        const conAddr = document.getElementById('con-xmtp-addr-display-side');
+        const conInbox = document.getElementById('con-xmtp-inbox-display-side');
         if (conAddr) conAddr.textContent = 'No XMTP Address';
         if (conInbox) conInbox.textContent = 'No Inbox ID';
 
-        const btns = ['xmtp-connect-btn', 'con-xmtp-connect-btn'];
+        const btns = ['xmtp-connect-btn', 'con-xmtp-connect-btn-side'];
         btns.forEach(id => {
           const btn = document.getElementById(id);
           if (btn) {
@@ -3750,8 +3792,8 @@
 
     async function refreshInstallations() {
       if (!state.xmtpConnected || !state.xmtpClient) return;
-      const list = document.getElementById('xmtp-ins-list');
-      if (!list) return;
+      const insList = document.getElementById('xmtp-ins-list-side');
+      if (!insList) return;
 
       try {
         log("Fetching system installations...", "inf");
@@ -3799,7 +3841,7 @@
       }
 
       log("Starting revocation process on 'dev' environment...", "wrn");
-      const revokeBtn = document.getElementById('con-xmtp-revoke-btn');
+      const revokeBtn = document.getElementById('con-xmtp-revoke-btn-side');
       if (revokeBtn) {
         revokeBtn.textContent = 'Revoking...';
         revokeBtn.disabled = true;
@@ -4188,6 +4230,24 @@
     function renderMessages() {
       const convId = state.selectedConversation ? (state.selectedConversation.id || state.selectedConversation.topic) : null;
       const msgList = document.getElementById('chat-messages');
+      
+      if (!state.wallet) {
+        msgList.innerHTML = policy.createHTML(`
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:30px; gap:15px;">
+            <div style="font-size:32px; filter: drop-shadow(0 0 10px var(--purple-glow));">🦞</div>
+            <div style="font-family:var(--display); font-size:18px; font-weight:800; color:var(--text);">Welcome to WalletClaw</div>
+            <p style="font-size:12px; color:var(--text3); max-width:240px; line-height:1.6; opacity:0.8;">
+              To start chatting with agent agents, you first need to <b>Generate</b> or <b>Import</b> a wallet in the sidebar.
+            </p>
+            <div style="display:flex; gap:10px; margin-top:5px;">
+              <button class="btn-primary" onclick="generateWallet()" style="font-size:10px; padding:6px 12px;">Generate</button>
+              <button class="btn-secondary" onclick="importWallet()" style="font-size:10px; padding:6px 12px;">Import</button>
+            </div>
+          </div>
+        `);
+        return;
+      }
+
       if (!convId || !state.messages[convId]) {
         msgList.innerHTML = policy.createHTML('<div style="flex:1; display:flex; align-items:center; justify-content:center; color:var(--text3); font-size:11px; opacity:0.5; text-align:center; padding:20px; line-height:1.5;">Select a conversation to start messaging</div>');
         return;
@@ -5308,9 +5368,12 @@
           style="display:flex; align-items:center; justify-content:space-between; margin-top:14px; margin-bottom: 2px;">
           <span style="font-size:12px; color: var(--text2); font-weight: 600;">Remember in this session</span>
           <label class="switch" style="transform: scale(0.8); transform-origin: right;">
-            <input type="checkbox" id="pw-remember-session" onchange="setRememberSession(this.checked)">
+            <input type="checkbox" id="pw-remember-session" onchange="window.setRememberSession(this.checked)">
             <span class="slider"></span>
           </label>
+        </div>
+        <div style="font-size: 8px; opacity: 0.3; text-align: center; margin-top: 10px;">
+          WALLETCLAW v1.2.4
         </div>
       </div>
       <div id="pw-confirm-row">

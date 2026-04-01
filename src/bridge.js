@@ -9,7 +9,7 @@ import { exec, execSync } from 'child_process';
  * ───────────────────────────────────────────────────────────────────
  */
 
-const BRIDGE_VERSION = 'v1.1.3';
+const BRIDGE_VERSION = 'v1.2.4';
 const STATE_FILE = './.bridge_state.json';
 
 let activeApiKey = 'CLAW_BRIDGE_SECRET';

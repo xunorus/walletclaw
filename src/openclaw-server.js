@@ -6,7 +6,7 @@
  */
 
 import "dotenv/config";
-import { OpenClawXMTP } from "./OpenClawXMTP.js";
+import { OpenClawXMTP } from "./xmtp/OpenClawXMTP.js";
 import { OpenClawWS } from "./OpenClawWS.js";
 
 // 1. Cargar configuración desde .env
