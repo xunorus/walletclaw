@@ -78,21 +78,3 @@ const onReceived = async ({ from, payload }) => {
     console.error('❌ Error iniciando XMTP:', e.message);
   }
 })();
-
-// 3. Arrancar
-try {
-  await agent.init();
-  console.log(`🟢 AGENTE ONLINE: ${agent.address}`);
-  console.log(`👉 Copia este address y chatea con él desde WalletClaw.`);
-  console.log(`📌 Recuerda en WalletClaw configurar el AGENT_ADDR en Settings para verlo en la lista.\n`);
-
-  // --- Realizar Handshake proactivo ---
-  if (config.walletClawAddress !== '0x0000000000000000000000000000000000000000') {
-    console.info(`[SYS] Iniciando handshake con el Boss (${config.walletClawAddress})...`);
-    await agent.handshake(config.walletClawAddress);
-  } else {
-    console.warn("[SYS] No se pudo enviar handshake: walletClawAddress no configurada en miAgenteChat.js (línea 10)");
-  }
-} catch (e) {
-  console.error("❌ Error al iniciar el agente:", e.message);
-}
