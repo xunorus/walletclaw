@@ -3509,7 +3509,7 @@
           bridgeSocket.send(JSON.stringify({ 
               type: 'CONNECT', 
               apiKey: state.apiKey,
-              key: state.apiKey // Redundancia para versiones viejas
+              key: state.apiKey 
           }));
 
           if (state.wallet) {
@@ -3529,10 +3529,10 @@
               updateUI('Connected', 'Disconnect', true);
               renderConversations();
 
-              const keyEl = document.getElementById('con-api-key-display') || document.getElementById('api-key-display');
-              const currentKey = state.apiKey || (keyEl ? keyEl.textContent : null);
-              if (currentKey && !currentKey.includes('—') && !currentKey.includes('Key Loading...')) {
-                bridgeSocket.send(JSON.stringify({ type: 'SYNC_API_KEY', key: currentKey }));
+              const keyEl = document.getElementById('con-api-key-display') || document.getElementById('api-key-display') || document.getElementById('api-key-manual-input-side');
+              const currentKey = state.apiKey || (keyEl ? (keyEl.value || keyEl.textContent) : null);
+              if (currentKey && currentKey.length > 5 && !currentKey.includes('—') && !currentKey.includes('Key Loading...')) {
+                bridgeSocket.send(JSON.stringify({ type: 'CONNECT', apiKey: currentKey, key: currentKey }));
               }
 
               if (state.wallet) {
