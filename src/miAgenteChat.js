@@ -14,7 +14,7 @@ const config = {
 };
 
 console.log("\n╔════════════════════════════════════════╗");
-console.log("║    🤖 OpenClaw Chat Agent — v1.1.2     ║");
+console.log("║    🤖 OpenClaw Chat Agent — v1.1.3     ║");
 console.log("╚════════════════════════════════════════╝\n");
 
 // 2. Inicializar agentes XMTP y WS
@@ -47,19 +47,18 @@ const onReceived = async ({ from, payload }) => {
 
 // 3. Start connections
 (async () => {
-  /* Commented out to focus on XMTP and avoid 'Conexión cerrada' crash
+  // Connect WS (bridge) - Re-enabled for stability and speed
   try {
     agentWS = new OpenClawWS({
-      bridgeUrl: 'ws://localhost:18789/ws-agent', // adjust if needed
+      bridgeUrl: config.bridgeUrl || 'ws://localhost:18789/ws-agent',
       apiKey: 'wc_your_key_here', // ensure matches WalletClaw config
       onMessage: onReceived,
     });
     await agentWS.connect();
-    console.log('✅ Conectado al Bridge Local via WS');
+    console.log('✅ Conectado al Bridge Local via WS (CHAT RÁPIDO)');
   } catch (e) {
-    console.warn('⚠️ No se pudo conectar al Bridge Local:', e.message);
+    console.warn('⚠️ No se pudo conectar al Bridge Local (se usará XMTP como backup):', e.message);
   }
-  */
 
   // Initialize XMTP agent
   agentXMTP = new OpenClawXMTP({

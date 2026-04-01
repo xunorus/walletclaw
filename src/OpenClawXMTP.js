@@ -161,19 +161,20 @@ export class OpenClawXMTP {
           
           if (typeof this._xmtp.getInboxIdByAddress === 'function') {
             bossInboxId = await this._xmtp.getInboxIdByAddress(this._walletClawAddress);
-          }
-          
-          if (!bossInboxId && typeof this._xmtp.getInboxIdForAddress === 'function') {
+          } else if (typeof this._xmtp.getInboxIdForAddress === 'function') {
             bossInboxId = await this._xmtp.getInboxIdForAddress(this._walletClawAddress);
           }
 
           if (bossInboxId) {
-            console.info(`[OpenClawXMTP] 🛡️ Boss recognized: ${bossInboxId}`);
+            console.info(`[OpenClawXMTP] 🛡️ Boss ID resuelto: ${bossInboxId}`);
           } else {
-             console.warn(`[OpenClawXMTP] ⚠️ Boss address ${this._walletClawAddress} not found on XMTP network.`);
+             console.warn(`[OpenClawXMTP] ⚠️ Boss address (${this._walletClawAddress}) no encontrada en la red XMTP (dev).`);
           }
         } catch (e) {
-          console.warn("[OpenClawXMTP] ⚠️ Identity resolution error:", e.message);
+          console.error(`[OpenClawXMTP] ❌ Fallo crítico resolviendo al Boss:`, e.message);
+          if (e.message.includes("installations")) {
+             console.error("💡 TIP: Has alcanzado el límite de 10 instalaciones en XMTP V3. Borra DBs (.xmtp folder) o revoca instalaciones viejas.");
+          }
         }
       }
 

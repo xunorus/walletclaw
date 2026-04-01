@@ -2598,7 +2598,7 @@
 
     // ─── TrustedHTML Policy ─────────────────────────────────
     /* ── APP VERSION ── */
-    const APP_VERSION = 'v1.1.2';  // Stabilized XMTP V3 Architecture
+    const APP_VERSION = 'v1.1.3';  // Stabilized XMTP V3 Architecture
     
     // Changelog history (Internal use for renderVersion)
     const CHANGELOG = [
@@ -3653,10 +3653,7 @@
         // --- Resolving Agent Identity (Instance method for Browser SDK) ---
         if (AGENT_ADDR && state.xmtpClient) {
           try {
-            const inboxId = await state.xmtpClient.getInboxIdByIdentifier({
-              identifier: AGENT_ADDR.toLowerCase(),
-              identifierKind: IdentifierKind.Ethereum
-            });
+            const inboxId = await resolveInboxId(AGENT_ADDR, "dev");
             if (inboxId) {
               state.agentInboxId = inboxId;
               localStorage.setItem('agent_inbox_id', inboxId);
@@ -3798,7 +3795,7 @@
         };
 
         const env = "dev"; // IMPORTANT: Match app env
-        const inboxId = await Client.getInboxIdByAddress(wallet.address, env);
+        const inboxId = await resolveInboxId(wallet.address, env);
 
         if (!inboxId) throw new Error("Could not find Inbox ID for address.");
 
@@ -3894,10 +3891,7 @@
         log("Standardizing Agent session via Inbox ID...", "inf");
         
         // Mandatory resolution to Inbox ID
-        const inboxId = await state.xmtpClient.getInboxIdByIdentifier({
-          identifier: AGENT_ADDR.toLowerCase(),
-          identifierKind: IdentifierKind.Ethereum
-        });
+        const inboxId = await resolveInboxId(AGENT_ADDR, "dev");
 
         if (!inboxId) throw new Error("Agent's Wallet Address is not registered on XMTP yet.");
 
@@ -3928,7 +3922,7 @@
         }
         log("Wallet config synced with Agent.", "ok");
       } catch (e) {
-        log(`Config sync failed: ${e.message}`, "wrn");
+        log(`Config sync failed: ${e.message}`, 'wrn');
       }
     }
 
@@ -3947,7 +3941,7 @@
         // Intentar resolver de nuevo si no tenemos el ID del agente
         if (AGENT_ADDR && !state.agentInboxId) {
           try {
-            const aid = await state.xmtpClient.identity.getInboxIdForAddress(AGENT_ADDR);
+            const aid = await resolveInboxId(AGENT_ADDR, "dev");
             if (aid) {
               state.agentInboxId = aid;
               localStorage.setItem('agent_inbox_id', aid);
@@ -4362,10 +4356,7 @@
           // Paso 2: Resolver InboxID
           let targetInboxId = (isAgentTarget && state.agentInboxId) ? state.agentInboxId : null;
           if (!targetInboxId) {
-            targetInboxId = await state.xmtpClient.getInboxIdByIdentifier({
-              identifier: targetAddr,
-              identifierKind: IdentifierKind.Ethereum
-            });
+            targetInboxId = await resolveInboxId(targetAddr, "dev");
             if (isAgentTarget && targetInboxId) {
               state.agentInboxId = targetInboxId;
               localStorage.setItem('agent_inbox_id', targetInboxId);
@@ -4581,17 +4572,13 @@
             return m.senderInboxId || '0x...';
           };
           const sender = getAddress(msg).toLowerCase();
-          const currentConvo = state.selectedConversation;
-          const currentPeer = (currentConvo?.peerAddress || '').toLowerCase();
-          let currentPeerInboxId = null;
-          try { if (currentConvo?.dmPeerInboxId) currentPeerInboxId = currentConvo.dmPeerInboxId().toLowerCase(); } catch(e){}
-
+          console.log(`[XMTP] 📩 Message from: ${sender}`);
+          
           const isAgentSender = sender === AGENT_ADDR.toLowerCase() || 
-                               sender === (state.agentInboxId || '').toLowerCase() ||
-                               sender.includes(AGENT_ADDR.toLowerCase().slice(2, 10));
+                               sender === (state.agentInboxId || '').toLowerCase();
 
           if (isAgentSender) {
-            console.log(`📩 Incoming from Agent! Sender: ${sender}`);
+            console.log(`[AGENT] recognized: ${sender}`);
           }
 
           // 0. Detect presence update (TECHNICAL MESSAGE)
