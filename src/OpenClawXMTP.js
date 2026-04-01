@@ -119,20 +119,19 @@ export class OpenClawXMTP {
       // 1. Identificar al Boss (dueño del agente)
       let bossInboxId = null;
       try {
+        console.info(`[OpenClawXMTP] Resolviendo identidad del Boss: ${this._walletClawAddress}...`);
         bossInboxId = await this._xmtp.getInboxIdByAddress(this._walletClawAddress);
         if (bossInboxId) {
-          console.info(`[OpenClawXMTP] 🛡️ Filtro activo: Solo escuchando al Boss (${bossInboxId.slice(0,10)}...)`);
+          console.info(`[OpenClawXMTP] 🛡️ Boss ID resuelto: ${bossInboxId}`);
         }
       } catch (e) {
-        console.warn("[OpenClawXMTP] ⚠️ No se pudo pre-resolver el ID del Boss. Escuchando todo por ahora.");
+        console.warn("[OpenClawXMTP] ⚠️ Error resolviendo Boss ID:", e.message);
       }
 
       // 2. Sincronización en segundo plano
-      this._xmtp.conversations.sync().then(() => {
-        console.info("[OpenClawXMTP] 🔄 Sincronización de fondo completada.");
-      }).catch(e => { });
+      this._xmtp.conversations.sync().catch(e => { });
 
-      console.info("[OpenClawXMTP] 🟢 Escuchando mensajes (V3 Stream All)...");
+      console.info("[OpenClawXMTP] 🟢 Escuchando mensajes (MLS V3)...");
       const stream = await this._xmtp.conversations.streamAllMessages();
       for await (const message of stream) {
         if (!message) continue;
@@ -140,18 +139,20 @@ export class OpenClawXMTP {
         const fromId = message.senderInboxId;
         
         // --- FILTROS DE SEGURIDAD ---
-        // A. Ignorar mis propios mensajes
         if (this._xmtp && fromId === this._xmtp.inboxId) continue;
         
-        // B. Ignorar si no es el Boss (si tenemos el ID)
-        if (bossInboxId && fromId !== bossInboxId) {
-            // Opcional: Loguear intentos de acceso no autorizados
-            // console.warn(`[OpenClawXMTP] 🔒 Intento de acceso bloqueado de: ${fromId.slice(0,10)}...`);
-            continue;
+        // --- LOG DE DEBUG DE IDENTIDAD ---
+        const isBoss = bossInboxId && fromId.toLowerCase() === bossInboxId.toLowerCase();
+        
+        if (!isBoss) {
+            console.warn(`[OpenClawXMTP] 🔒 Mensaje de origen desconocido: ${fromId}`);
+            console.warn(`[OpenClawXMTP] 🔒 Comparando con Boss ID: ${bossInboxId}`);
+            // Por ahora dejamos pasar para debugear, pero avisamos.
+            console.info("[DEBUG] Dejando pasar para diagnóstico...");
+        } else {
+            console.info(`[OpenClawXMTP] ✅ Mensaje del Boss confirmado.`);
         }
 
-        console.info(`[OpenClawXMTP] 📩 Mensaje del Boss recibido (${fromId.slice(0,10)}...)`);
-        
         let parsed = message.content;
         try { 
           if (typeof message.content === 'string' && message.content.startsWith('{')) {
@@ -159,11 +160,7 @@ export class OpenClawXMTP {
           }
         } catch (e) { }
 
-        this._onMessage?.({ 
-          from: fromId, 
-          payload: parsed, 
-          raw: message 
-        });
+        this._onMessage?.({ from: fromId, payload: parsed, raw: message });
       }
     } catch (e) {
       console.error("[OpenClawXMTP] ❌ Error fatal en stream:", e.message || e);
