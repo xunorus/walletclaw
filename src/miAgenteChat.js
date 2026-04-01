@@ -13,6 +13,9 @@ const config = {
   env: 'dev'           // 'dev' para que coincida con WalletClaw dev mode
 };
 
+// --- CEREBRO DE HÉCTOR (HISTORIAL) ---
+const brain = new OpenClawHistory('./openclaw_brain.json');
+
 console.log("\n╔════════════════════════════════════════╗");
 console.log("║    🤖 OpenClaw Chat Agent — v1.1.3     ║");
 console.log("╚════════════════════════════════════════╝\n");
@@ -27,6 +30,10 @@ const onReceived = async ({ from, payload }) => {
   const senderLabel = isLocal ? '🌉 Bridge' : `🚀 XMTP (${from.slice(0, 10)}...)`;
   const text = typeof payload === 'string' ? payload : JSON.stringify(payload);
   console.log(`[MSG] De: ${senderLabel} Contenido: ${text}`);
+
+  // Log to file for Hector
+  await brain.addMessage(from, text);
+  console.log(`[CEREBRO] 📝 Pensamiento guardado en el historial estructurado.`);
 
   // Ignore automatic events
   if (typeof payload === 'object' && payload.event) return;
