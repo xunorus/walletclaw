@@ -117,18 +117,33 @@ export class OpenClawXMTP {
     this._isStreaming = true;
     
     try {
-      // 1. Identificar al Boss (dueño del agente)
+      // 1. Identificar al Boss (dueño del agente) con método resiliente
       let bossInboxId = null;
-      try {
-        console.info(`[OpenClawXMTP] 🔍 Buscando identidad del Boss (${this._walletClawAddress})...`);
-        bossInboxId = await this._xmtp.getInboxIdByAddress(this._walletClawAddress);
-        if (bossInboxId) {
-          console.info(`[OpenClawXMTP] 🛡️ Boss ID resuelto: ${bossInboxId}`);
-        } else {
-          console.warn("[OpenClawXMTP] ⚠️ El Boss no tiene Inbox ID aún. ¿Ya se registró en XMTP dev?");
+      let pairingCode = null;
+
+      if (!this._walletClawAddress) {
+        // MODO PAIRING: Si no hay address configurada, generamos un código de 6 dígitos
+        pairingCode = Math.floor(100000 + Math.random() * 900000).toString();
+        console.warn("\n╔════════════════════════════════════════════╗");
+        console.warn("║ ⚠️  MODO DE EMPAREJAMIENTO ACTIVADO         ║");
+        console.warn(`║ Envía este código a Héctor por XMTP: ${pairingCode} ║`);
+        console.warn("╚════════════════════════════════════════════╝\n");
+      } else {
+        try {
+          console.info(`[OpenClawXMTP] 🔍 Buscando identidad del Boss (${this._walletClawAddress})...`);
+          
+          if (typeof this._xmtp.getInboxIdByAddress === 'function') {
+            bossInboxId = await this._xmtp.getInboxIdByAddress(this._walletClawAddress);
+          } else if (typeof this._xmtp.getInboxIdForAddress === 'function') {
+            bossInboxId = await this._xmtp.getInboxIdForAddress(this._walletClawAddress);
+          }
+
+          if (bossInboxId) {
+            console.info(`[OpenClawXMTP] 🛡️ Boss ID resuelto: ${bossInboxId}`);
+          }
+        } catch (e) {
+          console.warn("[OpenClawXMTP] ⚠️ Error en resolución de Boss:", e.message);
         }
-      } catch (e) {
-        console.warn("[OpenClawXMTP] ⚠️ Error en resolución de Boss:", e.message);
       }
 
       // 2. Sincronización en segundo plano
@@ -142,24 +157,42 @@ export class OpenClawXMTP {
         const fromId = message.senderInboxId;
         if (this._xmtp && fromId === this._xmtp.inboxId) continue;
         
-        // --- LOG DE DEBUG DE IDENTIDAD ---
-        const isBoss = bossInboxId && fromId.toLowerCase() === bossInboxId.toLowerCase();
-        if (!isBoss) {
-            console.warn(`[OpenClawXMTP] 🔒 Mensaje de: ${fromId.slice(0,12)}... (No coincide con Boss ID: ${bossInboxId?.slice(0,12) || 'null'})`);
-        } else {
-            console.info(`[OpenClawXMTP] ✅ Mensaje del Boss confirmado.`);
+        // --- PROCESO DE PAIRING (HANDSHAKE) ---
+        if (!bossInboxId && pairingCode) {
+            let content = message.content || message.fallback || "";
+            if (content.trim() === pairingCode) {
+                bossInboxId = fromId;
+                pairingCode = null; // Cerramos el modo pairing
+                console.info("\n╔════════════════════════════════════════╗");
+                console.info("║ 🎉 ¡EMPAREJAMIENTO EXITOSO!            ║");
+                console.info(`║ Boss vinculado (InboxID): ${fromId} ║`);
+                console.info("╚════════════════════════════════════════╝\n");
+                
+                // Confirmamos por XMTP
+                try {
+                  const conv = await this._xmtp.conversations.getConversationById(message.conversationId);
+                  await conv.send("🤝 ¡Vínculo establecido! Hola, Boss. Soy Héctor, tu agente de OpenClaw. ¿En qué puedo ayudarte?");
+                } catch (e) { }
+                continue; // No procesamos el código como comando
+            }
         }
 
+        // --- FILTRO DE SEGURIDAD ---
+        const isBoss = bossInboxId && fromId.toLowerCase() === bossInboxId.toLowerCase();
+        
+        if (bossInboxId && !isBoss) {
+            // Ignoramos en silencio si ya tenemos un Boss y no es el que habla
+            continue;
+        }
+
+        console.info(`[OpenClawXMTP] ✅ Mensaje del Boss recibido.`);
+        
         // --- EXTRACCIÓN RESILIENTE DE CONTENIDO ---
         let payload = message.content;
-        
-        // Si el contenido viene vacío (común en algunos SDKs de V3), intentamos fallback o crudo
         if (payload === undefined || payload === null) {
-            payload = message.fallback || message.textBody || "[Mensaje sin texto legible]";
-            console.warn(`[OpenClawXMTP] ⚠️ Contenido indefinido detectado. Usando fallback: "${payload}"`);
+            payload = message.fallback || message.textBody || "";
         }
 
-        // Intentar parsear JSON si parece serlo
         let parsed = payload;
         try { 
           if (typeof payload === 'string' && payload.startsWith('{')) {
