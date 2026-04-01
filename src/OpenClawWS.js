@@ -24,8 +24,8 @@ export class OpenClawWS {
     async connect() {
         if (this._ws) return;
 
-        const url = `${this._bridgeUrl}?key=${this._apiKey}`;
-        console.info(`[OpenClawWS] Conectando a ${this._bridgeUrl}...`);
+        const url = `${this._bridgeUrl}?apiKey=${this._apiKey}&a=${this._apiKey}`;
+        console.info(`[OpenClawWS] Connecting to Bridge via ${this._bridgeUrl}...`);
 
         return new Promise((resolve, reject) => {
             try {

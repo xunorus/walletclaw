@@ -10,6 +10,7 @@ import { exec, execSync } from 'child_process';
  */
 
 const BRIDGE_VERSION = 'v1.1.3';
+let activeApiKey = 'CLAW_BRIDGE_SECRET'; // Standardized default for 1.1.4+
 
 const app = express();
 app.use(cors());
@@ -21,7 +22,6 @@ const REST_PORT = 18789; // Puerto único para REST, Agentes y UI (vía Caddy)
 // Estado del puente
 let uiSocket = null; // Conexión con el navegador (WalletClaw)
 let activeAgentSocket = null; // Último agente conectado
-let activeApiKey = null; // Se sincroniza desde el navegador
 let activeWalletAddress = null; // Se sincroniza desde el navegador
 
 // --- Utilidades Premium ---
@@ -218,10 +218,11 @@ uiWss.on('connection', (ws) => {
 });
 
 agentWss.on('connection', (ws, req) => {
-    const url = new URL(req.url, `http://${req.headers.host}`);
-    const queryKey = url.searchParams.get('key');
-    const authHeader = req.headers['authorization'] ? req.headers['authorization'].replace('Bearer ', '') : null;
-    const receivedKey = queryKey || authHeader;
+    const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+    const receivedKey = url.searchParams.get('apiKey') || 
+                        url.searchParams.get('a') || 
+                        url.searchParams.get('key') || 
+                        (req.headers['authorization'] ? req.headers['authorization'].replace('Bearer ', '') : null);
 
     if (!activeApiKey || receivedKey !== activeApiKey) {
         console.log(`[WS_AGENT] 🔴 Conexión rechazada: API Key inválida (Recibido: ${receivedKey})`);
